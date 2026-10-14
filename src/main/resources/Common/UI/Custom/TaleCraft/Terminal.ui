@@ -17,13 +17,11 @@ Group #Terminal {
 
   Group #Screen {
     FlexWeight: 1;
-    Background: #05070a(0.92);
-    Padding: (Full: 10);
     LayoutMode: Top;
 
-    Label #Output {
-      Text: "";
+    $C.@MultilineTextField #Output {
       FlexWeight: 1;
+      PlaceholderText: "";
       Style: (FontSize: 13, TextColor: #c8d8b8, Wrap: true, VerticalAlignment: Bottom);
     }
   }

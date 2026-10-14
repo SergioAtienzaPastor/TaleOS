@@ -54,7 +54,7 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         cmd.append(LAYOUT);
         lastShown = computer.getScrollback();
         cmd.set("#Title.Text", (readOnly ? "Monitor — Computer #" : "Computer #") + computer.getId());
-        cmd.set("#Output.Text", lastShown);
+        cmd.set("#Output.Value", lastShown);
         if (readOnly) {
             cmd.set("#Input.Visible", false);
         } else {
@@ -91,7 +91,7 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         lastShown = current;
         try {
             UICommandBuilder cmd = new UICommandBuilder();
-            cmd.set("#Output.Text", current);
+            cmd.set("#Output.Value", current);
             sendUpdate(cmd, false);
         } catch (Exception e) {
             // page was closed or the client went away: stop tracking it
