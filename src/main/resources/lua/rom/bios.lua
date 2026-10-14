@@ -28,6 +28,10 @@ end
 function os.shutdown()
   tale.shutdown()
 end
+function os.sleep(seconds)
+  -- 20 ticks por segundo de servidor; mínimo un tick
+  tale.sleep(math.max(1, math.ceil((seconds or 0) * 20)))
+end
 
 print("TaleOS v0.1 (TaleCraft)")
 

@@ -56,8 +56,12 @@ public final class LuaMachine {
 
     /** Marker used in the yield of a world call (see WorldBridge). */
     private static final LuaValue WORLDCALL = LuaValue.valueOf("tale:worldcall");
+    /** Marker used by tale.sleep: yield {"tale:sleep", ticks}. */
+    private static final LuaValue SLEEPCALL = LuaValue.valueOf("tale:sleep");
     /** World calls beyond this per tick get nil instead of executing. */
     private static final int MAX_WORLDCALLS_PER_TICK = 32;
+    /** Ticks the machine stays parked because of tale.sleep. */
+    private int sleepTicksRemaining;
 
     public LuaMachine(long budgetPerTick) {
         this(budgetPerTick, null);
@@ -119,12 +123,23 @@ public final class LuaMachine {
         if (state != State.ALIVE) {
             return;
         }
+        // A sleeping machine is parked mid-yield: count down and only resume
+        // (with nil, not an event) when the timer runs out.
+        boolean wakeFromSleep = false;
+        if (sleepTicksRemaining > 0) {
+            wakeFromSleep = --sleepTicksRemaining == 0;
+            if (!wakeFromSleep) {
+                return;
+            }
+        }
         budgetHook.reset(budgetPerTick / HOOK_INTERVAL);
         Varargs args;
         if (pendingChunk != null) {
             args = LuaValue.varargsOf(new LuaValue[] {
                     sethook, budgetHook, LuaValue.valueOf(HOOK_INTERVAL), pendingChunk });
             pendingChunk = null;
+        } else if (wakeFromSleep) {
+            args = LuaValue.NIL;
         } else {
             Varargs ev = events.poll();
             args = ev != null ? ev : LuaValue.NIL;
@@ -145,8 +160,11 @@ public final class LuaMachine {
                 state = State.DONE;
                 return;
             }
-            // Suspended: a pullEvent yield (wait for next tick's event) or a
-            // world call to execute right now on this thread.
+            // Suspended: sleep timer, pullEvent yield, or a world call.
+            if (SLEEPCALL.equals(result.arg(2))) {
+                sleepTicksRemaining = Math.max(1, result.arg(3).optint(1));
+                return;
+            }
             if (isWorldCall(result)) {
                 args = ++worldcalls <= MAX_WORLDCALLS_PER_TICK
                         ? executeWorldCall(result)
@@ -316,6 +334,14 @@ public final class LuaMachine {
             public Varargs invoke(Varargs args) {
                 return g.yield(LuaValue.varargsOf(new LuaValue[] {
                         WORLDCALL, LuaValue.valueOf("time") }));
+            }
+        });
+        tale.set("sleep", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                // Parks the machine for N ticks (min 1), then resumes with nil.
+                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        SLEEPCALL, LuaValue.valueOf(args.arg(1).optint(1)) }));
             }
         });
         g.set("tale", tale);
