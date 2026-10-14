@@ -1,14 +1,14 @@
 {
-    "Group": "Example",
-    "Name": "ExamplePlugin",
-    "Version": "0.0.2",
-    "Description": "An example plugin for HyTale!",
+    "Group": "TaleCraft",
+    "Name": "TaleCraft",
+    "Version": "0.1.0",
+    "Description": "Programmable Lua computers for Hytale: terminal blocks, a sandboxed Lua runtime and peripherals, inspired by ComputerCraft.",
     "Authors": [
         {
-            "Name": "It's you!"
+            "Name": "kvothe"
         }
     ],
-    "Website": "example.org",
+    "Website": "",
     "ServerVersion": "*",
     "Dependencies": {
         
@@ -17,6 +17,6 @@
         
     },
     "DisabledByDefault": false,
-    "Main": "org.example.plugin.ExamplePlugin",
+    "Main": "com.kvothe.talecraft.TaleCraftPlugin",
     "IncludesAssetPack": true
 }

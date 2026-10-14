@@ -1,4 +1,4 @@
-package org.example.plugin;
+package com.kvothe.talecraft;
 
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
@@ -8,15 +8,16 @@ import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
 import javax.annotation.Nonnull;
 
 /**
- * This is an example command that will simply print the name of the plugin in chat when used.
+ * Smoke-test command: prints the plugin name in chat. Will be replaced by the
+ * real computer/Lua commands as the core lands.
  */
-public class ExampleCommand extends CommandBase {
+public class TaleCraftCommand extends CommandBase {
 
     private final String pluginName;
     private final String pluginVersion;
 
-    public ExampleCommand(String pluginName, String pluginVersion) {
-        super("test", "Prints a test message from the " + pluginName + " plugin.");
+    public TaleCraftCommand(String pluginName, String pluginVersion) {
+        super("talecraft", "Prints a test message from the " + pluginName + " plugin.");
         this.setPermissionGroup(GameMode.Adventure); // Allows the command to be used by anyone, not just OP
         this.pluginName = pluginName;
         this.pluginVersion = pluginVersion;
