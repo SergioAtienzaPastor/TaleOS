@@ -1,5 +1,7 @@
 # TaleCraft
 
+![Concept art del bloque Computer](docs/concept_computer.png)
+
 **Programmable Lua computers for Hytale** — a ComputerCraft-style server plugin: craft a
 Computer block, press F, and you get a real terminal running **TaleOS**, a small Lua OS,
 sandboxed and safe for multiplayer servers.
