@@ -33,7 +33,7 @@ public final class TerminalPageSupplier implements OpenCustomUIInteraction.Custo
         if (pos == null) {
             return null;
         }
-        Computer computer = manager.bootAt(ComputerManager.worldNameOf(accessor), pos);
+        Computer computer = manager.bootAt(ComputerManager.worldOf(accessor), pos);
         TerminalPage page = new TerminalPage(playerRef, manager, computer);
         manager.registerPage(playerRef.getUuid(), page);
         return page;

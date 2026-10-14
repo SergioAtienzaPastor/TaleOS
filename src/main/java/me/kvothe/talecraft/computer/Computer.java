@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import me.kvothe.talecraft.lua.LuaMachine;
+import me.kvothe.talecraft.lua.WorldBridge;
 import me.kvothe.talecraft.os.VirtualFileSystem;
 
 /**
@@ -35,41 +36,55 @@ public final class Computer {
     private final int id;
     private final LuaMachine machine;
     private final StringBuilder scrollback = new StringBuilder();
+    private int scrollbackReadPos;
 
     private static final int SCROLLBACK_MAX_CHARS = 8000;
 
-    public Computer(int id, Path root) throws IOException {
+    public Computer(int id, Path root, WorldBridge bridge) throws IOException {
         this.id = id;
         VirtualFileSystem fs = new VirtualFileSystem(root, DISK_QUOTA);
         fs.mountRom(loadRomOverlay());
         this.machine = new LuaMachine(BUDGET_PER_TICK, fs);
         this.machine.setComputerId(id);
+        this.machine.setWorldBridge(bridge);
     }
 
     /** Loads bios and runs the first tick (boot to the TaleOS prompt). */
     public void boot() {
         machine.load(romOverlayCache().get("rom/bios.lua"), "taleos:bios");
         machine.tick();
+        pullMachineOutput();
     }
 
     public void tick() {
         if (machine.isAlive()) {
             machine.tick();
         }
-        drainOutput();
+        pullMachineOutput();
     }
 
-    public String drainOutput() {
+    /** Moves fresh machine output into the scrollback. */
+    private void pullMachineOutput() {
         String out = machine.drainOutput();
         if (!out.isEmpty()) {
             synchronized (scrollback) {
                 scrollback.append(out);
                 if (scrollback.length() > SCROLLBACK_MAX_CHARS) {
-                    scrollback.delete(0, scrollback.length() - SCROLLBACK_MAX_CHARS);
+                    int trimmed = scrollback.length() - SCROLLBACK_MAX_CHARS;
+                    scrollback.delete(0, trimmed);
+                    scrollbackReadPos = Math.max(0, scrollbackReadPos - trimmed);
                 }
             }
         }
-        return out;
+    }
+
+    /** Output produced since the previous call to this method. */
+    public String drainOutput() {
+        synchronized (scrollback) {
+            String out = scrollback.substring(scrollbackReadPos);
+            scrollbackReadPos = scrollback.length();
+            return out;
+        }
     }
 
     /** Recent terminal output (capped), for pages that open mid-session. */

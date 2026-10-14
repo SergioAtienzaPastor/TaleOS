@@ -52,6 +52,12 @@ public final class LuaMachine {
     private volatile int computerId;
     private volatile boolean rebootRequested;
     private volatile boolean shutdownRequested;
+    private volatile WorldBridge worldBridge = WorldBridge.NONE;
+
+    /** Marker used in the yield of a world call (see WorldBridge). */
+    private static final LuaValue WORLDCALL = LuaValue.valueOf("tale:worldcall");
+    /** World calls beyond this per tick get nil instead of executing. */
+    private static final int MAX_WORLDCALLS_PER_TICK = 32;
 
     public LuaMachine(long budgetPerTick) {
         this(budgetPerTick, null);
@@ -102,7 +108,13 @@ public final class LuaMachine {
         events.add(LuaValue.varargsOf(values));
     }
 
-    /** Resumes the machine once, with a fresh instruction budget for this tick. */
+    /**
+     * Resumes the machine once, with a fresh instruction budget for this tick.
+     * World calls requested by the script (tale.getBlock/detect/chat/time) are
+     * executed synchronously on <b>this</b> thread — which must be the server
+     * tick thread — before resuming the coroutine with the result, so Lua code
+     * never touches the world from its own thread.
+     */
     public void tick() {
         if (state != State.ALIVE) {
             return;
@@ -117,19 +129,70 @@ public final class LuaMachine {
             Varargs ev = events.poll();
             args = ev != null ? ev : LuaValue.NIL;
         }
-        Varargs result = thread.resume(args);
-        if (rebootRequested || shutdownRequested) {
-            // tale.reboot()/shutdown() park the coroutine; the supervisor turns
-            // that into a clean halt. The plugin recreates the machine on reboot.
-            state = State.DONE;
-        } else if (result.arg1().optboolean(false)) {
+        int worldcalls = 0;
+        while (state == State.ALIVE) {
+            Varargs result = thread.resume(args);
+            if (rebootRequested || shutdownRequested) {
+                state = State.DONE;
+                return;
+            }
+            if (!result.arg1().optboolean(false)) {
+                state = State.DEAD;
+                error = result.arg(2).tojstring();
+                return;
+            }
             if ("dead".equals(thread.getStatus())) {
                 state = State.DONE;
+                return;
             }
-        } else {
-            state = State.DEAD;
-            error = result.arg(2).tojstring();
+            // Suspended: a pullEvent yield (wait for next tick's event) or a
+            // world call to execute right now on this thread.
+            if (isWorldCall(result)) {
+                args = ++worldcalls <= MAX_WORLDCALLS_PER_TICK
+                        ? executeWorldCall(result)
+                        : LuaValue.NIL;
+                continue;
+            }
+            return;
         }
+    }
+
+    private static boolean isWorldCall(Varargs yieldValues) {
+        return WORLDCALL.equals(yieldValues.arg(2));
+    }
+
+    /** Executes one world call on the calling (tick) thread. */
+    private Varargs executeWorldCall(Varargs yieldValues) {
+        String op = yieldValues.arg(3).tojstring();
+        WorldBridge bridge = worldBridge;
+        switch (op) {
+            case "getBlock": {
+                int dx = yieldValues.arg(4).optint(0);
+                int dy = yieldValues.arg(5).optint(-1);
+                int dz = yieldValues.arg(6).optint(0);
+                String id = bridge.getBlockId(bridge.getOriginX() + dx,
+                        bridge.getOriginY() + dy, bridge.getOriginZ() + dz);
+                return id == null ? LuaValue.NIL : LuaValue.valueOf(id);
+            }
+            case "detect": {
+                int dx = yieldValues.arg(4).optint(0);
+                int dy = yieldValues.arg(5).optint(-1);
+                int dz = yieldValues.arg(6).optint(0);
+                return LuaValue.valueOf(bridge.getBlockId(bridge.getOriginX() + dx,
+                        bridge.getOriginY() + dy, bridge.getOriginZ() + dz) != null);
+            }
+            case "chat":
+                bridge.chat(yieldValues.arg(4).tojstring());
+                return LuaValue.TRUE;
+            case "time":
+                return LuaValue.valueOf(bridge.getTime());
+            default:
+                return LuaValue.NIL;
+        }
+    }
+
+    public void setWorldBridge(WorldBridge bridge) {
+        this.worldBridge = bridge == null ? WorldBridge.NONE : bridge;
     }
 
     public State getState() {
@@ -216,6 +279,43 @@ public final class LuaMachine {
             public Varargs invoke(Varargs args) {
                 shutdownRequested = true;
                 return g.yield(LuaValue.NIL);
+            }
+        });
+        // World API v1: each call yields a marker that tick() executes on the
+        // tick thread, resuming with the result (CC:T main-thread pattern).
+        tale.set("getBlock", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("getBlock"),
+                        LuaValue.valueOf(args.arg(1).optint(0)),
+                        LuaValue.valueOf(args.arg(2).optint(-1)),
+                        LuaValue.valueOf(args.arg(3).optint(0)) }));
+            }
+        });
+        tale.set("detect", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("detect"),
+                        LuaValue.valueOf(args.arg(1).optint(0)),
+                        LuaValue.valueOf(args.arg(2).optint(-1)),
+                        LuaValue.valueOf(args.arg(3).optint(0)) }));
+            }
+        });
+        tale.set("chat", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("chat"),
+                        LuaValue.valueOf(args.arg(1).tojstring()) }));
+            }
+        });
+        tale.set("time", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("time") }));
             }
         });
         g.set("tale", tale);

@@ -12,6 +12,7 @@ import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import me.kvothe.talecraft.lua.WorldBridge;
 import me.kvothe.talecraft.ui.TerminalPage;
 
 /**
@@ -40,16 +41,21 @@ public final class ComputerManager {
         }
     }
 
-    /** Boots (or returns) the computer at the given block. */
-    public Computer bootAt(String worldName, BlockPosition pos) {
+    /** Boots (or returns) the computer at the given block. A null world means
+     * "no world context" (headless self-test): the machine gets WorldBridge.NONE. */
+    public Computer bootAt(World world, BlockPosition pos) {
+        String worldName = world != null ? world.getName() : "world";
         String key = key(worldName, pos.x, pos.y, pos.z);
         return computers.compute(key, (k, existing) -> {
             if (existing != null && existing.isAlive()) {
                 return existing;
             }
             int id = idStore.idFor(k);
+            WorldBridge bridge = world == null
+                    ? WorldBridge.NONE
+                    : new HytaleWorldBridge(world, pos, id);
             try {
-                Computer c = new Computer(id, dataDir.resolve("computers").resolve(String.valueOf(id)));
+                Computer c = new Computer(id, dataDir.resolve("computers").resolve(String.valueOf(id)), bridge);
                 c.boot();
                 return c;
             } catch (IOException e) {
@@ -103,20 +109,17 @@ public final class ComputerManager {
         return worldName + ":" + x + ":" + y + ":" + z;
     }
 
-    /** Resolves the world name for an entity-store accessor (page callbacks
-     * don't get the World directly). Falls back to "world" when unsure. */
-    public static String worldNameOf(ComponentAccessor<EntityStore> accessor) {
+    /** Resolves the World for an entity-store accessor (page callbacks don't
+     * get it directly). Null when it cannot be resolved (headless testing). */
+    public static World worldOf(ComponentAccessor<EntityStore> accessor) {
         try {
             if (accessor instanceof Store<?> store
                     && store.getExternalData() instanceof EntityStore entityStore) {
-                World w = entityStore.getWorld();
-                if (w != null && w.getName() != null) {
-                    return w.getName();
-                }
+                return entityStore.getWorld();
             }
         } catch (Exception ignored) {
-            // best effort; a stable fallback key still works per-world in practice
+            // best effort
         }
-        return "world";
+        return null;
     }
 }
