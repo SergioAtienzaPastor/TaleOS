@@ -1,0 +1,1 @@
+print("ordenador #" .. os.getComputerID())

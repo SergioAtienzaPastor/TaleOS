@@ -1,0 +1,42 @@
+-- TaleOS bios — escrito desde cero para TaleCraft.
+-- Prepara las APIs base (term, os) y arranca el shell desde rom/shell.lua.
+
+-- term: MVP lineal sobre print; el terminal de rejilla llega con la UI.
+term = term or {}
+function term.write(s)
+  print(tostring(s))
+end
+function term.getSize()
+  return 51, 19
+end
+function term.clear()
+  print("[clear]")
+end
+function term.setCursorPos(x, y)
+end
+
+-- os sobre la tabla ya saneada (clock/time/date) del sandbox.
+function os.pullEvent()
+  return tale.pullEvent()
+end
+function os.getComputerID()
+  return tale.getComputerID()
+end
+function os.reboot()
+  tale.reboot()
+end
+function os.shutdown()
+  tale.shutdown()
+end
+
+print("TaleOS v0.1 (TaleCraft)")
+
+local src = fs.read("rom/shell.lua")
+if not src then
+  error("TaleOS: rom/shell.lua no encontrado")
+end
+local fn, err = load(src, "@rom/shell.lua")
+if not fn then
+  error("TaleOS: " .. tostring(err))
+end
+fn()

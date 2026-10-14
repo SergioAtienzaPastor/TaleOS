@@ -1,0 +1,2 @@
+print("apagando...")
+os.shutdown()

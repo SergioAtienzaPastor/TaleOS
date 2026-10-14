@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -64,14 +65,28 @@ class VirtualFileSystemTest {
     @Test
     void mkdirListDelete() throws Exception {
         VirtualFileSystem fs = newFs(1_000_000);
-        fs.mkdir("rom/programs");
-        assertTrue(fs.isDir("rom"));
-        fs.write("rom/programs/a.lua", "print(1)");
-        fs.write("rom/b.lua", "print(2)");
-        assertEquals(List.of("b.lua", "programs"), fs.list("rom"));
-        fs.delete("rom");
-        assertFalse(fs.exists("rom/b.lua"));
+        fs.mkdir("data/programs");
+        assertTrue(fs.isDir("data"));
+        fs.write("data/programs/a.lua", "print(1)");
+        fs.write("data/b.lua", "print(2)");
+        assertEquals(List.of("b.lua", "programs"), fs.list("data"));
+        fs.delete("data");
+        assertFalse(fs.exists("data/b.lua"));
         assertThrows(VirtualFileSystem.FsException.class, () -> fs.delete(""));
+    }
+
+    @Test
+    void romOverlayIsReadOnlyAndShadowsDisk() throws Exception {
+        VirtualFileSystem fs = newFs(1_000_000);
+        fs.mountRom(Map.of("rom/shell.lua", "-- shell", "rom/programs/id.lua", "-- id"));
+        assertTrue(fs.exists("rom/shell.lua"));
+        assertTrue(fs.isDir("rom"));
+        assertTrue(fs.isDir("rom/programs"));
+        assertEquals(List.of("programs", "shell.lua"), fs.list("rom"));
+        assertEquals("-- shell", fs.read("rom/shell.lua"));
+        assertThrows(VirtualFileSystem.FsException.class, () -> fs.write("rom/x.lua", "x"));
+        assertThrows(VirtualFileSystem.FsException.class, () -> fs.mkdir("rom/sub"));
+        assertThrows(VirtualFileSystem.FsException.class, () -> fs.delete("rom/shell.lua"));
     }
 
     @Test

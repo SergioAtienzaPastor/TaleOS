@@ -49,6 +49,9 @@ public final class LuaMachine {
     private LuaValue pendingChunk;
     private volatile State state = State.NEW;
     private volatile String error;
+    private volatile int computerId;
+    private volatile boolean rebootRequested;
+    private volatile boolean shutdownRequested;
 
     public LuaMachine(long budgetPerTick) {
         this(budgetPerTick, null);
@@ -90,8 +93,13 @@ public final class LuaMachine {
     }
 
     /** Queues an event; the next tick resumes the machine with it. */
-    public void queueEvent(String name) {
-        events.add(LuaValue.varargsOf(new LuaValue[] { LuaValue.valueOf(name) }));
+    public void queueEvent(String name, String... args) {
+        LuaValue[] values = new LuaValue[args.length + 1];
+        values[0] = LuaValue.valueOf(name);
+        for (int i = 0; i < args.length; i++) {
+            values[i + 1] = LuaValue.valueOf(args[i]);
+        }
+        events.add(LuaValue.varargsOf(values));
     }
 
     /** Resumes the machine once, with a fresh instruction budget for this tick. */
@@ -110,7 +118,11 @@ public final class LuaMachine {
             args = ev != null ? ev : LuaValue.NIL;
         }
         Varargs result = thread.resume(args);
-        if (result.arg1().optboolean(false)) {
+        if (rebootRequested || shutdownRequested) {
+            // tale.reboot()/shutdown() park the coroutine; the supervisor turns
+            // that into a clean halt. The plugin recreates the machine on reboot.
+            state = State.DONE;
+        } else if (result.arg1().optboolean(false)) {
             if ("dead".equals(thread.getStatus())) {
                 state = State.DONE;
             }
@@ -186,7 +198,43 @@ public final class LuaMachine {
                 return g.yield(LuaValue.NIL);
             }
         });
+        tale.set("getComputerID", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return LuaValue.valueOf(computerId);
+            }
+        });
+        tale.set("reboot", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                rebootRequested = true;
+                return g.yield(LuaValue.NIL);
+            }
+        });
+        tale.set("shutdown", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                shutdownRequested = true;
+                return g.yield(LuaValue.NIL);
+            }
+        });
         g.set("tale", tale);
+    }
+
+    public int getComputerId() {
+        return computerId;
+    }
+
+    public void setComputerId(int computerId) {
+        this.computerId = computerId;
+    }
+
+    public boolean isRebootRequested() {
+        return rebootRequested;
+    }
+
+    public boolean isShutdownRequested() {
+        return shutdownRequested;
     }
 
     /**
