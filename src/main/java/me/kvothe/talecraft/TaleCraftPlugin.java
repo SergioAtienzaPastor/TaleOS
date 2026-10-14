@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.kvothe.talecraft.computer.Computer;
 import me.kvothe.talecraft.computer.ComputerManager;
 import me.kvothe.talecraft.computer.ComputerTickSystem;
+import me.kvothe.talecraft.computer.MonitorPageSupplier;
 import me.kvothe.talecraft.computer.TerminalPageSupplier;
 import me.kvothe.talecraft.lua.LuaMachine;
 
@@ -40,6 +41,8 @@ public class TaleCraftPlugin extends JavaPlugin {
         // Block "Use" interactions reference this page supplier by name.
         OpenCustomUIInteraction.registerCustomPageSupplier(this, TerminalPageSupplier.class,
                 "TaleCraftComputer", new TerminalPageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this, MonitorPageSupplier.class,
+                "TaleCraftMonitor", new MonitorPageSupplier(computerManager));
         this.getCommandRegistry().registerCommand(new TaleCraftCommand(this.getName(),
                 this.getManifest().getVersion().toString()));
         if (Boolean.parseBoolean(System.getProperty("talecraft.selftest", "false"))) {

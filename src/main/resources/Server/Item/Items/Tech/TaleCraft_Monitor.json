@@ -1,0 +1,93 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.TaleCraft_Monitor.name",
+    "Description": "server.items.TaleCraft_Monitor.description"
+  },
+  "PlayerAnimationsId": "Block",
+  "Categories": [
+    "Furniture.Tech"
+  ],
+  "Icon": "Icons/ItemsGenerated/TaleCraft_Monitor.png",
+  "IconProperties": {
+    "Scale": 0.6,
+    "Rotation": [
+      22.5,
+      45.0,
+      22.5
+    ]
+  },
+  "BlockType": {
+    "BlockParticleSetId": "Wood",
+    "ParticleColor": "#5a4a30",
+    "BlockSoundSetId": "Wood",
+    "PhysicalMaterialId": "Wood",
+    "CustomModel": "Blocks/TaleCraft/TaleCraft_Monitor.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/TaleCraft/TaleCraft_Monitor_Texture.png",
+        "Weight": 1
+      }
+    ],
+    "DrawType": "Model",
+    "Flags": {},
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Woods"
+      }
+    },
+    "HitboxType": "Full",
+    "Material": "Solid",
+    "Opacity": "Transparent",
+    "Support": {
+      "Down": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
+    "VariantRotation": "NESW",
+    "InteractionHint": "server.interactionHints.openDoor",
+    "Interactions": {
+      "Use": {
+        "Interactions": [
+          {
+            "Type": "OpenCustomUI",
+            "Page": {
+              "Id": "TaleCraftMonitor"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Tags": {
+    "Type": [
+      "Furniture"
+    ]
+  },
+  "Recipe": {
+    "TimeSeconds": 3,
+    "Input": [
+      {
+        "ItemId": "Ingredient_Bar_Copper",
+        "Quantity": 2
+      },
+      {
+        "ItemId": "Wood_Deadwood_Planks",
+        "Quantity": 2
+      }
+    ],
+    "BenchRequirement": [
+      {
+        "Id": "Workbench",
+        "Type": "Crafting",
+        "Categories": [
+          "Workbench_Survival"
+        ]
+      }
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Wood",
+  "ItemLevel": 4,
+  "MaxStack": 25
+}

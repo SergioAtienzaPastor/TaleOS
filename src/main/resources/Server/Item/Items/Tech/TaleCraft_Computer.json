@@ -21,10 +21,10 @@
     "ParticleColor": "#5a4a30",
     "BlockSoundSetId": "Wood",
     "PhysicalMaterialId": "Wood",
-    "CustomModel": "Blocks/Benches/Workbench.blockymodel",
+    "CustomModel": "Blocks/TaleCraft/TaleCraft_Computer.blockymodel",
     "CustomModelTexture": [
       {
-        "Texture": "Blocks/Benches/Workbench_Texture.png",
+        "Texture": "Blocks/TaleCraft/TaleCraft_Computer_Texture.png",
         "Weight": 1
       }
     ],

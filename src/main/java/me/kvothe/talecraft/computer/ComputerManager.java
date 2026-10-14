@@ -90,6 +90,23 @@ public final class ComputerManager {
         openPages.put(player, page);
     }
 
+    public boolean isRunningAt(World world, BlockPosition pos) {
+        Computer c = computers.get(key(world.getName(), pos.x, pos.y, pos.z));
+        return c != null && c.isAlive();
+    }
+
+    /** First alive computer in the 6-neighbourhood of the position, or null. */
+    public Computer findAdjacentRunning(World world, BlockPosition pos) {
+        int[][] dirs = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+        for (int[] d : dirs) {
+            Computer c = computers.get(key(world.getName(), pos.x + d[0], pos.y + d[1], pos.z + d[2]));
+            if (c != null && c.isAlive()) {
+                return c;
+            }
+        }
+        return null;
+    }
+
     public void unregisterPage(UUID player) {
         openPages.remove(player);
     }

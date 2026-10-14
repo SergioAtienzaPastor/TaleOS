@@ -32,13 +32,20 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
     private final PlayerRef playerRef;
     private final ComputerManager manager;
     private final Computer computer;
+    private final boolean readOnly;
     private String lastShown = "";
 
     public TerminalPage(@Nonnull PlayerRef playerRef, ComputerManager manager, Computer computer) {
+        this(playerRef, manager, computer, false);
+    }
+
+    public TerminalPage(@Nonnull PlayerRef playerRef, ComputerManager manager, Computer computer,
+            boolean readOnly) {
         super(playerRef, CustomPageLifetime.CanDismiss, TerminalEventData.CODEC);
         this.playerRef = playerRef;
         this.manager = manager;
         this.computer = computer;
+        this.readOnly = readOnly;
     }
 
     @Override
@@ -46,11 +53,15 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
             @Nonnull UIEventBuilder evt, @Nonnull Store<EntityStore> store) {
         cmd.append(LAYOUT);
         lastShown = computer.getScrollback();
-        cmd.set("#Title.Text", "Computer #" + computer.getId());
+        cmd.set("#Title.Text", (readOnly ? "Monitor — Computer #" : "Computer #") + computer.getId());
         cmd.set("#Output.Text", lastShown);
-        // Enter in the input field submits the line; "@Line" captures its value.
-        evt.addEventBinding(CustomUIEventBindingType.Activating, "#Input",
-                new EventData().append("Action", "input").append("@Line", "#Input.Value"), false);
+        if (readOnly) {
+            cmd.set("#Input.Visible", false);
+        } else {
+            // Enter in the input field submits the line; "@Line" captures its value.
+            evt.addEventBinding(CustomUIEventBindingType.Activating, "#Input",
+                    new EventData().append("Action", "input").append("@Line", "#Input.Value"), false);
+        }
         evt.addEventBinding(CustomUIEventBindingType.Dismissing, "#Terminal",
                 new EventData().append("Action", "close"), false);
     }
