@@ -10,14 +10,20 @@ function term.getSize()
   return 51, 19
 end
 function term.clear()
-  print("[clear]")
+  -- línea de control form-feed: el ordenador limpia el scrollback al verla
+  print("\x0c")
 end
 function term.setCursorPos(x, y)
 end
 
 -- os sobre la tabla ya saneada (clock/time/date) del sandbox.
-function os.pullEvent()
-  return tale.pullEvent()
+function os.pullEvent(filter)
+  while true do
+    local ev = { tale.pullEvent() }
+    if filter == nil or ev[1] == filter then
+      return table.unpack(ev)
+    end
+  end
 end
 function os.getComputerID()
   return tale.getComputerID()

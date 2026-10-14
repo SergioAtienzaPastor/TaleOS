@@ -31,6 +31,7 @@ public final class Computer {
             "programs/mkdir.lua", "programs/rm.lua", "programs/echo.lua",
             "programs/reboot.lua", "programs/shutdown.lua",
             "programs/lua.lua", "programs/edit.lua",
+            "programs/clear.lua", "programs/help.lua",
     };
 
     private final int id;
@@ -63,17 +64,29 @@ public final class Computer {
         pullMachineOutput();
     }
 
-    /** Moves fresh machine output into the scrollback. */
+    /** Moves fresh machine output into the scrollback. A form-feed (\f) control
+     * line (term.clear()) wipes the scrollback instead of being appended. */
     private void pullMachineOutput() {
         String out = machine.drainOutput();
-        if (!out.isEmpty()) {
+        if (out.isEmpty()) {
+            return;
+        }
+        if (out.contains("\f")) {
             synchronized (scrollback) {
-                scrollback.append(out);
-                if (scrollback.length() > SCROLLBACK_MAX_CHARS) {
-                    int trimmed = scrollback.length() - SCROLLBACK_MAX_CHARS;
-                    scrollback.delete(0, trimmed);
-                    scrollbackReadPos = Math.max(0, scrollbackReadPos - trimmed);
-                }
+                scrollback.setLength(0);
+                scrollbackReadPos = 0;
+            }
+            out = out.replace("\f\n", "").replace("\f", "");
+            if (out.isEmpty()) {
+                return;
+            }
+        }
+        synchronized (scrollback) {
+            scrollback.append(out);
+            if (scrollback.length() > SCROLLBACK_MAX_CHARS) {
+                int trimmed = scrollback.length() - SCROLLBACK_MAX_CHARS;
+                scrollback.delete(0, trimmed);
+                scrollbackReadPos = Math.max(0, scrollbackReadPos - trimmed);
             }
         }
     }
