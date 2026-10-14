@@ -37,6 +37,25 @@ class LuaMachineTest {
     }
 
     @Test
+    void xpcallCannotEscapeTheBudget() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("print(xpcall(function() while true do end end, function() return 'h' end))", "trap2");
+        machine.tick();
+        assertEquals(LuaMachine.State.DEAD, machine.getState(),
+                "xpcall must not swallow the budget kill; state=" + machine.getState());
+    }
+
+    @Test
+    void coroutinesShareTheSameBudget() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("while true do coroutine.resume(coroutine.create(function() while true do end end)) end",
+                "cospin");
+        machine.tick();
+        assertEquals(LuaMachine.State.DEAD, machine.getState(),
+                "spinning inside child coroutines must still die by budget; state=" + machine.getState());
+    }
+
+    @Test
     void printIsCapturedWithTabSeparator() {
         LuaMachine machine = new LuaMachine(BUDGET);
         machine.load("print('Hello', 'World', 42)", "hello");

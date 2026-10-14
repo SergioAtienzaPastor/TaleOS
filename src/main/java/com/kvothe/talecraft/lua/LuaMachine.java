@@ -1,6 +1,5 @@
 package com.kvothe.talecraft.lua;
 
-import java.util.ArrayDeque;
 import java.util.Deque;
 
 import org.luaj.vm2.Globals;
@@ -12,15 +11,18 @@ import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
+import com.kvothe.talecraft.os.VirtualFileSystem;
+
 /**
  * One sandboxed Lua virtual machine for a single computer.
  *
  * <p>The whole script runs as one Lua coroutine (LuaJ runs it on its own Java
  * thread): each {@link #tick()} resumes it once with the next queued event and
- * a fresh instruction budget. The budget is enforced by a debug count hook;
- * when it is exhausted the hook throws a plain {@link RuntimeException}, which
- * Lua {@code pcall} cannot catch (LuaJ's pcall only catches {@link LuaError}),
- * so runaway scripts always end up killing the machine, never the server.
+ * a fresh instruction budget. The budget is enforced by a debug count hook
+ * (requires {@link JsePlatform#debugGlobals()}). On exhaustion the hook throws
+ * a {@link RuntimeException} and ratchets the hook interval to 1, so the kill
+ * unwinds through pcall, xpcall handlers and child coroutines instead of being
+ * swallowed — runaway scripts always kill the machine, never the server.
  */
 public final class LuaMachine {
 
@@ -40,21 +42,29 @@ public final class LuaMachine {
     private final LuaValue sethook; // captured debug.sethook, hidden from scripts
     private final BudgetHook budgetHook = new BudgetHook();
     private final long budgetPerTick;
-    private final Deque<Varargs> events = new ArrayDeque<>();
+    private final Deque<Varargs> events = new java.util.concurrent.ConcurrentLinkedDeque<>();
     private final StringBuilder output = new StringBuilder();
 
     private LuaThread thread;
     private LuaValue pendingChunk;
-    private State state = State.NEW;
-    private String error;
+    private volatile State state = State.NEW;
+    private volatile String error;
 
     public LuaMachine(long budgetPerTick) {
+        this(budgetPerTick, null);
+    }
+
+    public LuaMachine(long budgetPerTick, VirtualFileSystem fs) {
         this.budgetPerTick = budgetPerTick;
         this.globals = JsePlatform.debugGlobals();
         this.sethook = globals.get("debug").get("sethook");
         stripGlobals(globals);
         installPrint(globals);
         installTaleApi(globals);
+        installErrorGuard(globals);
+        if (fs != null) {
+            globals.set("fs", FsLib.create(fs));
+        }
     }
 
     /** Compiles the script and arms the machine. Compile errors kill it at once. */
@@ -85,7 +95,7 @@ public final class LuaMachine {
     }
 
     /** Resumes the machine once, with a fresh instruction budget for this tick. */
-    public synchronized void tick() {
+    public void tick() {
         if (state != State.ALIVE) {
             return;
         }
@@ -123,10 +133,12 @@ public final class LuaMachine {
     }
 
     /** Everything printed since the last {@link #drainOutput()}. */
-    public synchronized String drainOutput() {
-        String out = output.toString();
-        output.setLength(0);
-        return out;
+    public String drainOutput() {
+        synchronized (output) {
+            String out = output.toString();
+            output.setLength(0);
+            return out;
+        }
     }
 
     private void stripGlobals(Globals g) {
@@ -156,7 +168,7 @@ public final class LuaMachine {
                     }
                     line.append(args.arg(i).tojstring());
                 }
-                synchronized (LuaMachine.this) {
+                synchronized (output) {
                     output.append(line).append('\n');
                 }
                 return LuaValue.NIL;
@@ -177,7 +189,69 @@ public final class LuaMachine {
         g.set("tale", tale);
     }
 
-    private static final class BudgetHook extends VarArgFunction {
+    /**
+     * Closes the escape hatches around the budget kill: pcall is wrapped so a
+     * budget death (recognizable by its marker in the wrapped "vm error"
+     * message) is rethrown instead of returned — plain LuaJ pcall would
+     * otherwise swallow it. xpcall needs no wrapper: its handler is only a
+     * traceback hook in LuaJ and the kill keeps unwinding regardless (verified
+     * empirically). Coroutines created by the script inherit the very same
+     * budget hook, so they share this machine's per-tick budget instead of
+     * getting a free ride.
+     */
+    private void installErrorGuard(Globals g) {
+        final LuaValue basePcall = g.get("pcall");
+        g.set("pcall", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return rethrowBudgetKill(basePcall.invoke(args));
+            }
+        });
+
+        LuaValue coroutine = g.get("coroutine");
+        if (coroutine.istable()) {
+            LuaTable co = (LuaTable) coroutine;
+            final LuaValue baseCreate = co.get("create");
+            co.set("create", new VarArgFunction() {
+                @Override
+                public Varargs invoke(Varargs args) {
+                    LuaThread child = baseCreate.call(args.arg1()).checkthread();
+                    child.state.hookfunc = budgetHook;
+                    child.state.hookcount = HOOK_INTERVAL;
+                    return child;
+                }
+            });
+            g.load("local co = ...\n"
+                    + "co.wrap = function(f)\n"
+                    + "  local c = co.create(f)\n"
+                    + "  return function(...)\n"
+                    + "    local res = table.pack(co.resume(c, ...))\n"
+                    + "    if not res[1] then error(res[2], 2) end\n"
+                    + "    return table.unpack(res, 2, res.n)\n"
+                    + "  end\n"
+                    + "end\n", "talecraft:wrap").call(co);
+        }
+    }
+
+    private static Varargs rethrowBudgetKill(Varargs result) {
+        if (!result.arg1().optboolean(true)) {
+            String msg = result.arg(2).tojstring();
+            if (msg != null && msg.contains(BudgetExceededException.class.getSimpleName())) {
+                throw new LuaError(msg);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Count hook fired by the interpreter every HOOK_INTERVAL bytecodes. On
+     * budget exhaustion it throws the pcall-proof {@link BudgetExceededException}
+     * and ratchets the hook interval down to 1 on the running coroutine, so
+     * any error-catcher that swallows the kill gets a fresh one on the very
+     * next bytecode — no Lua construct (pcall, xpcall handlers, child
+     * coroutines) can keep the machine alive past its budget.
+     */
+    private final class BudgetHook extends VarArgFunction {
         private long remaining;
 
         void reset(long fires) {
@@ -187,6 +261,10 @@ public final class LuaMachine {
         @Override
         public Varargs invoke(Varargs args) {
             if (--remaining < 0) {
+                LuaThread running = globals.running;
+                if (running != null && running.state != null) {
+                    running.state.hookcount = 1;
+                }
                 throw new BudgetExceededException();
             }
             return NIL;
