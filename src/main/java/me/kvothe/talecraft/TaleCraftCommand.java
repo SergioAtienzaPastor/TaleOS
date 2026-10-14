@@ -1,4 +1,4 @@
-package com.kvothe.talecraft;
+package me.kvothe.talecraft;
 
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;

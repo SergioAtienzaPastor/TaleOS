@@ -1,4 +1,4 @@
-package com.kvothe.talecraft.lua;
+package me.kvothe.talecraft.lua;
 
 import java.util.Deque;
 
@@ -11,7 +11,7 @@ import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
-import com.kvothe.talecraft.os.VirtualFileSystem;
+import me.kvothe.talecraft.os.VirtualFileSystem;
 
 /**
  * One sandboxed Lua virtual machine for a single computer.

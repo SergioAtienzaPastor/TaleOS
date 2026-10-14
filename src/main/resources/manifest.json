@@ -17,6 +17,6 @@
         
     },
     "DisabledByDefault": false,
-    "Main": "com.kvothe.talecraft.TaleCraftPlugin",
+    "Main": "me.kvothe.talecraft.TaleCraftPlugin",
     "IncludesAssetPack": true
 }

@@ -1,4 +1,4 @@
-package com.kvothe.talecraft.os;
+package me.kvothe.talecraft.os;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -24,7 +24,7 @@ import java.util.TreeSet;
  *
  * <p>Text files are UTF-8. This class is deliberately free of LuaJ types so it
  * can be unit-tested headless; the Lua binding lives in
- * {@code com.kvothe.talecraft.lua.FsLib}.
+ * {@code me.kvothe.talecraft.lua.FsLib}.
  */
 public final class VirtualFileSystem {
 

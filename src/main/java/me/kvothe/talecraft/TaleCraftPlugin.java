@@ -1,4 +1,4 @@
-package com.kvothe.talecraft;
+package me.kvothe.talecraft;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;

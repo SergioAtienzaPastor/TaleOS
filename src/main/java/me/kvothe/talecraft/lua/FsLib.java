@@ -1,4 +1,4 @@
-package com.kvothe.talecraft.lua;
+package me.kvothe.talecraft.lua;
 
 import java.io.IOException;
 import java.util.List;
@@ -9,7 +9,7 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
 
-import com.kvothe.talecraft.os.VirtualFileSystem;
+import me.kvothe.talecraft.os.VirtualFileSystem;
 
 /**
  * The Lua-facing {@code fs} API of a computer, backed by a jailed

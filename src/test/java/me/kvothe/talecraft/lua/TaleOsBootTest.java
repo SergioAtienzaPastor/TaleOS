@@ -1,4 +1,4 @@
-package com.kvothe.talecraft.lua;
+package me.kvothe.talecraft.lua;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,7 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.kvothe.talecraft.os.VirtualFileSystem;
+import me.kvothe.talecraft.os.VirtualFileSystem;
 
 /** Boots the real TaleOS rom from src/main/resources/lua/rom headless. */
 class TaleOsBootTest {

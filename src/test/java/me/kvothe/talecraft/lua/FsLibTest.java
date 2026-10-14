@@ -1,4 +1,4 @@
-package com.kvothe.talecraft.lua;
+package me.kvothe.talecraft.lua;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.kvothe.talecraft.os.VirtualFileSystem;
+import me.kvothe.talecraft.os.VirtualFileSystem;
 
 class FsLibTest {
 
