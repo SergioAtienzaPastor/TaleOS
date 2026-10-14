@@ -1,0 +1,38 @@
+// TaleCraft terminal page. Layout path: TaleCraft/Terminal.ui
+$C = "../Common.ui";
+
+Group #Terminal {
+  Anchor: (Width: 720, Height: 430);
+  Background: #101418(0.97);
+  LayoutMode: Top;
+  Padding: (Full: 14);
+
+  Label #Title {
+    Text: "Computer";
+    Anchor: (Height: 30);
+    Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true);
+  }
+
+  Group { Anchor: (Height: 6); }
+
+  Group #Screen {
+    FlexWeight: 1;
+    Background: #05070a(0.92);
+    Padding: (Full: 10);
+    LayoutMode: Top;
+
+    Label #Output {
+      Text: "";
+      FlexWeight: 1;
+      Style: (FontSize: 13, TextColor: #c8d8b8, Wrap: true, VerticalAlignment: Bottom);
+    }
+  }
+
+  Group { Anchor: (Height: 8); }
+
+  $C.@TextField #Input {
+    FlexWeight: 1;
+    PlaceholderText: "escribe un comando y pulsa Enter";
+    Anchor: (Height: 38);
+  }
+}
