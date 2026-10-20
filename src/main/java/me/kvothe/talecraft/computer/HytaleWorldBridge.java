@@ -1,18 +1,17 @@
 package me.kvothe.talecraft.computer;
 
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
+import com.hypixel.hytale.server.core.universe.world.accessor.SectionReader;
 
 import me.kvothe.talecraft.lua.WorldBridge;
 
 /**
- * WorldBridge backed by a real Hytale world. Block reads go through
- * {@code getChunkIfLoaded} so scripts never trigger chunk loads from the
- * tick thread.
+ * WorldBridge backed by a real Hytale world. Block reads go through a
+ * {@link SectionReader} over in-memory sections only, so scripts never
+ * trigger chunk loads from the tick thread.
  */
 public final class HytaleWorldBridge implements WorldBridge {
 
@@ -42,13 +41,11 @@ public final class HytaleWorldBridge implements WorldBridge {
 
     @Override
     public String getBlockId(int x, int y, int z) {
-        int cx = ChunkUtil.chunkCoordinate(x);
-        int cz = ChunkUtil.chunkCoordinate(z);
-        WorldChunk chunk = world.getChunkIfLoaded(ChunkUtil.indexColumn(cx, cz));
-        if (chunk == null) {
+        SectionReader reader = new SectionReader(world.getChunkStore());
+        if (!reader.hasStorageInMemory(x, y, z)) {
             return null;
         }
-        BlockType type = chunk.getBlockType(x, y, z);
+        BlockType type = BlockType.getAssetMap().getAsset(reader.getBlock(x, y, z));
         return type == null ? null : type.getId();
     }
 

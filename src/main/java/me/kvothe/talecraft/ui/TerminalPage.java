@@ -34,6 +34,7 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
     private final Computer computer;
     private final boolean readOnly;
     private String lastShown = "";
+    private String lastPrompt = "";
 
     public TerminalPage(@Nonnull PlayerRef playerRef, ComputerManager manager, Computer computer) {
         this(playerRef, manager, computer, false);
@@ -53,13 +54,15 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
             @Nonnull UIEventBuilder evt, @Nonnull Store<EntityStore> store) {
         cmd.append(LAYOUT);
         lastShown = computer.getScrollback();
+        lastPrompt = computer.getPrompt();
         cmd.set("#Title.Text", (readOnly ? "Monitor — Computer #" : "Computer #") + computer.getId());
         cmd.set("#Output.Value", lastShown);
+        cmd.set("#Prompt.Text", lastPrompt);
         if (readOnly) {
-            cmd.set("#Input.Visible", false);
+            cmd.set("#InputRow.Visible", false);
         } else {
             // Enter in the input field submits the line; "@Line" captures its value.
-            evt.addEventBinding(CustomUIEventBindingType.Activating, "#Input",
+            evt.addEventBinding(CustomUIEventBindingType.Validating, "#Input",
                     new EventData().append("Action", "input").append("@Line", "#Input.Value"), false);
         }
         evt.addEventBinding(CustomUIEventBindingType.Dismissing, "#Terminal",
@@ -81,17 +84,20 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         }
     }
 
-    /** Pushes fresh computer output to the client when it changed. Called once
-     * per tick by the plugin's tick system. */
+    /** Pushes fresh computer output and prompt to the client when they changed.
+     * Called once per tick by the plugin's tick system. */
     public void refreshFromComputer() {
         String current = computer.getScrollback();
-        if (current.equals(lastShown)) {
+        String prompt = computer.getPrompt();
+        if (current.equals(lastShown) && prompt.equals(lastPrompt)) {
             return;
         }
         lastShown = current;
+        lastPrompt = prompt;
         try {
             UICommandBuilder cmd = new UICommandBuilder();
             cmd.set("#Output.Value", current);
+            cmd.set("#Prompt.Text", prompt);
             sendUpdate(cmd, false);
         } catch (Exception e) {
             // page was closed or the client went away: stop tracking it

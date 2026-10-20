@@ -22,15 +22,27 @@ Group #Terminal {
     $C.@MultilineTextField #Output {
       FlexWeight: 1;
       PlaceholderText: "";
-      Style: (FontSize: 13, TextColor: #c8d8b8, Wrap: true, VerticalAlignment: Bottom);
+      IsReadOnly: true;
+      Style: (TextColor: #c8d8b8);
     }
   }
 
   Group { Anchor: (Height: 8); }
 
-  $C.@TextField #Input {
-    FlexWeight: 1;
-    PlaceholderText: "escribe un comando y pulsa Enter";
+  Group #InputRow {
     Anchor: (Height: 38);
+    LayoutMode: Left;
+    Padding: (Left: 10);
+
+    Label #Prompt {
+      Text: "tale> ";
+      Style: (FontSize: 13, TextColor: #c8d8b8, VerticalAlignment: Center);
+    }
+
+    $C.@TextField #Input {
+      FlexWeight: 1;
+      PlaceholderText: "escribe un comando y pulsa Enter";
+      Background: #101418;
+    }
   }
 }

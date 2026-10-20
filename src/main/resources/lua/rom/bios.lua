@@ -1,10 +1,10 @@
 -- TaleOS bios — escrito desde cero para TaleCraft.
 -- Prepara las APIs base (term, os) y arranca el shell desde rom/shell.lua.
 
--- term: MVP lineal sobre print; el terminal de rejilla llega con la UI.
+-- term: MVP lineal sobre print/rawwrite; el terminal de rejilla llega con la UI.
 term = term or {}
 function term.write(s)
-  print(tostring(s))
+  rawwrite(tostring(s))
 end
 function term.getSize()
   return 51, 19

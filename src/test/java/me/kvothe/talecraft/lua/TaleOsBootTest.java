@@ -48,7 +48,7 @@ class TaleOsBootTest {
         m.tick();
         String boot = m.drainOutput();
         assertTrue(boot.contains("TaleOS v0.1"), "boot banner, got: " + boot);
-        assertTrue(boot.contains("tale>"), "shell prompt, got: " + boot);
+        assertEquals("tale> ", m.getPrompt(), "shell prompt");
         assertTrue(m.isAlive(), "shell waits suspended for stdin");
 
         m.queueEvent("stdin", "id");

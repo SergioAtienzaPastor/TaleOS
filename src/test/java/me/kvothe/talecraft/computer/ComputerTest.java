@@ -26,7 +26,7 @@ class ComputerTest {
         Computer c = bootComputer();
         String out = c.drainOutput();
         assertTrue(out.contains("TaleOS v0.1"), "banner, got: " + out);
-        assertTrue(out.contains("tale>"), "prompt, got: " + out);
+        assertEquals("tale> ", c.getPrompt(), "shell prompt");
         assertTrue(c.isAlive());
     }
 
@@ -48,9 +48,9 @@ class ComputerTest {
         assertFalse(c.getScrollback().isEmpty());
         c.queueStdin("clear");
         c.tick();
-        // the shell reprints the prompt right after clearing
-        assertEquals("tale> \n", c.getScrollback(),
-                "after clear only the fresh prompt remains; got: " + c.getScrollback());
+        // the prompt lives in the page's input row now; clear wipes everything
+        assertEquals("", c.getScrollback(),
+                "after clear the transcript is empty; got: " + c.getScrollback());
         // new output still works after the wipe
         c.queueStdin("id");
         c.tick();

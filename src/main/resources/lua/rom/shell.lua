@@ -21,7 +21,7 @@ local function findProgram(name)
 end
 
 while true do
-  term.write("tale> ")
+  tale.setPrompt("tale> ")
   local ev, line = tale.pullEvent()
   if ev == "stdin" and line then
     local words = splitWords(line)

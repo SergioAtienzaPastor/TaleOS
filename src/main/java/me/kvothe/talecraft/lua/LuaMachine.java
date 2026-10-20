@@ -58,10 +58,16 @@ public final class LuaMachine {
     private static final LuaValue WORLDCALL = LuaValue.valueOf("tale:worldcall");
     /** Marker used by tale.sleep: yield {"tale:sleep", ticks}. */
     private static final LuaValue SLEEPCALL = LuaValue.valueOf("tale:sleep");
+    /** Yield marker of tale.pullEvent: the machine parks until an event arrives. */
+    private static final LuaValue EVENTWAIT = LuaValue.valueOf("tale:wait_event");
     /** World calls beyond this per tick get nil instead of executing. */
     private static final int MAX_WORLDCALLS_PER_TICK = 32;
     /** Ticks the machine stays parked because of tale.sleep. */
     private int sleepTicksRemaining;
+    /** True while the machine sits in tale.pullEvent with nothing to deliver. */
+    private boolean waitingForEvent;
+    /** Current shell/program prompt, shown by the page next to the input row. */
+    private volatile String prompt = "tale> ";
 
     public LuaMachine(long budgetPerTick) {
         this(budgetPerTick, null);
@@ -140,6 +146,14 @@ public final class LuaMachine {
             pendingChunk = null;
         } else if (wakeFromSleep) {
             args = LuaValue.NIL;
+        } else if (waitingForEvent) {
+            // Parked in pullEvent: only resume when there is an event to deliver.
+            Varargs ev = events.poll();
+            if (ev == null) {
+                return;
+            }
+            waitingForEvent = false;
+            args = ev;
         } else {
             Varargs ev = events.poll();
             args = ev != null ? ev : LuaValue.NIL;
@@ -163,6 +177,10 @@ public final class LuaMachine {
             // Suspended: sleep timer, pullEvent yield, or a world call.
             if (SLEEPCALL.equals(result.arg(2))) {
                 sleepTicksRemaining = Math.max(1, result.arg(3).optint(1));
+                return;
+            }
+            if (EVENTWAIT.equals(result.arg(2))) {
+                waitingForEvent = true;
                 return;
             }
             if (isWorldCall(result)) {
@@ -234,6 +252,17 @@ public final class LuaMachine {
         }
     }
 
+    /** Appends an echo line (prompt + submitted input) to the output buffer. */
+    public void appendEcho(String s) {
+        synchronized (output) {
+            output.append(s);
+        }
+    }
+
+    public String getPrompt() {
+        return prompt;
+    }
+
     private void stripGlobals(Globals g) {
         g.set("io", LuaValue.NIL);
         g.set("debug", LuaValue.NIL);
@@ -267,6 +296,19 @@ public final class LuaMachine {
                 return LuaValue.NIL;
             }
         });
+        // Raw write: appends without a trailing newline, so term.write can keep
+        // the prompt and the typed line on the same visual line.
+        g.set("rawwrite", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                synchronized (output) {
+                    for (int i = 1; i <= args.narg(); i++) {
+                        output.append(args.arg(i).tojstring());
+                    }
+                }
+                return LuaValue.NIL;
+            }
+        });
     }
 
     private void installTaleApi(Globals g) {
@@ -274,15 +316,23 @@ public final class LuaMachine {
         tale.set("pullEvent", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
-                // Suspends the coroutine; the next tick's resume value is
-                // returned to the Lua caller as the event.
-                return g.yield(LuaValue.NIL);
+                // Suspends the coroutine with the EVENTWAIT marker; the tick
+                // system parks the machine until an event is queued, and the
+                // resume value is returned to the Lua caller as the event.
+                return g.yield(EVENTWAIT);
             }
         });
         tale.set("getComputerID", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
                 return LuaValue.valueOf(computerId);
+            }
+        });
+        tale.set("setPrompt", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                prompt = args.arg1().tojstring();
+                return LuaValue.NIL;
             }
         });
         tale.set("reboot", new VarArgFunction() {
