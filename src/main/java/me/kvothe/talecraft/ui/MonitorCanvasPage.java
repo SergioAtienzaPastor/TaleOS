@@ -23,10 +23,11 @@ import me.kvothe.talecraft.computer.MonitorCanvas;
 
 /**
  * Page of a Monitor block: renders the block's {@link MonitorCanvas} as a
- * 40x24 grid of colored cells. Each grid row is a Group of cell Groups whose
- * Background comes from the palette; changed rows are rebuilt server-side and
- * re-inserted (colors travel inside inline documents, the only fully
- * supported way to set them dynamically).
+ * 40x24 grid of colored cells. Every pixel run is a Label showing full-block
+ * glyphs tinted with its palette color — only constructs proven to parse in
+ * inline documents (the vanilla CommandListPage clear+appendInline pattern:
+ * no element ids, no Background on inline groups). Changed content repaints
+ * the whole grid, which stays small thanks to run merging.
  */
 public class MonitorCanvasPage extends InteractiveCustomUIPage<MonitorCanvasPage.CanvasEventData> {
 
@@ -35,6 +36,9 @@ public class MonitorCanvasPage extends InteractiveCustomUIPage<MonitorCanvasPage
 
     /** Cell edge in UI units (40x24 cells at 15px = 600x360 canvas). */
     private static final int CELL = 15;
+
+    /** Glyph used as one pixel. */
+    private static final String PIXEL = "█";
 
     private final PlayerRef playerRef;
     private final ComputerManager manager;
@@ -52,10 +56,8 @@ public class MonitorCanvasPage extends InteractiveCustomUIPage<MonitorCanvasPage
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder cmd,
             @Nonnull UIEventBuilder evt, @Nonnull Store<EntityStore> store) {
         cmd.append(LAYOUT);
-        cmd.set("#Title.Text", "Monitor");
-        for (int y = 0; y < MonitorCanvas.HEIGHT; y++) {
-            cmd.appendInline("#Canvas", rowDocument(y, canvas));
-        }
+        cmd.set("#Title.Text", "Monitor — " + MonitorCanvas.WIDTH + "x" + MonitorCanvas.HEIGHT);
+        appendCanvas(cmd, canvas);
         canvas.consumeDirtyRows(); // everything was just painted
         evt.addEventBinding(CustomUIEventBindingType.Dismissing, "#Monitor",
                 new EventData().append("Action", "close"), false);
@@ -69,8 +71,8 @@ public class MonitorCanvasPage extends InteractiveCustomUIPage<MonitorCanvasPage
         }
     }
 
-    /** Pushes the rows that changed since the last tick. Called once per tick
-     * by the plugin's tick system. */
+    /** Repaints the grid when anything changed since the last tick. Called
+     * once per tick by the plugin's tick system. */
     public void refreshFromCanvas() {
         BitSet dirty = canvas.consumeDirtyRows();
         if (dirty.isEmpty()) {
@@ -78,23 +80,8 @@ public class MonitorCanvasPage extends InteractiveCustomUIPage<MonitorCanvasPage
         }
         try {
             UICommandBuilder cmd = new UICommandBuilder();
-            // Remove every dirty row first, then re-insert ascending before the
-            // next surviving row (or append when the tail was dirty).
-            for (int y = dirty.nextSetBit(0); y >= 0; y = dirty.nextSetBit(y + 1)) {
-                cmd.remove("#row_" + y);
-            }
-            for (int y = dirty.nextSetBit(0); y >= 0; y = dirty.nextSetBit(y + 1)) {
-                int next = y + 1;
-                while (next < MonitorCanvas.HEIGHT && dirty.get(next)) {
-                    next++;
-                }
-                String doc = rowDocument(y, canvas);
-                if (next < MonitorCanvas.HEIGHT) {
-                    cmd.insertBeforeInline("#row_" + next, doc);
-                } else {
-                    cmd.appendInline("#Canvas", doc);
-                }
-            }
+            cmd.clear("#Canvas");
+            appendCanvas(cmd, canvas);
             sendUpdate(cmd, false);
         } catch (Exception e) {
             // page was closed or the client went away: stop tracking it
@@ -102,32 +89,37 @@ public class MonitorCanvasPage extends InteractiveCustomUIPage<MonitorCanvasPage
         }
     }
 
-    /** Inline document of one canvas row with its cells' current colors. */
-    private static String rowDocument(int y, MonitorCanvas canvas) {
-        StringBuilder sb = new StringBuilder(64 * MonitorCanvas.WIDTH);
-        sb.append("Group #row_").append(y)
-                .append(" { LayoutMode: Left; Anchor: (Height: ").append(CELL).append("); ");
-        int run = 1;
-        int runColor = canvas.getPixel(0, y);
-        for (int x = 1; x < MonitorCanvas.WIDTH; x++) {
-            int color = canvas.getPixel(x, y);
-            if (color != runColor) {
-                appendCell(sb, run, runColor);
-                run = 0;
-                runColor = color;
-            }
-            run++;
+    /** Appends the 24 row documents under #Canvas. */
+    private static void appendCanvas(UICommandBuilder cmd, MonitorCanvas canvas) {
+        for (int y = 0; y < MonitorCanvas.HEIGHT; y++) {
+            cmd.appendInline("#Canvas", rowDocument(y, canvas));
         }
-        appendCell(sb, run, runColor);
+    }
+
+    /** One canvas row as an inline document: consecutive same-color pixels
+     * merge into one Label of repeated block glyphs. */
+    private static String rowDocument(int y, MonitorCanvas canvas) {
+        StringBuilder sb = new StringBuilder(96 * MonitorCanvas.WIDTH);
+        sb.append("Group { LayoutMode: Left; Anchor: (Height: ").append(CELL).append("); ");
+        int x = 0;
+        while (x < MonitorCanvas.WIDTH) {
+            int color = canvas.getPixel(x, y);
+            int run = 1;
+            while (x + run < MonitorCanvas.WIDTH && canvas.getPixel(x + run, y) == color) {
+                run++;
+            }
+            appendRun(sb, run, color);
+            x += run;
+        }
         sb.append('}');
         return sb.toString();
     }
 
-    /** Consecutive same-color cells collapse into one wider element (solid
-     * rows cost one element instead of forty). */
-    private static void appendCell(StringBuilder sb, int cellsWide, int color) {
-        sb.append("Group { Anchor: (Width: ").append(cellsWide * CELL)
-                .append("); Background: ").append(MonitorCanvas.PALETTE_HEX[color]).append("; } ");
+    private static void appendRun(StringBuilder sb, int cells, int color) {
+        sb.append("Label { Anchor: (Width: ").append(cells * CELL).append(", Height: ").append(CELL)
+                .append("); Text: \"").append(PIXEL.repeat(cells))
+                .append("\"; Style: (TextColor: ").append(MonitorCanvas.PALETTE_HEX[color])
+                .append(", FontSize: ").append(CELL + 5).append("); } ");
     }
 
     public static class CanvasEventData {

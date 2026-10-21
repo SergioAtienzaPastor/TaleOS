@@ -33,6 +33,21 @@ def face_layout(cell):
             for f in FACES}
 
 
+def face_layout_mapped(mapping):
+    """Per-face cells: mapping face name -> cell name."""
+    out = {}
+    for f in FACES:
+        u, v = CELL[mapping[f]]
+        out[f] = {"offset": {"x": u, "y": v}, "mirror": {"x": False, "y": False}, "angle": 0}
+    return out
+
+
+def box_mapped(nid, name, size, center, mapping):
+    b = box(nid, name, size, center, "brass")
+    b["shape"]["textureLayout"] = face_layout_mapped(mapping)
+    return b
+
+
 def box(nid, name, size, center, cell):
     return {
         "id": str(nid),
@@ -83,12 +98,12 @@ def computer_model():
 
 
 def monitor_model():
-    # pie, panel latón y pantalla
+    # Panel plano estilo CC:T: un bloque completo con la pantalla en la cara
+    # frontal, para que varios monitores juntos formen una pared continua.
+    faces = {f: "brass" for f in FACES}
+    faces["front"] = "screen"
     return model([
-        box(10, "Stand", (8, 12, 4), (0, 6, 0), "brass"),
-        box(11, "Panel", (26, 18, 3), (0, 21, 0), "brass"),
-        box(12, "Screen", (22, 14, 1.5), (0, 21, 2.5), "screen"),
-        box(13, "Foot", (16, 2, 10), (0, 1, 0), "wood"),
+        box_mapped(10, "Panel", (32, 32, 32), (0, 16, 0), faces),
     ])
 
 
