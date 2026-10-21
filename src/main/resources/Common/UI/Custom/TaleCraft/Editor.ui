@@ -1,0 +1,60 @@
+// TaleCraft editor page. Layout path: TaleCraft/Editor.ui
+$C = "../Common.ui";
+
+Group #Editor {
+  Anchor: (Width: 720, Height: 430);
+  Background: #101418(0.97);
+  LayoutMode: Top;
+  Padding: (Full: 14);
+
+  Label #Title {
+    Text: "Editor";
+    Anchor: (Height: 30);
+    Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true);
+  }
+
+  Group { Anchor: (Height: 6); }
+
+  // Editable file content. Client-side template from Common.ui.
+  $C.@MultilineTextField #Content {
+    FlexWeight: 1;
+    MaxLength: 16000;
+    PlaceholderText: "-- escribe tu programa Lua aquí";
+    Style: (TextColor: #e8e8d8);
+  }
+
+  Group { Anchor: (Height: 4); }
+
+  Label #Status {
+    Text: "";
+    Anchor: (Height: 18);
+    Style: (FontSize: 11, TextColor: #c08888);
+  }
+
+  Group { Anchor: (Height: 4); }
+
+  Group #ButtonRow {
+    Anchor: (Height: 34);
+    LayoutMode: Left;
+
+    $C.@TextButton #Save {
+      Text: "Guardar";
+      Anchor: (Width: 110, Height: 32);
+    }
+
+    Group { Anchor: (Width: 8); }
+
+    $C.@SecondaryTextButton #Run {
+      Text: "Guardar y ejecutar";
+      Anchor: (Width: 170, Height: 32);
+    }
+
+    // pushes Salir to the far right
+    Group { FlexWeight: 1; }
+
+    $C.@SecondaryTextButton #Exit {
+      Text: "Salir";
+      Anchor: (Width: 90, Height: 32);
+    }
+  }
+}

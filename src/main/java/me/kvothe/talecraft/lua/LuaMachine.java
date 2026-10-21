@@ -11,6 +11,7 @@ import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
+import me.kvothe.talecraft.computer.Computer;
 import me.kvothe.talecraft.os.VirtualFileSystem;
 
 /**
@@ -68,6 +69,7 @@ public final class LuaMachine {
     private boolean waitingForEvent;
     /** Current shell/program prompt, shown by the page next to the input row. */
     private volatile String prompt = "tale> ";
+    private final VirtualFileSystem fileSystem;
 
     public LuaMachine(long budgetPerTick) {
         this(budgetPerTick, null);
@@ -75,6 +77,7 @@ public final class LuaMachine {
 
     public LuaMachine(long budgetPerTick, VirtualFileSystem fs) {
         this.budgetPerTick = budgetPerTick;
+        this.fileSystem = fs;
         this.globals = JsePlatform.debugGlobals();
         this.sethook = globals.get("debug").get("sethook");
         stripGlobals(globals);
@@ -84,6 +87,10 @@ public final class LuaMachine {
         if (fs != null) {
             globals.set("fs", FsLib.create(fs));
         }
+    }
+
+    public VirtualFileSystem getFileSystem() {
+        return fileSystem;
     }
 
     /** Compiles the script and arms the machine. Compile errors kill it at once. */
@@ -276,6 +283,19 @@ public final class LuaMachine {
         for (String fn : new String[] { "clock", "time", "date" }) {
             safeOs.set(fn, os.get(fn));
         }
+        // Requests the editor UI for a file: emits an editor-request control
+        // line that Computer turns into an EditorPage for the player who is
+        // typing in the terminal.
+        safeOs.set("openEditor", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                String path = args.arg1().tojstring();
+                synchronized (output) {
+                    output.append(Computer.EDITOR_MARK).append(path).append('\n');
+                }
+                return LuaValue.TRUE;
+            }
+        });
         g.set("os", safeOs);
     }
 

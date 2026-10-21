@@ -85,7 +85,7 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
             @Nonnull TerminalEventData data) {
         if ("input".equals(data.action)) {
             if (data.line != null && !data.line.isBlank()) {
-                computer.queueStdin(data.line.trim());
+                computer.queueStdin(data.line.trim(), playerRef.getUuid());
             }
             UICommandBuilder cmd = new UICommandBuilder();
             cmd.set("#Input.Value", "");
@@ -93,6 +93,10 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         } else if ("close".equals(data.action)) {
             manager.unregisterPage(playerRef.getUuid());
         }
+    }
+
+    public Computer getComputer() {
+        return computer;
     }
 
     /** Pushes fresh computer output and prompt to the client when they changed.

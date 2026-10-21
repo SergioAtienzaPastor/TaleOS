@@ -56,4 +56,28 @@ class ComputerTest {
         c.tick();
         assertTrue(c.getScrollback().contains("ordenador #42"));
     }
+
+    @Test
+    void editWithoutOpenerReportsUnavailable() throws Exception {
+        Computer c = bootComputer();
+        c.drainOutput();
+        c.queueStdin("edit foo.lua");
+        c.tick();
+        String out = c.drainOutput();
+        assertTrue(out.contains("editor no disponible"), "got: " + out);
+        assertFalse(out.contains(""), "control chars must never reach the transcript");
+    }
+
+    @Test
+    void editRequestsReachTheOpener() throws Exception {
+        Computer c = bootComputer();
+        c.drainOutput();
+        StringBuilder requested = new StringBuilder();
+        c.setEditorOpener((computer, path, player) -> requested.append(path).append('|').append(player));
+        java.util.UUID who = java.util.UUID.randomUUID();
+        c.queueStdin("edit foo.lua", who);
+        c.tick();
+        assertEquals("foo.lua|" + who, requested.toString());
+        assertFalse(c.getScrollback().contains(""), "control chars must stay out of the transcript");
+    }
 }

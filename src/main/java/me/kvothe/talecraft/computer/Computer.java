@@ -9,8 +9,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import me.kvothe.talecraft.lua.LuaMachine;
 import me.kvothe.talecraft.lua.WorldBridge;
@@ -55,6 +58,20 @@ public final class Computer {
      * newest-first. Never displayed; stripped from the log and drainOutput. */
     public static final char ECHO_MARK = '\u0001';
 
+    /** Control char starting an editor-request control line in the machine
+     * output (os.openEditor). The rest of the line is the file path. Never
+     * displayed nor logged. */
+    public static final char EDITOR_MARK = '\u0002';
+
+    /** Opens the editor UI for a computer file; set by ComputerManager. */
+    public interface EditorOpener {
+        void openEditor(Computer computer, String path, UUID requestedBy);
+    }
+
+    private volatile EditorOpener editorOpener;
+    private UUID lastStdinPlayer;
+    private final List<String> editorRequests = new ArrayList<>();
+
     public Computer(int id, Path root, WorldBridge bridge) throws IOException {
         this.id = id;
         this.root = root;
@@ -86,6 +103,7 @@ public final class Computer {
             machine.tick();
         }
         pullMachineOutput();
+        drainEditorRequests();
         LuaMachine.State now = machine.getState();
         if (now != lastState) {
             lastState = now;
@@ -125,6 +143,30 @@ public final class Computer {
                 return;
             }
         }
+        // Editor-request control lines (EDITOR_MARK + path + \n) never reach
+        // the transcript; they are queued for the next tick.
+        if (out.indexOf(EDITOR_MARK) >= 0) {
+            StringBuilder visible = new StringBuilder(out.length());
+            int i = 0;
+            while (i < out.length()) {
+                int mark = out.indexOf(EDITOR_MARK, i);
+                if (mark < 0) {
+                    visible.append(out.substring(i));
+                    break;
+                }
+                visible.append(out, i, mark);
+                int nl = out.indexOf('\n', mark);
+                if (nl < 0) {
+                    break; // truncated control line: drop it
+                }
+                editorRequests.add(out.substring(mark + 1, nl).trim());
+                i = nl + 1;
+            }
+            out = visible.toString();
+            if (out.isEmpty()) {
+                return;
+            }
+        }
         logLine(out.replace(ECHO_MARK + "", ""));
         synchronized (scrollback) {
             scrollback.append(out);
@@ -153,6 +195,14 @@ public final class Computer {
     }
 
     public void queueStdin(String line) {
+        queueStdin(line, null);
+    }
+
+    /** Queues a shell input line; the player uuid identifies who typed it so
+     * os.openEditor knows which terminal to open the editor in (null = server
+     * console). */
+    public void queueStdin(String line, UUID player) {
+        lastStdinPlayer = player;
         // Eco estilo terminal: la línea enviada aparece tras el prompt actual,
         // precedida de ECHO_MARK para delimitar el bloque en el transcript.
         machine.appendEcho(ECHO_MARK + machine.getPrompt() + line + "\n");
@@ -162,6 +212,41 @@ public final class Computer {
 
     public String getPrompt() {
         return machine.getPrompt();
+    }
+
+    public VirtualFileSystem getFileSystem() {
+        return machine.getFileSystem();
+    }
+
+    public void setEditorOpener(EditorOpener opener) {
+        this.editorOpener = opener;
+    }
+
+    /** Prints a server-side message into the transcript and the log. */
+    public void systemMessage(String s) {
+        logLine("[system] " + s);
+        synchronized (scrollback) {
+            scrollback.append(s).append('\n');
+        }
+    }
+
+    /** Opens the editor UI for each queued os.openEditor request. */
+    private void drainEditorRequests() {
+        if (editorRequests.isEmpty()) {
+            return;
+        }
+        List<String> pending = new ArrayList<>(editorRequests);
+        editorRequests.clear();
+        EditorOpener opener = editorOpener;
+        if (opener == null) {
+            for (String path : pending) {
+                systemMessage("edit: editor no disponible en este contexto (" + path + ")");
+            }
+            return;
+        }
+        for (String path : pending) {
+            opener.openEditor(this, path, lastStdinPlayer);
+        }
     }
 
     private void logLine(String s) {

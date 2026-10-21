@@ -10,12 +10,14 @@ import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.BlockPosition;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import me.kvothe.talecraft.lua.WorldBridge;
+import me.kvothe.talecraft.ui.EditorPage;
 import me.kvothe.talecraft.ui.TerminalPage;
 
 /**
@@ -63,7 +65,7 @@ public final class ComputerManager {
                 }
             }
         }
-        return computers.compute(key, (k, existing) -> {
+        Computer computer = computers.compute(key, (k, existing) -> {
             if (existing != null && existing.isAlive()) {
                 if (world != null) {
                     // Idempotent upgrade: a machine booted headless gets the
@@ -90,6 +92,49 @@ public final class ComputerManager {
                 throw new IllegalStateException("cannot boot computer at " + k, e);
             }
         });
+        computer.setEditorOpener(this::openEditor);
+        return computer;
+    }
+
+    /** Opens the editor page for a computer file, for the player who typed the
+     * edit command (or any player viewing that computer's terminal). Called on
+     * the world tick thread from Computer.tick. */
+    public void openEditor(Computer computer, String path, UUID requestedBy) {
+        PlayerRef playerRef = requestedBy != null ? Universe.get().getPlayer(requestedBy) : null;
+        if (playerRef == null) {
+            for (Map.Entry<UUID, TerminalPage> e : openPages.entrySet()) {
+                if (e.getValue().getComputer() == computer) {
+                    playerRef = Universe.get().getPlayer(e.getKey());
+                    if (playerRef != null) {
+                        break;
+                    }
+                }
+            }
+        }
+        if (playerRef == null) {
+            computer.systemMessage("edit: no hay ningún jugador con el terminal abierto");
+            return;
+        }
+        try {
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref == null || !ref.isValid()) {
+                computer.systemMessage("edit: jugador no disponible");
+                return;
+            }
+            Store<EntityStore> store = ref.getStore();
+            Player player = store.getComponent(ref, Player.getComponentType());
+            if (player == null) {
+                computer.systemMessage("edit: jugador no disponible");
+                return;
+            }
+            EditorPage page = new EditorPage(playerRef, this, computer, path);
+            // The editor replaces the terminal page; stop refreshing the old one.
+            unregisterPage(playerRef.getUuid());
+            player.getPageManager().openCustomPage(ref, store, page);
+        } catch (Exception e) {
+            LOGGER.atWarning().log("cannot open editor: " + e.getMessage());
+            computer.systemMessage("edit: no se pudo abrir el editor");
+        }
     }
 
     /** Ticks the computers of ONE world (called from that world's tick thread)
