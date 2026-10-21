@@ -118,7 +118,154 @@ def texture(path):
     fill("wood", (74, 54, 40), noise=8)
     fill("screen", (22, 34, 46), noise=6, gradient=True)
     fill("keys", (35, 35, 44), noise=6, grid=4)
+
+    # prompt ">_" verde fosforo en la esquina superior izquierda de la pantalla:
+    # hace el bloque reconocible como terminal en el mundo y en el icono.
+    u0, v0 = CELL["screen"]
+    green = (150, 225, 160)
+    for i in range(5):                      # chevron ">" de 5px de alto
+        for thick in (0, 1):
+            img.putpixel((u0 + 4 + min(i, 4 - i) + thick, v0 + 5 + i), green)
+    for dx in range(5):                     # guion bajo "_"
+        for dy in (10, 11):
+            img.putpixel((u0 + 9 + dx, v0 + dy), green)
     img.save(path)
+
+
+def render_icon(model_path, texture_path, out_path, canvas=256):
+    """Render isométrico del blockymodel al estilo de los iconos vanilla de
+    Icons/ItemsGenerated (vista frente-arriba-derecha, fondo transparente).
+    Rasteriza por caras con z-buffer y sombreado por orientación; el icono
+    final se guarda en 64x64 (downscale desde `canvas` = antialiasing)."""
+    data = json.load(open(model_path))
+    tex = np.asarray(Image.open(texture_path).convert("RGB"), dtype=np.float32)
+
+    boxes = []
+
+    def walk(node, base):
+        pos = node["position"]
+        center = (base[0] + pos["x"], base[1] + pos["y"], base[2] + pos["z"])
+        shape = node["shape"]
+        if shape["type"] == "box" and node.get("visible", True):
+            size = shape["settings"]["size"]
+            boxes.append((center, (size["x"], size["y"], size["z"]), shape["textureLayout"]))
+        for child in node.get("children", []):
+            walk(child, center)
+
+    for root in data["nodes"]:
+        walk(root, (0.0, 0.0, 0.0))
+
+    cos30 = math.sqrt(3) / 2
+
+    def proj(p):
+        x, y, z = p
+        return np.array([(x - z) * cos30, (x + z) * 0.5 - y])
+
+    def depth(p):
+        return p[0] + p[1] + p[2]
+
+    # primera pasada: encuadre del modelo en el canvas
+    all_pts = []
+    for center, size, _layout in boxes:
+        cx, cy, cz = center
+        sx, sy, sz = (s / 2 for s in size)
+        for dx in (-sx, sx):
+            for dy in (-sy, sy):
+                for dz in (-sz, sz):
+                    all_pts.append(proj((cx + dx, cy + dy, cz + dz)))
+    min_px = np.min([p[0] for p in all_pts])
+    max_px = np.max([p[0] for p in all_pts])
+    min_py = np.min([p[1] for p in all_pts])
+    max_py = np.max([p[1] for p in all_pts])
+    shift = np.array([canvas / 2 - (min_px + max_px) / 2, canvas / 2 - (min_py + max_py) / 2])
+
+    def projc(p):
+        return proj(p) + shift
+
+    # cara: (nombre, normal-light, esquinas 3D en orden, ejes uv)
+    # uv: qué ejes del mundo alimentan u y v de la textura (celda 32x32)
+    img = np.zeros((canvas, canvas, 4), dtype=np.float32)
+    zbuf = np.full((canvas, canvas), -1e9, dtype=np.float32)
+
+    for center, size, layout in boxes:
+        cx, cy, cz = center
+        sx, sy, sz = (s / 2 for s in size)
+        x0, x1 = cx - sx, cx + sx
+        y0, y1 = cy - sy, cy + sy
+        z0, z1 = cz - sz, cz + sz
+        faces = [
+            # (face key, light, 4 corners, u axis, v axis, u range, v range)
+            ("top", 1.00, [(x0, y1, z1), (x1, y1, z1), (x1, y1, z0), (x0, y1, z0)], 0, 2),
+            ("front", 0.80, [(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], 0, 1),
+            ("right", 0.62, [(x1, y0, z1), (x1, y0, z0), (x1, y1, z0), (x1, y1, z1)], 2, 1),
+        ]
+        for face, light, corners, ua, va in faces:
+            if face not in layout:
+                continue
+            off = layout[face]["offset"]
+            ou, ov = off["x"], off["y"]
+            pts = [projc(c) for c in corners]
+            # base afín: píxel = A @ (u, v) + t ; u/v recorren la celda 32x32
+            u0v0 = corners[0]
+            du = np.array(corners[1]) - np.array(corners[0])  # +u mundial
+            dv = np.array(corners[3]) - np.array(corners[0])  # +v mundial
+            su = max(abs(corners[1][ua] - corners[0][ua]), 1e-6)
+            sv = max(abs(corners[3][va] - corners[0][va]), 1e-6)
+            p00 = pts[0]
+            pu = (pts[1] - pts[0]) / su
+            pv = (pts[3] - pts[0]) / sv
+            d0 = depth(u0v0)
+            du_d = (depth(corners[1]) - d0) / su
+            dv_d = (depth(corners[3]) - d0) / sv
+            minx = max(int(min(p[0] for p in pts)), 0)
+            maxx = min(int(max(p[0] for p in pts)) + 1, canvas)
+            miny = max(int(min(p[1] for p in pts)), 0)
+            maxy = min(int(max(p[1] for p in pts)) + 1, canvas)
+            if minx >= maxx or miny >= maxy:
+                continue
+            # inversa 2x2 para pasar de píxel a (u, v)
+            a, b = pu[0], pv[0]
+            c_, d = pu[1], pv[1]
+            det = a * d - b * c_
+            if abs(det) < 1e-9:
+                continue
+            ia, ib, ic, id_ = d / det, -b / det, -c_ / det, a / det
+            ys, xs = np.mgrid[miny:maxy, minx:maxx].astype(np.float32) + 0.5
+            rx = xs - p00[0]
+            ry = ys - p00[1]
+            uu = ia * rx + ib * ry
+            vv = ic * rx + id_ * ry
+            inside = (uu >= 0) & (uu < su) & (vv >= 0) & (vv < sv)
+            if not inside.any():
+                continue
+            tu = np.clip((ou + uu * (32.0 / su) if su > 32 else ou + uu).astype(int), 0, 63)
+            tv = np.clip((ov + vv * (32.0 / sv) if sv > 32 else ov + vv).astype(int), 0, 63)
+            dep = d0 + uu * du_d + vv * dv_d
+            wins = inside & (dep > zbuf[miny:maxy, minx:maxx])
+            if not wins.any():
+                continue
+            shade = light * (1.0 - 0.10 * (vv / max(sv, 1e-6)))
+            rgb = tex[tv, tu] * shade[..., None]
+            region = zbuf[miny:maxy, minx:maxx]
+            region[wins] = dep[wins]
+            block = img[miny:maxy, minx:maxx]
+            block[wins, :3] = rgb[wins]
+            block[wins, 3] = 255.0
+
+    # recorte al contenido, cuadrado, escala a 64x64 con margen
+    alpha = img[:, :, 3] > 0
+    if not alpha.any():
+        raise RuntimeError("render vacío: " + model_path)
+    ys, xs = np.where(alpha)
+    crop = img[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    h, w = crop.shape[:2]
+    side = int(max(h, w) / 0.86)
+    out = np.zeros((side, side, 4), dtype=np.float32)
+    oy = (side - h) // 2
+    ox = (side - w) // 2
+    out[oy:oy + h, ox:ox + w] = crop
+    final = Image.fromarray(out.astype(np.uint8), "RGBA").resize((64, 64), Image.LANCZOS)
+    final.save(out_path)
 
 
 def beep(path):
@@ -137,12 +284,17 @@ def beep(path):
 def main():
     os.makedirs(BLOCKS, exist_ok=True)
     os.makedirs(SOUNDS, exist_ok=True)
+    icons = os.path.join(RES, "Common", "Icons", "ItemsGenerated")
+    os.makedirs(icons, exist_ok=True)
     for name, builder in (("TaleCraft_Computer", computer_model), ("TaleCraft_Monitor", monitor_model)):
-        with open(os.path.join(BLOCKS, name + ".blockymodel"), "w") as f:
+        model_file = os.path.join(BLOCKS, name + ".blockymodel")
+        tex_file = os.path.join(BLOCKS, name + "_Texture.png")
+        with open(model_file, "w") as f:
             json.dump(builder(), f, separators=(",", ":"))
-        texture(os.path.join(BLOCKS, name + "_Texture.png"))
+        texture(tex_file)
+        render_icon(model_file, tex_file, os.path.join(icons, name + ".png"))
     beep(os.path.join(SOUNDS, "boot_beep.ogg"))
-    print("assets generados en", BLOCKS, "y", SOUNDS)
+    print("assets generados en", BLOCKS, ",", SOUNDS, "e", icons)
 
 
 if __name__ == "__main__":
