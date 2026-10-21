@@ -21,6 +21,9 @@ public final class HytaleWorldBridge implements WorldBridge {
     private final int originX, originY, originZ;
     private final int computerId;
 
+    private static final com.hypixel.hytale.logger.HytaleLogger LOGGER =
+            com.hypixel.hytale.logger.HytaleLogger.forEnclosingClass();
+
     public HytaleWorldBridge(World world, BlockPosition computerPos, int computerId) {
         this.world = world;
         this.originX = computerPos.x;
@@ -53,8 +56,7 @@ public final class HytaleWorldBridge implements WorldBridge {
         } catch (IllegalStateException wrongThread) {
             // World stores assert thread affinity; a stray call must never
             // crash the world thread — report "unloaded" instead.
-            System.err.println("[TaleCraft] WARN: block read off the world thread at "
-                    + x + "," + y + "," + z);
+            LOGGER.atWarning().log("block read off the world thread at " + x + "," + y + "," + z);
             return null;
         }
     }
@@ -98,6 +100,6 @@ public final class HytaleWorldBridge implements WorldBridge {
         } catch (Throwable t) {
             sb.append(" ERROR=").append(t);
         }
-        System.err.println(sb);
+        LOGGER.atInfo().log(sb.toString());
     }
 }

@@ -44,8 +44,18 @@ Then `cat hello.txt` again after a server restart — files survive.
 - Scripts cannot touch Java (`luajava`, `io`, `debug`, `package` are removed; `os` is reduced
   to `clock/time/date`).
 - Instruction budget per tick (default 200k bytecodes) with an uncatchable kill.
-- World reads only work on loaded chunks and are rate-limited per tick.
+- World reads only work on loaded chunks and are rate-limited per tick. With no players
+  nearby a computer's chunk unloads and `tale.detect`/`getBlock` return false/nil (same
+  rule as CC:T). To keep an area running use vanilla keep-loaded:
+  `/world settings keeploaded set <minX> <minZ> <maxX> <maxZ> --world=<mundo>`.
 - No network access from Lua.
+
+### Console/admin command
+
+`/talecraft <mundo> <x> <y> <z> <línea de shell>` boots the computer at that block (if
+needed) and queues one shell line — scriptable from the server console for tests and
+admin work. `/talecraft <mundo> <x> <y> <z> __probe` logs chunk/section diagnostics.
+Every computer also writes a transcript to `mods/TaleCraft/logs/computer-<id>.log`.
 
 ## For developers
 

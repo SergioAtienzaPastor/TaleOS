@@ -24,6 +24,9 @@ import me.kvothe.talecraft.ui.TerminalPage;
  */
 public final class TerminalPageSupplier implements OpenCustomUIInteraction.CustomPageSupplier {
 
+    private static final com.hypixel.hytale.logger.HytaleLogger LOGGER =
+            com.hypixel.hytale.logger.HytaleLogger.forEnclosingClass();
+
     private final ComputerManager manager;
 
     public TerminalPageSupplier(ComputerManager manager) {
@@ -58,14 +61,14 @@ public final class TerminalPageSupplier implements OpenCustomUIInteraction.Custo
             index = soundIndex("SFX/TaleCraft_Boot_Beep");
         }
         if (index < 0) {
-            System.err.println("[TaleCraft] WARN: sound event TaleCraft_Boot_Beep not registered; skipping beep");
+            LOGGER.atWarning().log("sound event TaleCraft_Boot_Beep not registered; skipping beep");
             return;
         }
         try {
             SoundUtil.playSoundEvent3d(index, SoundCategory.SFX, pos.x + 0.5, pos.y + 0.5, pos.z + 0.5,
                     accessor);
         } catch (Exception e) {
-            System.err.println("[TaleCraft] WARN: could not play boot beep: " + e.getMessage());
+            LOGGER.atWarning().log("could not play boot beep: " + e.getMessage());
         }
     }
 

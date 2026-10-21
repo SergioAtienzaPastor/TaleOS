@@ -25,6 +25,9 @@ import me.kvothe.talecraft.ui.TerminalPage;
  */
 public final class ComputerManager {
 
+    private static final com.hypixel.hytale.logger.HytaleLogger LOGGER =
+            com.hypixel.hytale.logger.HytaleLogger.forEnclosingClass();
+
     private final Path dataDir;
     private final ComputerIdStore idStore;
     private final Map<String, Computer> computers = new ConcurrentHashMap<>();
@@ -71,9 +74,9 @@ public final class ComputerManager {
                 return existing;
             }
             int id = idStore.idFor(k);
-            System.err.println("[TaleCraft] boot computer #" + id + " at " + k);
+            LOGGER.atInfo().log("boot computer #" + id + " at " + k);
             if (world == null) {
-                System.err.println("[TaleCraft] WARN: booting computer at " + k
+                LOGGER.atWarning().log("booting computer at " + k
                         + " without world context: tale.* world calls will no-op");
             }
             WorldBridge bridge = world == null
