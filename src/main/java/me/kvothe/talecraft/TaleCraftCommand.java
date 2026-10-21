@@ -1,30 +1,62 @@
 package me.kvothe.talecraft;
 
-import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
+import com.hypixel.hytale.protocol.BlockPosition;
+import com.hypixel.hytale.server.core.universe.world.World;
 
 import javax.annotation.Nonnull;
 
+import me.kvothe.talecraft.computer.Computer;
+import me.kvothe.talecraft.computer.ComputerManager;
+import me.kvothe.talecraft.computer.HytaleWorldBridge;
+
 /**
- * Smoke-test command: prints the plugin name in chat. Will be replaced by the
- * real computer/Lua commands as the core lands.
+ * {@code /talecraft <world> <x> <y> <z> <línea...>} boots the computer at that
+ * block if needed and queues one shell line. Usable from the server console,
+ * which makes the whole shell scriptable for automated testing and admin work.
  */
 public class TaleCraftCommand extends CommandBase {
 
-    private final String pluginName;
-    private final String pluginVersion;
+    private final ComputerManager manager;
+    private final RequiredArg<World> worldArg;
+    private final RequiredArg<Integer> xArg;
+    private final RequiredArg<Integer> yArg;
+    private final RequiredArg<Integer> zArg;
+    private final RequiredArg<String> lineArg;
 
-    public TaleCraftCommand(String pluginName, String pluginVersion) {
-        super("talecraft", "Prints a test message from the " + pluginName + " plugin.");
-        this.setPermissionGroup(GameMode.Adventure); // Allows the command to be used by anyone, not just OP
-        this.pluginName = pluginName;
-        this.pluginVersion = pluginVersion;
+    public TaleCraftCommand(String pluginName, String pluginVersion, ComputerManager manager) {
+        super("talecraft", pluginName + " v" + pluginVersion
+                + ": ejecuta una línea de shell en un Computer (admin/test)");
+        this.manager = manager;
+        this.worldArg = withRequiredArg("world", "mundo del bloque", ArgTypes.WORLD);
+        this.xArg = withRequiredArg("x", "coordenada x del bloque", ArgTypes.INTEGER);
+        this.yArg = withRequiredArg("y", "coordenada y del bloque", ArgTypes.INTEGER);
+        this.zArg = withRequiredArg("z", "coordenada z del bloque", ArgTypes.INTEGER);
+        this.lineArg = withRequiredArg("linea", "línea de shell a ejecutar", ArgTypes.GREEDY_STRING);
     }
 
     @Override
     protected void executeSync(@Nonnull CommandContext ctx) {
-        ctx.sendMessage(Message.raw("Hello from the " + pluginName + " v" + pluginVersion + " plugin!"));
+        World world = ctx.get(worldArg);
+        int x = ctx.get(xArg);
+        int y = ctx.get(yArg);
+        int z = ctx.get(zArg);
+        String line = ctx.get(lineArg);
+        if (line == null || line.isBlank()) {
+            ctx.sendMessage(Message.raw("[TaleCraft] línea vacía"));
+            return;
+        }
+        if ("__probe".equals(line.trim())) {
+            HytaleWorldBridge.debugProbe(world, x, y, z);
+            ctx.sendMessage(Message.raw("[TaleCraft] probe en el log del servidor"));
+            return;
+        }
+        Computer computer = manager.bootAt(world, new BlockPosition(x, y, z));
+        computer.queueStdin(line);
+        ctx.sendMessage(Message.raw("[TaleCraft] computer #" + computer.getId() + " <- '" + line + "'"));
     }
 }

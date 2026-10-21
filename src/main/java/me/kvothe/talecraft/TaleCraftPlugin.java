@@ -44,7 +44,7 @@ public class TaleCraftPlugin extends JavaPlugin {
         OpenCustomUIInteraction.registerCustomPageSupplier(this, MonitorPageSupplier.class,
                 "TaleCraftMonitor", new MonitorPageSupplier(computerManager));
         this.getCommandRegistry().registerCommand(new TaleCraftCommand(this.getName(),
-                this.getManifest().getVersion().toString()));
+                this.getManifest().getVersion().toString(), computerManager));
         if (Boolean.parseBoolean(System.getProperty("talecraft.selftest", "false"))) {
             runSelfTest();
         }

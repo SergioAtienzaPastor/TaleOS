@@ -71,6 +71,7 @@ public final class ComputerManager {
                 return existing;
             }
             int id = idStore.idFor(k);
+            System.err.println("[TaleCraft] boot computer #" + id + " at " + k);
             if (world == null) {
                 System.err.println("[TaleCraft] WARN: booting computer at " + k
                         + " without world context: tale.* world calls will no-op");
