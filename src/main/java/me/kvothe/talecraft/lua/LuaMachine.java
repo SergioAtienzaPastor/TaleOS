@@ -12,6 +12,7 @@ import org.luaj.vm2.lib.VarArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import me.kvothe.talecraft.computer.Computer;
+import me.kvothe.talecraft.computer.MonitorCanvas;
 import me.kvothe.talecraft.os.VirtualFileSystem;
 
 /**
@@ -229,9 +230,81 @@ public final class LuaMachine {
                 return LuaValue.TRUE;
             case "time":
                 return LuaValue.valueOf(bridge.getTime());
+            case "monitor": {
+                MonitorCanvas canvas = bridge.monitorAt(
+                        yieldValues.arg(4).optint(0), yieldValues.arg(5).optint(0),
+                        yieldValues.arg(6).optint(0));
+                return canvas == null ? LuaValue.NIL : monitorTable(canvas);
+            }
             default:
                 return LuaValue.NIL;
         }
+    }
+
+    /** Lua table of a monitor canvas: setPixel/getPixel/fill/clear/write plus
+     * getSize. Coordinates are 1-based with the origin at the top-left; colors
+     * are palette names (MonitorCanvas.PALETTE). */
+    private static LuaTable monitorTable(MonitorCanvas canvas) {
+        LuaTable mon = new LuaTable();
+        mon.set("getSize", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs a) {
+                return LuaValue.varargsOf(LuaValue.valueOf(MonitorCanvas.WIDTH),
+                        LuaValue.valueOf(MonitorCanvas.HEIGHT));
+            }
+        });
+        mon.set("setPixel", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs a) {
+                canvas.setPixel(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1, checkColor(a.arg(3)));
+                return LuaValue.NIL;
+            }
+        });
+        mon.set("getPixel", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs a) {
+                int c = canvas.getPixel(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1);
+                return LuaValue.valueOf(MonitorCanvas.PALETTE[c]);
+            }
+        });
+        mon.set("fill", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs a) {
+                canvas.fill(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1,
+                        a.arg(3).checkint(), a.arg(4).checkint(), checkColor(a.arg(5)));
+                return LuaValue.NIL;
+            }
+        });
+        mon.set("clear", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs a) {
+                int color = a.arg(1).isnil() ? 0 : checkColor(a.arg(1));
+                canvas.clear(color);
+                return LuaValue.NIL;
+            }
+        });
+        mon.set("write", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs a) {
+                String text = a.arg(3).checkjstring();
+                int color = a.arg(4).isnil()
+                        ? MonitorCanvas.colorIndex("white")
+                        : checkColor(a.arg(4));
+                canvas.writeText(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1, text, color);
+                return LuaValue.NIL;
+            }
+        });
+        return mon;
+    }
+
+    private static int checkColor(LuaValue v) {
+        String name = v.checkjstring();
+        int index = MonitorCanvas.colorIndex(name);
+        if (index < 0) {
+            throw new LuaError("color desconocido: " + name
+                    + " (paleta: " + String.join(", ", MonitorCanvas.PALETTE) + ")");
+        }
+        return index;
     }
 
     public void setWorldBridge(WorldBridge bridge) {
@@ -412,6 +485,18 @@ public final class LuaMachine {
                 // Parks the machine for N ticks (min 1), then resumes with nil.
                 return g.yield(LuaValue.varargsOf(new LuaValue[] {
                         SLEEPCALL, LuaValue.valueOf(args.arg(1).optint(1)) }));
+            }
+        });
+        // tale.monitor([dx,dy,dz]) → drawable canvas table of the monitor block
+        // (no args = search the 6 face neighbours), nil when there is none.
+        tale.set("monitor", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("monitor"),
+                        LuaValue.valueOf(args.arg(1).optint(0)),
+                        LuaValue.valueOf(args.arg(2).optint(0)),
+                        LuaValue.valueOf(args.arg(3).optint(0)) }));
             }
         });
         g.set("tale", tale);

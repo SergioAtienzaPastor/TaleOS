@@ -32,6 +32,13 @@ public interface WorldBridge {
         return 0;
     }
 
+    /** Drawable canvas of the Monitor block at the computer position plus the
+     * given offset; (0,0,0) means "search the six face neighbours". Null when
+     * there is no monitor there. */
+    default me.kvothe.talecraft.computer.MonitorCanvas monitorAt(int dx, int dy, int dz) {
+        return null;
+    }
+
     /** No-world bridge: reads return nil, chat is dropped. */
     WorldBridge NONE = new WorldBridge() {
         @Override

@@ -39,7 +39,7 @@ public final class Computer {
             "programs/mkdir.lua", "programs/rm.lua", "programs/echo.lua",
             "programs/reboot.lua", "programs/shutdown.lua",
             "programs/lua.lua", "programs/edit.lua",
-            "programs/clear.lua", "programs/help.lua",
+            "programs/clear.lua", "programs/help.lua", "programs/reloj.lua",
     };
 
     private final int id;

@@ -20,16 +20,19 @@ public final class HytaleWorldBridge implements WorldBridge {
     private final World world;
     private final int originX, originY, originZ;
     private final int computerId;
+    private final ComputerManager manager;
 
     private static final com.hypixel.hytale.logger.HytaleLogger LOGGER =
             com.hypixel.hytale.logger.HytaleLogger.forEnclosingClass();
 
-    public HytaleWorldBridge(World world, BlockPosition computerPos, int computerId) {
+    public HytaleWorldBridge(World world, BlockPosition computerPos, int computerId,
+            ComputerManager manager) {
         this.world = world;
         this.originX = computerPos.x;
         this.originY = computerPos.y;
         this.originZ = computerPos.z;
         this.computerId = computerId;
+        this.manager = manager;
     }
 
     public int getOriginX() {
@@ -72,6 +75,33 @@ public final class HytaleWorldBridge implements WorldBridge {
     @Override
     public void chat(String message) {
         world.sendMessage(Message.raw("[computer #" + computerId + "] " + message));
+    }
+
+    @Override
+    public MonitorCanvas monitorAt(int dx, int dy, int dz) {
+        if (manager == null) {
+            return null;
+        }
+        if (dx == 0 && dy == 0 && dz == 0) {
+            // No offset: search the six face neighbours for a monitor block.
+            int[][] dirs = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 },
+                    { 0, 0, -1 } };
+            for (int[] d : dirs) {
+                MonitorCanvas canvas = canvasIfMonitor(originX + d[0], originY + d[1], originZ + d[2]);
+                if (canvas != null) {
+                    return canvas;
+                }
+            }
+            return null;
+        }
+        return canvasIfMonitor(originX + dx, originY + dy, originZ + dz);
+    }
+
+    private MonitorCanvas canvasIfMonitor(int x, int y, int z) {
+        if (!"TaleCraft_Monitor".equals(getBlockId(x, y, z))) {
+            return null;
+        }
+        return manager.canvasAt(world, new BlockPosition(x, y, z));
     }
 
     /** Console-side diagnostics for the block-read chain. Forces an async chunk

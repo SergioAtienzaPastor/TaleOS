@@ -18,6 +18,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import me.kvothe.talecraft.lua.WorldBridge;
 import me.kvothe.talecraft.ui.EditorPage;
+import me.kvothe.talecraft.ui.MonitorCanvasPage;
 import me.kvothe.talecraft.ui.TerminalPage;
 
 /**
@@ -34,6 +35,8 @@ public final class ComputerManager {
     private final ComputerIdStore idStore;
     private final Map<String, Computer> computers = new ConcurrentHashMap<>();
     private final Map<UUID, TerminalPage> openPages = new ConcurrentHashMap<>();
+    private final Map<String, MonitorCanvas> canvases = new ConcurrentHashMap<>();
+    private final Map<UUID, MonitorCanvasPage> openMonitorPages = new ConcurrentHashMap<>();
 
     public ComputerManager(Path dataDir) {
         this.dataDir = dataDir;
@@ -71,7 +74,7 @@ public final class ComputerManager {
                     // Idempotent upgrade: a machine booted headless gets the
                     // real world bridge as soon as one is available.
                     existing.getMachine().setWorldBridge(
-                            new HytaleWorldBridge(world, pos, existing.getId()));
+                            new HytaleWorldBridge(world, pos, existing.getId(), this));
                 }
                 return existing;
             }
@@ -83,7 +86,7 @@ public final class ComputerManager {
             }
             WorldBridge bridge = world == null
                     ? WorldBridge.NONE
-                    : new HytaleWorldBridge(world, pos, id);
+                    : new HytaleWorldBridge(world, pos, id, this);
             try {
                 Computer c = new Computer(id, dataDir.resolve("computers").resolve(String.valueOf(id)), bridge);
                 c.boot();
@@ -157,6 +160,24 @@ public final class ComputerManager {
         for (TerminalPage page : openPages.values()) {
             page.refreshFromComputer();
         }
+        for (MonitorCanvasPage page : openMonitorPages.values()) {
+            page.refreshFromCanvas();
+        }
+    }
+
+    /** Drawable canvas of the monitor block at the position (created on first
+     * use; volatile by design, like the computers' transcript). */
+    public MonitorCanvas canvasAt(World world, BlockPosition pos) {
+        return canvases.computeIfAbsent(key(world.getName(), pos.x, pos.y, pos.z),
+                k -> new MonitorCanvas());
+    }
+
+    public void registerMonitorPage(UUID player, MonitorCanvasPage page) {
+        openMonitorPages.put(player, page);
+    }
+
+    public void unregisterMonitorPage(UUID player) {
+        openMonitorPages.remove(player);
     }
 
     public void registerPage(UUID player, TerminalPage page) {
@@ -208,6 +229,8 @@ public final class ComputerManager {
         }
         computers.clear();
         openPages.clear();
+        canvases.clear();
+        openMonitorPages.clear();
     }
 
     public String key(String worldName, int x, int y, int z) {
