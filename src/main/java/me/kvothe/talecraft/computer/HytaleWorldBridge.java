@@ -52,7 +52,10 @@ public final class HytaleWorldBridge implements WorldBridge {
                 return null;
             }
             BlockType type = BlockType.getAssetMap().getAsset(reader.getBlock(x, y, z));
-            return type == null ? null : type.getId();
+            if (type == null || "Empty".equals(type.getId())) {
+                return null; // air reads as the "Empty" asset; scripts expect null for air
+            }
+            return type.getId();
         } catch (IllegalStateException wrongThread) {
             // World stores assert thread affinity; a stray call must never
             // crash the world thread — report "unloaded" instead.
