@@ -19,11 +19,15 @@ Group #Terminal {
     FlexWeight: 1;
     LayoutMode: Top;
 
-    $C.@MultilineTextField #Output {
-      FlexWeight: 1;
-      PlaceholderText: "";
-      IsReadOnly: true;
-      Style: (TextColor: #c8d8b8);
+    // Elastic spacer: pushes the transcript to the bottom of the screen,
+    // so the latest line sits just above the prompt like a real console.
+    Group { FlexWeight: 1; }
+
+    // Read-only multiline label (no internal scroll): TerminalPage feeds it
+    // the tail of the transcript, capped to what fits the screen.
+    Label #Output {
+      Text: "";
+      Style: (FontSize: 13, TextColor: #c8d8b8, Wrap: true);
     }
   }
 
