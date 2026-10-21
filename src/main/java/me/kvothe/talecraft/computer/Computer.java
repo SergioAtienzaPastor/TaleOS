@@ -50,6 +50,11 @@ public final class Computer {
 
     private static final int SCROLLBACK_MAX_CHARS = 8000;
 
+    /** Control char prepended to echo lines in the scrollback: it marks the
+     * start of a transcript block so the terminal page can render the blocks
+     * newest-first. Never displayed; stripped from the log and drainOutput. */
+    public static final char ECHO_MARK = '\u0001';
+
     public Computer(int id, Path root, WorldBridge bridge) throws IOException {
         this.id = id;
         this.root = root;
@@ -120,7 +125,7 @@ public final class Computer {
                 return;
             }
         }
-        logLine(out);
+        logLine(out.replace(ECHO_MARK + "", ""));
         synchronized (scrollback) {
             scrollback.append(out);
             if (scrollback.length() > SCROLLBACK_MAX_CHARS) {
@@ -136,7 +141,7 @@ public final class Computer {
         synchronized (scrollback) {
             String out = scrollback.substring(scrollbackReadPos);
             scrollbackReadPos = scrollback.length();
-            return out;
+            return out.replace(ECHO_MARK + "", "");
         }
     }
 
@@ -148,8 +153,9 @@ public final class Computer {
     }
 
     public void queueStdin(String line) {
-        // Eco estilo terminal: la línea enviada aparece tras el prompt actual.
-        machine.appendEcho(machine.getPrompt() + line + "\n");
+        // Eco estilo terminal: la línea enviada aparece tras el prompt actual,
+        // precedida de ECHO_MARK para delimitar el bloque en el transcript.
+        machine.appendEcho(ECHO_MARK + machine.getPrompt() + line + "\n");
         logLine("[stdin] " + line);
         machine.queueEvent("stdin", line);
     }

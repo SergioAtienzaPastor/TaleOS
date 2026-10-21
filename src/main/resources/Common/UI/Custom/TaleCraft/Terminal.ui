@@ -7,55 +7,16 @@ Group #Terminal {
   LayoutMode: Top;
   Padding: (Full: 14);
 
-  Group #TitleRow {
+  Label #Title {
+    Text: "Computer";
     Anchor: (Height: 30);
-    LayoutMode: Left;
-
-    Label #Title {
-      Text: "Computer";
-      FlexWeight: 1;
-      Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true, VerticalAlignment: Center);
-    }
-
-    Label #ScrollHint {
-      Text: "";
-      Anchor: (Right: 8);
-      Style: (FontSize: 11, TextColor: #8a9a7a, VerticalAlignment: Center);
-    }
-
-    $C.@SecondaryTextButton #PageUp {
-      Text: "Subir";
-      Anchor: (Width: 64, Height: 28);
-    }
-
-    Group { Anchor: (Width: 6); }
-
-    $C.@SecondaryTextButton #PageDown {
-      Text: "Bajar";
-      Anchor: (Width: 64, Height: 28);
-    }
+    Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true);
   }
 
   Group { Anchor: (Height: 6); }
 
-  Group #Screen {
-    FlexWeight: 1;
-    LayoutMode: Top;
-
-    // Elastic spacer: pushes the transcript to the bottom of the screen,
-    // so the latest line sits just above the prompt like a real console.
-    Group { FlexWeight: 1; }
-
-    // Read-only multiline label (no internal scroll): TerminalPage feeds it a
-    // window of the transcript capped to what fits the screen.
-    Label #Output {
-      Text: "";
-      Style: (FontSize: 13, TextColor: #c8d8b8, Wrap: true);
-    }
-  }
-
-  Group { Anchor: (Height: 8); }
-
+  // Input row on top: the transcript renders newest-first, so the command
+  // being typed sits right above where its echo and output will appear.
   Group #InputRow {
     Anchor: (Height: 38);
     LayoutMode: Left;
@@ -70,6 +31,24 @@ Group #Terminal {
       FlexWeight: 1;
       PlaceholderText: "escribe un comando y pulsa Enter";
       Background: #101418;
+    }
+  }
+
+  Group { Anchor: (Height: 8); }
+
+  Group #Screen {
+    FlexWeight: 1;
+    LayoutMode: Top;
+
+    // Scrollable read-only transcript. The client's text field jumps to its
+    // top on every value set (the UI protocol has no scroll command), so
+    // TerminalPage renders the transcript newest-block-first: the latest
+    // output is always visible and scrolling down reveals older history.
+    $C.@MultilineTextField #Output {
+      FlexWeight: 1;
+      PlaceholderText: "";
+      IsReadOnly: true;
+      Style: (TextColor: #c8d8b8);
     }
   }
 }
