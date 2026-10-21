@@ -44,8 +44,10 @@ Marcar cada prueba solo si se reproduce tal cual:
   contenido del terminal. (No testeable con un solo PC.)
 
 ## Regresión de servidor
-- [ ] `grep -i talecraft Server/logs/latest.log` sin ERROR/WARN tras 5 min de
-  uso.
+- [x] `grep -i talecraft Server/logs/latest.log` sin ERROR/WARN tras 5 min de
+  uso. ✅ 2026-10-21 — soak de 5+ min con la batería de consola ejecutándose:
+  0 excepciones, 0 crashes de mundo, ningún SEVERE/WARN de TaleCraft (solo el
+  WARN benigno del escaneo del directorio de datos `mods/TaleCraft` como pack).
 
 ## Notas de la sesión 2026-10-21
 - El terminal muestra siempre la **cola** del transcript (14 líneas que caben
