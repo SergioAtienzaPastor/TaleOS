@@ -123,13 +123,28 @@ public final class ComputerManager {
         return c != null && c.isAlive();
     }
 
-    /** First alive computer in the 6-neighbourhood of the position, or null. */
+    /** First alive computer near the position: the 6 face neighbours first,
+     * then the rest of a ±2 cube (monitors read a computer "close by", so a
+     * small gap in the user's setup still works). */
     public Computer findAdjacentRunning(World world, BlockPosition pos) {
         int[][] dirs = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
         for (int[] d : dirs) {
             Computer c = computers.get(key(world.getName(), pos.x + d[0], pos.y + d[1], pos.z + d[2]));
             if (c != null && c.isAlive()) {
                 return c;
+            }
+        }
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= 1) {
+                        continue; // already checked above
+                    }
+                    Computer c = computers.get(key(world.getName(), pos.x + dx, pos.y + dy, pos.z + dz));
+                    if (c != null && c.isAlive()) {
+                        return c;
+                    }
+                }
             }
         }
         return null;
