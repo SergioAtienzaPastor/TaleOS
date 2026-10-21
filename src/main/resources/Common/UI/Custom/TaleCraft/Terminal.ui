@@ -7,10 +7,33 @@ Group #Terminal {
   LayoutMode: Top;
   Padding: (Full: 14);
 
-  Label #Title {
-    Text: "Computer";
+  Group #TitleRow {
     Anchor: (Height: 30);
-    Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true);
+    LayoutMode: Left;
+
+    Label #Title {
+      Text: "Computer";
+      FlexWeight: 1;
+      Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true, VerticalAlignment: Center);
+    }
+
+    Label #ScrollHint {
+      Text: "";
+      Anchor: (Right: 8);
+      Style: (FontSize: 11, TextColor: #8a9a7a, VerticalAlignment: Center);
+    }
+
+    $C.@SecondaryTextButton #PageUp {
+      Text: "Subir";
+      Anchor: (Width: 64, Height: 28);
+    }
+
+    Group { Anchor: (Width: 6); }
+
+    $C.@SecondaryTextButton #PageDown {
+      Text: "Bajar";
+      Anchor: (Width: 64, Height: 28);
+    }
   }
 
   Group { Anchor: (Height: 6); }
@@ -23,8 +46,8 @@ Group #Terminal {
     // so the latest line sits just above the prompt like a real console.
     Group { FlexWeight: 1; }
 
-    // Read-only multiline label (no internal scroll): TerminalPage feeds it
-    // the tail of the transcript, capped to what fits the screen.
+    // Read-only multiline label (no internal scroll): TerminalPage feeds it a
+    // window of the transcript capped to what fits the screen.
     Label #Output {
       Text: "";
       Style: (FontSize: 13, TextColor: #c8d8b8, Wrap: true);
