@@ -29,7 +29,6 @@ public final class ComputerManager {
     private final ComputerIdStore idStore;
     private final Map<String, Computer> computers = new ConcurrentHashMap<>();
     private final Map<UUID, TerminalPage> openPages = new ConcurrentHashMap<>();
-    private volatile long lastTickNanos;
 
     public ComputerManager(Path dataDir) {
         this.dataDir = dataDir;
@@ -89,16 +88,16 @@ public final class ComputerManager {
         });
     }
 
-    /** Ticks every live machine once and refreshes open terminal pages.
-     * The ECS tick system runs once per world store; the time-window guard
-     * makes the pass idempotent so machines tick exactly once per server tick. */
-    public void tickAll() {
-        long now = System.nanoTime();
-        if (now - lastTickNanos < 40_000_000L) {
-            return;
-        }
-        lastTickNanos = now;
-        computers.values().removeIf(c -> {
+    /** Ticks the computers of ONE world (called from that world's tick thread)
+     * and refreshes the open terminal pages. World stores assert thread
+     * affinity, so a machine must never be ticked from another world's thread. */
+    public void tickWorld(World world) {
+        String prefix = world.getName() + ":";
+        computers.entrySet().removeIf(entry -> {
+            if (!entry.getKey().startsWith(prefix)) {
+                return false;
+            }
+            Computer c = entry.getValue();
             if (c.isHalted()) {
                 // reboot is handled by the next interaction; drop the corpse.
                 return true;

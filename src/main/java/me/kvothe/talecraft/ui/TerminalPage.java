@@ -30,9 +30,10 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
     public static final String LAYOUT = "TaleCraft/Terminal.ui";
 
     /** The UI has no scroll-to-bottom command, so the output field shows the
-     * tail of the transcript — like a real console, the latest lines are
-     * always visible. Full history stays in the computer's log file. */
-    private static final int MAX_VISIBLE_LINES = 24;
+     * tail of the transcript, small enough to always fit the screen — like a
+     * real console, the latest lines are always visible without scrolling.
+     * Full history stays in the computer's log file. */
+    private static final int MAX_VISIBLE_LINES = 14;
 
     /** Last ~screenful of the transcript. */
     static String tail(String s) {

@@ -41,12 +41,18 @@ public final class HytaleWorldBridge implements WorldBridge {
 
     @Override
     public String getBlockId(int x, int y, int z) {
-        SectionReader reader = new SectionReader(world.getChunkStore());
-        if (!reader.hasStorageInMemory(x, y, z)) {
+        try {
+            SectionReader reader = new SectionReader(world.getChunkStore());
+            if (!reader.hasStorageInMemory(x, y, z)) {
+                return null;
+            }
+            BlockType type = BlockType.getAssetMap().getAsset(reader.getBlock(x, y, z));
+            return type == null ? null : type.getId();
+        } catch (IllegalStateException wrongThread) {
+            // World stores assert thread affinity; a stray call must never
+            // crash the world thread — report "unloaded" instead.
             return null;
         }
-        BlockType type = BlockType.getAssetMap().getAsset(reader.getBlock(x, y, z));
-        return type == null ? null : type.getId();
     }
 
     @Override

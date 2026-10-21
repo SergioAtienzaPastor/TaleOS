@@ -54,7 +54,7 @@ public final class ComputerIdStore {
                 continue;
             }
             String key = unquote(entry.substring(1, sep));
-            int id = extractInt(entry.substring(sep + 1), "", -1);
+            int id = extractInt(entry.substring(sep + 2), "", -1);
             if (id >= 0) {
                 byBlock.put(key, id);
                 nextId = Math.max(nextId, id + 1);

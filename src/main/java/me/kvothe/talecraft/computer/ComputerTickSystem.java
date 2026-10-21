@@ -2,11 +2,14 @@ package me.kvothe.talecraft.computer;
 
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
+import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 /**
- * Drives every live computer's LuaMachine once per server tick and refreshes
- * open terminal pages. Registered as a global ticking system.
+ * Drives each world its own computers once per tick and refreshes open
+ * terminal pages. Registered on the EntityStore registry, so it runs once per
+ * world store on <b>that</b> world's thread — computers must only tick (and
+ * touch the world) from their own world thread.
  */
 public class ComputerTickSystem extends TickingSystem<EntityStore> {
 
@@ -18,6 +21,12 @@ public class ComputerTickSystem extends TickingSystem<EntityStore> {
 
     @Override
     public void tick(float deltaTime, int step, Store<EntityStore> store) {
-        manager.tickAll();
+        World world = null;
+        if (store.getExternalData() instanceof EntityStore entityStore) {
+            world = entityStore.getWorld();
+        }
+        if (world != null) {
+            manager.tickWorld(world);
+        }
     }
 }
