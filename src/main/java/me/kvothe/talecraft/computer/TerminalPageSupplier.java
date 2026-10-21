@@ -38,6 +38,9 @@ public final class TerminalPageSupplier implements OpenCustomUIInteraction.Custo
             return null;
         }
         World world = ComputerManager.worldOf(accessor);
+        if (world == null) {
+            world = ComputerManager.worldOf(playerRef);
+        }
         boolean freshBoot = world != null && !manager.isRunningAt(world, pos);
         Computer computer = manager.bootAt(world, pos);
         if (freshBoot) {
@@ -48,14 +51,29 @@ public final class TerminalPageSupplier implements OpenCustomUIInteraction.Custo
         return page;
     }
 
-    /** Boot beep at the block; failures (unknown sound asset) are ignored. */
+    /** Boot beep at the block. */
     private static void playBootBeep(BlockPosition pos, ComponentAccessor<EntityStore> accessor) {
+        int index = soundIndex("TaleCraft_Boot_Beep");
+        if (index < 0) {
+            index = soundIndex("SFX/TaleCraft_Boot_Beep");
+        }
+        if (index < 0) {
+            System.err.println("[TaleCraft] WARN: sound event TaleCraft_Boot_Beep not registered; skipping beep");
+            return;
+        }
         try {
-            int index = SoundEvent.getAssetStore().getAssetMap().getIndex("TaleCraft_Boot_Beep");
             SoundUtil.playSoundEvent3d(index, SoundCategory.SFX, pos.x + 0.5, pos.y + 0.5, pos.z + 0.5,
                     accessor);
         } catch (Exception e) {
-            // sound is cosmetic; never block the terminal on it
+            System.err.println("[TaleCraft] WARN: could not play boot beep: " + e.getMessage());
+        }
+    }
+
+    private static int soundIndex(String name) {
+        try {
+            return SoundEvent.getAssetStore().getAssetMap().getIndex(name);
+        } catch (Exception e) {
+            return -1;
         }
     }
 }

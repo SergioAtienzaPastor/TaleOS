@@ -29,6 +29,28 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
     /** Layout path relative to Common/UI/Custom/. */
     public static final String LAYOUT = "TaleCraft/Terminal.ui";
 
+    /** The UI has no scroll-to-bottom command, so the output field shows the
+     * tail of the transcript — like a real console, the latest lines are
+     * always visible. Full history stays in the computer's log file. */
+    private static final int MAX_VISIBLE_LINES = 24;
+
+    /** Last ~screenful of the transcript. */
+    static String tail(String s) {
+        int lines = 0;
+        int i = s.length();
+        while (i > 0) {
+            int nl = s.lastIndexOf('\n', i - 1);
+            if (nl < 0) {
+                break;
+            }
+            if (++lines > MAX_VISIBLE_LINES) {
+                return s.substring(nl + 1);
+            }
+            i = nl;
+        }
+        return s;
+    }
+
     private final PlayerRef playerRef;
     private final ComputerManager manager;
     private final Computer computer;
@@ -56,7 +78,7 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         lastShown = computer.getScrollback();
         lastPrompt = computer.getPrompt();
         cmd.set("#Title.Text", (readOnly ? "Monitor — Computer #" : "Computer #") + computer.getId());
-        cmd.set("#Output.Value", lastShown);
+        cmd.set("#Output.Value", tail(lastShown));
         cmd.set("#Prompt.Text", lastPrompt);
         if (readOnly) {
             cmd.set("#InputRow.Visible", false);
@@ -96,7 +118,7 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         lastPrompt = prompt;
         try {
             UICommandBuilder cmd = new UICommandBuilder();
-            cmd.set("#Output.Value", current);
+            cmd.set("#Output.Value", tail(current));
             cmd.set("#Prompt.Text", prompt);
             sendUpdate(cmd, false);
         } catch (Exception e) {

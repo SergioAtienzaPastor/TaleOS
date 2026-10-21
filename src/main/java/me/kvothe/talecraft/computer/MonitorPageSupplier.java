@@ -31,6 +31,9 @@ public final class MonitorPageSupplier implements OpenCustomUIInteraction.Custom
             PlayerRef playerRef, InteractionContext ctx) {
         BlockPosition pos = ctx.getTargetBlock();
         World world = ComputerManager.worldOf(accessor);
+        if (world == null) {
+            world = ComputerManager.worldOf(playerRef);
+        }
         if (pos == null || world == null) {
             return null;
         }

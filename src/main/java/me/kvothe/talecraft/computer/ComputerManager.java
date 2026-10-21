@@ -7,8 +7,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.hypixel.hytale.component.ComponentAccessor;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.BlockPosition;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
@@ -46,11 +49,33 @@ public final class ComputerManager {
     public Computer bootAt(World world, BlockPosition pos) {
         String worldName = world != null ? world.getName() : "world";
         String key = key(worldName, pos.x, pos.y, pos.z);
+        if (world != null) {
+            // Computers booted while the world was unresolvable live under the
+            // legacy literal "world" key: adopt them so ids/disks stay stable.
+            String legacyKey = key("world", pos.x, pos.y, pos.z);
+            if (!legacyKey.equals(key)) {
+                idStore.adopt(legacyKey, key);
+                Computer migrated = computers.remove(legacyKey);
+                if (migrated != null) {
+                    computers.putIfAbsent(key, migrated);
+                }
+            }
+        }
         return computers.compute(key, (k, existing) -> {
             if (existing != null && existing.isAlive()) {
+                if (world != null) {
+                    // Idempotent upgrade: a machine booted headless gets the
+                    // real world bridge as soon as one is available.
+                    existing.getMachine().setWorldBridge(
+                            new HytaleWorldBridge(world, pos, existing.getId()));
+                }
                 return existing;
             }
             int id = idStore.idFor(k);
+            if (world == null) {
+                System.err.println("[TaleCraft] WARN: booting computer at " + k
+                        + " without world context: tale.* world calls will no-op");
+            }
             WorldBridge bridge = world == null
                     ? WorldBridge.NONE
                     : new HytaleWorldBridge(world, pos, id);
@@ -132,6 +157,32 @@ public final class ComputerManager {
         try {
             if (accessor instanceof Store<?> store
                     && store.getExternalData() instanceof EntityStore entityStore) {
+                return entityStore.getWorld();
+            }
+        } catch (Exception ignored) {
+            // best effort
+        }
+        return null;
+    }
+
+    /** Resolves the World a player is in. Interaction accessors are often not
+     * the Store itself, so this is the reliable path from page suppliers. */
+    public static World worldOf(PlayerRef playerRef) {
+        try {
+            UUID worldUuid = playerRef.getWorldUuid();
+            if (worldUuid != null) {
+                World w = Universe.get().getWorld(worldUuid);
+                if (w != null) {
+                    return w;
+                }
+            }
+        } catch (Exception ignored) {
+            // best effort
+        }
+        try {
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref != null && ref.isValid()
+                    && ref.getStore().getExternalData() instanceof EntityStore entityStore) {
                 return entityStore.getWorld();
             }
         } catch (Exception ignored) {

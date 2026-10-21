@@ -31,6 +31,16 @@ public final class ComputerIdStore {
         return byBlock.computeIfAbsent(blockKey, k -> nextId++);
     }
 
+    /** If realKey has no id yet but legacyKey does, points realKey at the same
+     * id (used to adopt computers created while the world was unresolvable and
+     * the key fell back to the literal "world" prefix). */
+    public synchronized void adopt(String legacyKey, String realKey) {
+        Integer legacy = byBlock.get(legacyKey);
+        if (legacy != null && !byBlock.containsKey(realKey)) {
+            byBlock.put(realKey, legacy);
+        }
+    }
+
     public synchronized void load() throws IOException {
         if (!Files.isRegularFile(file)) {
             return;
