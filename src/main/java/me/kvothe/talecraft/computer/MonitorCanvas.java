@@ -178,4 +178,35 @@ public final class MonitorCanvas {
     public void markAllDirty() {
         dirtyRows.set(0, HEIGHT);
     }
+
+    /** Canvas → nameplate text: one '█' per non-black pixel, cropped to the
+     * content's bounding box (nameplate text is centered on the entity, so
+     * absolute canvas position cannot be preserved — a compact block of text
+     * reads best floating over the monitor). */
+    public String toNameplateText() {
+        int minX = WIDTH, maxX = -1, minY = HEIGHT, maxY = -1;
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                if (getPixel(x, y) != 0) {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+        }
+        if (maxX < 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder((maxX - minX + 1) * (maxY - minY + 1));
+        for (int y = minY; y <= maxY; y++) {
+            if (y > minY) {
+                sb.append('\n');
+            }
+            for (int x = minX; x <= maxX; x++) {
+                sb.append(getPixel(x, y) != 0 ? '█' : ' ');
+            }
+        }
+        return sb.toString();
+    }
 }

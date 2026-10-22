@@ -55,6 +55,35 @@ public class TaleCraftCommand extends CommandBase {
             ctx.sendMessage(Message.raw("[TaleCraft] probe en el log del servidor"));
             return;
         }
+        String action = line.trim();
+        if ("__displaytest".equals(action)) {
+            manager.displayTest(world, new BlockPosition(x, y, z), null);
+            ctx.sendMessage(Message.raw("[TaleCraft] patrón de prueba en " + x + "," + y + "," + z));
+            return;
+        }
+        if ("__displayraw".equals(action)) {
+            manager.displayTest(world, new BlockPosition(x, y, z),
+                    "linea1 [#ff0000]ROJO\nlinea2 &aVERDE&r normal\nlinea3 <#00ffff>cyan</#00ffff>");
+            ctx.sendMessage(Message.raw("[TaleCraft] raw nameplate test en " + x + "," + y + "," + z));
+            return;
+        }
+        if ("__displayclear".equals(action)) {
+            manager.displayClear(world, new BlockPosition(x, y, z));
+            ctx.sendMessage(Message.raw("[TaleCraft] display limpiado en " + x + "," + y + "," + z));
+            return;
+        }
+        if ("__blockid".equals(action)) {
+            String id = new HytaleWorldBridge(world, new BlockPosition(x, y, z), -1, manager)
+                    .getBlockId(x, y, z);
+            ctx.sendMessage(Message.raw("[TaleCraft] bloque en " + x + "," + y + "," + z + " = " + id));
+            return;
+        }
+        if ("__cleanmobs".equals(action)) {
+            manager.requestDisplayCleanup(world);
+            ctx.sendMessage(Message.raw("[TaleCraft] limpieza de displays/maniquís programada en "
+                    + world.getName()));
+            return;
+        }
         Computer computer = manager.bootAt(world, new BlockPosition(x, y, z));
         computer.queueStdin(line);
         ctx.sendMessage(Message.raw("[TaleCraft] computer #" + computer.getId() + " <- '" + line + "'"));

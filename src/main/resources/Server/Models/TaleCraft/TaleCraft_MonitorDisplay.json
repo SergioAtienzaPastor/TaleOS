@@ -1,0 +1,11 @@
+{
+  "Model": "NPC/MISC/Empty.blockymodel",
+  "Texture": "NPC/Void/Tentacle_Void/Models/Texture.png",
+  "HitBox": {
+    "Max": { "X": 0.01, "Y": 0.01, "Z": 0.01 },
+    "Min": { "X": -0.01, "Y": 0, "Z": -0.01 }
+  },
+  "MinScale": 1,
+  "MaxScale": 1,
+  "EyeHeight": 0
+}

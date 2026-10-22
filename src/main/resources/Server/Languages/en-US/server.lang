@@ -1,4 +1,5 @@
 items.TaleCraft_Computer.name=Computer
 items.TaleCraft_Computer.description=A programmable Lua computer. Press F to open its terminal.
 items.TaleCraft_Monitor.name=Monitor
-items.TaleCraft_Monitor.description=A display peripheral. Place next to a Computer and press F to mirror its terminal.
+npcRoles.TaleCraft_MonitorDisplay.name=​
+items.TaleCraft_Monitor.description=A display peripheral. Place next to a Computer; programs paint on it and the readout shows in the world.

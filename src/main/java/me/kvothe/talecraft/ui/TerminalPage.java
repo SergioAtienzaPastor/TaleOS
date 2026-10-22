@@ -100,11 +100,16 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
     }
 
     /** Pushes fresh computer output and prompt to the client when they changed.
-     * Called once per tick by the plugin's tick system. */
+     * Called once per tick by the plugin's tick system. Never pushes to a page
+     * the client is not showing — a stale selector disconnects the client. */
     public void refreshFromComputer() {
         String current = computer.getScrollback();
         String prompt = computer.getPrompt();
         if (current.equals(lastShown) && prompt.equals(lastPrompt)) {
+            return;
+        }
+        if (!ComputerManager.isCurrentPage(playerRef, this)) {
+            manager.unregisterPage(playerRef.getUuid());
             return;
         }
         lastShown = current;

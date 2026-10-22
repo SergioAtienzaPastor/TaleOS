@@ -72,8 +72,13 @@ public class MonitorCanvasPage extends InteractiveCustomUIPage<MonitorCanvasPage
     }
 
     /** Repaints the grid when anything changed since the last tick. Called
-     * once per tick by the plugin's tick system. */
+     * once per tick by the plugin's tick system. Never pushes to a page the
+     * client is not showing — a stale selector disconnects the client. */
     public void refreshFromCanvas() {
+        if (!ComputerManager.isCurrentPage(playerRef, this)) {
+            manager.unregisterMonitorPage(playerRef.getUuid());
+            return;
+        }
         BitSet dirty = canvas.consumeDirtyRows();
         if (dirty.isEmpty()) {
             return;

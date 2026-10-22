@@ -8,13 +8,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
 
 import me.kvothe.talecraft.lua.WorldBridge;
 import me.kvothe.talecraft.ui.EditorPage;
@@ -37,6 +40,12 @@ public final class ComputerManager {
     private final Map<UUID, TerminalPage> openPages = new ConcurrentHashMap<>();
     private final Map<String, MonitorCanvas> canvases = new ConcurrentHashMap<>();
     private final Map<UUID, MonitorCanvasPage> openMonitorPages = new ConcurrentHashMap<>();
+    private final Map<String, MonitorDisplay> displays = new ConcurrentHashMap<>();
+    /** Worlds with a pending display-entity cleanup (set from any thread,
+     * executed on the world's tick thread). */
+    private final java.util.Set<String> pendingDisplayCleanup =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private int worldTickCounter;
 
     public ComputerManager(Path dataDir) {
         this.dataDir = dataDir;
@@ -145,6 +154,15 @@ public final class ComputerManager {
      * affinity, so a machine must never be ticked from another world's thread. */
     public void tickWorld(World world) {
         String prefix = world.getName() + ":";
+        if (pendingDisplayCleanup.remove(world.getName())) {
+            cleanDisplayEntities(world, false);
+        }
+        // Slow background sweep: the mannequins left by the spawn bisect only
+        // become visible to the store when their chunk loads (a player walking
+        // by), so a one-shot cleanup misses them. Touches loaded entities only.
+        if (++worldTickCounter % 400 == 0) {
+            cleanDisplayEntities(world, true);
+        }
         computers.entrySet().removeIf(entry -> {
             if (!entry.getKey().startsWith(prefix)) {
                 return false;
@@ -163,13 +181,94 @@ public final class ComputerManager {
         for (MonitorCanvasPage page : openMonitorPages.values()) {
             page.refreshFromCanvas();
         }
+        // In-world monitor readouts (nameplate entities); a display whose
+        // monitor block vanished removes itself from the map.
+        displays.entrySet().removeIf(entry -> {
+            if (!entry.getKey().startsWith(prefix)) {
+                return false;
+            }
+            return !entry.getValue().tick();
+        });
     }
 
     /** Drawable canvas of the monitor block at the position (created on first
-     * use; volatile by design, like the computers' transcript). */
+     * use; volatile by design, like the computers' transcript). Also registers
+     * the in-world display entity for the block. */
     public MonitorCanvas canvasAt(World world, BlockPosition pos) {
-        return canvases.computeIfAbsent(key(world.getName(), pos.x, pos.y, pos.z),
-                k -> new MonitorCanvas());
+        String key = key(world.getName(), pos.x, pos.y, pos.z);
+        MonitorCanvas canvas = canvases.computeIfAbsent(key, k -> new MonitorCanvas());
+        displays.computeIfAbsent(key,
+                k -> new MonitorDisplay(world, pos.x, pos.y, pos.z, canvas));
+        return canvas;
+    }
+
+    /** Console test hook: paints a canned pattern (or shows raw text) on the
+     * display at the position, without requiring a real monitor block. */
+    public void displayTest(World world, BlockPosition pos, String rawText) {
+        String key = key(world.getName(), pos.x, pos.y, pos.z);
+        MonitorCanvas canvas = canvases.computeIfAbsent(key, k -> new MonitorCanvas());
+        if (rawText == null) {
+            canvas.clear(0);
+            canvas.fill(0, 0, MonitorCanvas.WIDTH, 1, 15);
+            canvas.writeText(1, 3, "TALECRAFT", 4);
+            canvas.writeText(1, 10, "12:34:56", 10);
+            canvas.fill(0, MonitorCanvas.HEIGHT - 1, MonitorCanvas.WIDTH, 1, 3);
+        }
+        MonitorDisplay display = displays.computeIfAbsent(key,
+                k -> new MonitorDisplay(world, pos.x, pos.y, pos.z, canvas));
+        display.setTestMode(true);
+        if (rawText != null) {
+            display.setRawText(rawText);
+        }
+    }
+
+    /** Console test hook: removes the test display/canvas at the position. */
+    public void displayClear(World world, BlockPosition pos) {
+        String key = key(world.getName(), pos.x, pos.y, pos.z);
+        MonitorDisplay display = displays.remove(key);
+        if (display != null) {
+            display.despawn();
+        }
+        canvases.remove(key);
+    }
+
+    /** Schedules a cleanup of leftover display NPCs (runs on the world's tick
+     * thread; entity stores assert thread affinity). */
+    public void requestDisplayCleanup(World world) {
+        pendingDisplayCleanup.add(world.getName());
+    }
+
+    /** Removes leftover display NPCs. {@code onlyMannequins} limits the sweep
+     * to the vanilla Empty_Role entities from the spawn bisect (used by the
+     * periodic sweep so live TaleCraft displays are never touched); the manual
+     * console cleanup also removes TaleCraft_MonitorDisplay entities. Returns
+     * the count. */
+    private int cleanDisplayEntities(World world, boolean onlyMannequins) {
+        Store<EntityStore> store = world.getEntityStore().getStore();
+        int[] removed = { 0 };
+        try {
+            store.forEachChunk(Query.and(NPCEntity.getComponentType()), (chunk, cmd) -> {
+                for (int i = 0; i < chunk.size(); i++) {
+                    NPCEntity npc = chunk.getComponent(i, NPCEntity.getComponentType());
+                    if (npc == null) {
+                        continue;
+                    }
+                    String role = npc.getRoleName();
+                    if ("Empty_Role".equals(role)
+                            || (!onlyMannequins && "TaleCraft_MonitorDisplay".equals(role))) {
+                        cmd.removeEntity(chunk.getReferenceTo(i), RemoveReason.REMOVE);
+                        removed[0]++;
+                    }
+                }
+            });
+        } catch (Exception e) {
+            LOGGER.atWarning().log("display cleanup failed: " + e.getMessage());
+        }
+        if (removed[0] > 0) {
+            LOGGER.atInfo().log("removed " + removed[0] + " leftover display entities in "
+                    + world.getName());
+        }
+        return removed[0];
     }
 
     public void registerMonitorPage(UUID player, MonitorCanvasPage page) {
@@ -231,10 +330,33 @@ public final class ComputerManager {
         openPages.clear();
         canvases.clear();
         openMonitorPages.clear();
+        for (MonitorDisplay display : displays.values()) {
+            display.despawn();
+        }
+        displays.clear();
     }
 
     public String key(String worldName, int x, int y, int z) {
         return worldName + ":" + x + ":" + y + ":" + z;
+    }
+
+    /** True only when this page is the one the player's client is currently
+     * showing. Sending UI commands to a page that is not current makes the
+     * client disconnect ("Selected element not found"), so every per-tick
+     * refresh must check this first. */
+    public static boolean isCurrentPage(PlayerRef playerRef,
+            com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage page) {
+        try {
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref == null || !ref.isValid()) {
+                return false;
+            }
+            Store<EntityStore> store = ref.getStore();
+            Player player = store.getComponent(ref, Player.getComponentType());
+            return player != null && player.getPageManager().getCustomPage() == page;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /** Resolves the World for an entity-store accessor (page callbacks don't
