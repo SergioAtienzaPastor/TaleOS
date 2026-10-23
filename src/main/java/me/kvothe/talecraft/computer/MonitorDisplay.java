@@ -47,15 +47,15 @@ public final class MonitorDisplay {
     /** Safety cap on shapes sent per frame. */
     private static final int MAX_RECTS = 512;
 
-    // --- Calibration constants (see TESTING.md) ---------------------------
+    // --- Calibration constants (verified in client, see TESTING.md) --------
     /** True when the model's screen face is local +Z at yaw 0. */
-    private static final boolean FRONT_IS_POSITIVE_Z = false;
+    private static final boolean FRONT_IS_POSITIVE_Z = true;
     /** Sign applied to the block yaw before rotateY. */
     private static final double YAW_SIGN = 1.0;
-    /** Flip when text comes out mirrored. Verified empirically: for a viewer
-     * outside the protruding face, canvas +u mapped to their left — the
-     * mirror is independent of the face yaw, so it is always flipped. */
-    private static final boolean MIRROR_U = true;
+    /** Canvas-U flip needed for the text to read correctly from outside the
+     * protruding face. Tied to the front-face sign: with the slabs on +Z the
+     * unflipped U already matches the viewer's right. */
+    private static final boolean MIRROR_U = false;
     /** Debug shapes are assumed unit cubes centered on their matrix origin. */
     private static final boolean UNIT_CUBE_CENTERED = true;
 

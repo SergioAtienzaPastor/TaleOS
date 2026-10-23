@@ -107,7 +107,7 @@ def monitor_model():
     ])
 
 
-def texture(path):
+def texture(path, prompt_glyph=True):
     """Paleta 64x64 con ruido sutil y borde interior sombreado (estilo Hytale)."""
     rng = random.Random(42)
     img = Image.new("RGB", (64, 64))
@@ -136,14 +136,17 @@ def texture(path):
 
     # prompt ">_" verde fosforo en la esquina superior izquierda de la pantalla:
     # hace el bloque reconocible como terminal en el mundo y en el icono.
-    u0, v0 = CELL["screen"]
-    green = (150, 225, 160)
-    for i in range(5):                      # chevron ">" de 5px de alto
-        for thick in (0, 1):
-            img.putpixel((u0 + 4 + min(i, 4 - i) + thick, v0 + 5 + i), green)
-    for dx in range(5):                     # guion bajo "_"
-        for dy in (10, 11):
-            img.putpixel((u0 + 9 + dx, v0 + dy), green)
+    # Solo en el Computer: el Monitor pinta su contenido real en la pantalla
+    # (DisplayDebug) y el glifo estático molestaría.
+    if prompt_glyph:
+        u0, v0 = CELL["screen"]
+        green = (150, 225, 160)
+        for i in range(5):                      # chevron ">" de 5px de alto
+            for thick in (0, 1):
+                img.putpixel((u0 + 4 + min(i, 4 - i) + thick, v0 + 5 + i), green)
+        for dx in range(5):                     # guion bajo "_"
+            for dy in (10, 11):
+                img.putpixel((u0 + 9 + dx, v0 + dy), green)
     img.save(path)
 
 
@@ -306,7 +309,7 @@ def main():
         tex_file = os.path.join(BLOCKS, name + "_Texture.png")
         with open(model_file, "w") as f:
             json.dump(builder(), f, separators=(",", ":"))
-        texture(tex_file)
+        texture(tex_file, prompt_glyph=(name == "TaleCraft_Computer"))
         render_icon(model_file, tex_file, os.path.join(icons, name + ".png"))
     beep(os.path.join(SOUNDS, "boot_beep.ogg"))
     print("assets generados en", BLOCKS, ",", SOUNDS, "e", icons)
