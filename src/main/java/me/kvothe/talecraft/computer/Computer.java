@@ -210,6 +210,21 @@ public final class Computer {
         machine.queueEvent("stdin", line);
     }
 
+    /** Asks the machine to stop the running program (CC:T's Ctrl+T): the
+     * program dies with a "Programa detenido" error that the shell's pcall
+     * catches, returning to the prompt. With nothing running it just says so. */
+    public void requestTerminate() {
+        if (!machine.isAlive()) {
+            systemMessage("el ordenador está apagado");
+            return;
+        }
+        if (!machine.isProgramRunning()) {
+            systemMessage("no hay ningún programa en ejecución");
+            return;
+        }
+        machine.requestTerminate();
+    }
+
     public String getPrompt() {
         return machine.getPrompt();
     }

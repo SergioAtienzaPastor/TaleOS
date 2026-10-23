@@ -100,4 +100,49 @@ class LuaMachineTest {
         assertEquals(LuaMachine.State.DEAD, machine.getState());
         assertFalse(machine.isAlive());
     }
+
+    @Test
+    void terminateKillsSleepingProgramAndShellSurvives() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        // Mirrors shell.lua: program runs under pcall between setProgramRunning.
+        machine.load("tale.setProgramRunning(true)\n"
+                + "local ok, err = pcall(function() while true do tale.sleep(50) end end)\n"
+                + "tale.setProgramRunning(false)\n"
+                + "print('caught: ' .. tostring(err))\n"
+                + "print('shell alive')\n", "shellish");
+        machine.tick(); // boots into the infinite sleep loop
+        assertTrue(machine.isAlive());
+        machine.requestTerminate();
+        machine.tick(); // wakes early, hook throws, pcall catches
+        assertEquals(LuaMachine.State.DONE, machine.getState());
+        assertEquals("caught: " + LuaMachine.TERMINATED_MESSAGE + "\nshell alive\n",
+                machine.drainOutput());
+    }
+
+    @Test
+    void terminateBeatsBudgetInTightLoops() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("tale.setProgramRunning(true)\n"
+                + "local ok, err = pcall(function() while true do end end)\n"
+                + "tale.setProgramRunning(false)\n"
+                + "print('caught: ' .. tostring(err))\n", "tight");
+        machine.requestTerminate();
+        machine.tick();
+        assertEquals(LuaMachine.State.DONE, machine.getState(),
+                "terminate must fire before the budget kill; state=" + machine.getState());
+        assertEquals("caught: " + LuaMachine.TERMINATED_MESSAGE + "\n", machine.drainOutput());
+    }
+
+    @Test
+    void terminateWithoutProgramIsIgnored() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("local e = tale.pullEvent(); print('got', e)", "idle");
+        machine.tick(); // parks at pullEvent with no program running
+        machine.requestTerminate();
+        machine.queueEvent("key");
+        machine.tick();
+        assertEquals(LuaMachine.State.DONE, machine.getState());
+        assertEquals("got\tkey\n", machine.drainOutput(),
+                "a stale terminate must not kill an idle machine");
+    }
 }

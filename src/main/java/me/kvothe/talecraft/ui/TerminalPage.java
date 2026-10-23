@@ -71,10 +71,15 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         cmd.set("#Prompt.Text", lastPrompt);
         if (readOnly) {
             cmd.set("#InputRow.Visible", false);
+            cmd.set("#Stop.Visible", false);
         } else {
             // Enter in the input field submits the line; "@Line" captures its value.
             evt.addEventBinding(CustomUIEventBindingType.Validating, "#Input",
                     new EventData().append("Action", "input").append("@Line", "#Input.Value"), false);
+            // Detener kills the running program (the shell catches the error
+            // and returns to the prompt — CC:T's Ctrl+T).
+            evt.addEventBinding(CustomUIEventBindingType.Activating, "#Stop",
+                    new EventData().append("Action", "stop"), false);
         }
         evt.addEventBinding(CustomUIEventBindingType.Dismissing, "#Terminal",
                 new EventData().append("Action", "close"), false);
@@ -90,6 +95,8 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
             UICommandBuilder cmd = new UICommandBuilder();
             cmd.set("#Input.Value", "");
             sendUpdate(cmd, false);
+        } else if ("stop".equals(data.action)) {
+            computer.requestTerminate();
         } else if ("close".equals(data.action)) {
             manager.unregisterPage(playerRef.getUuid());
         }

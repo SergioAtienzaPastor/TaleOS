@@ -35,7 +35,11 @@ while true do
         if not fn then
           print("error cargando " .. name .. ": " .. tostring(err))
         else
+          -- Marca "programa en ejecución" para que el botón Detener solo
+          -- mate programas y nunca a la propia shell.
+          tale.setProgramRunning(true)
           local ok, perr = pcall(fn, table.unpack(words, 2))
+          tale.setProgramRunning(false)
           if not ok then
             print(name .. ": " .. tostring(perr))
           end

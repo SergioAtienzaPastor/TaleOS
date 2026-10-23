@@ -79,6 +79,16 @@ public class TaleCraftCommand extends CommandBase {
                     + world.getName()));
             return;
         }
+        if ("__stop".equals(action)) {
+            BlockPosition pos = new BlockPosition(x, y, z);
+            if (!manager.isRunningAt(world, pos)) {
+                ctx.sendMessage(Message.raw("[TaleCraft] no hay ningún ordenador encendido ahí"));
+                return;
+            }
+            manager.bootAt(world, pos).requestTerminate();
+            ctx.sendMessage(Message.raw("[TaleCraft] terminate enviado"));
+            return;
+        }
         Computer computer = manager.bootAt(world, new BlockPosition(x, y, z));
         computer.queueStdin(line);
         ctx.sendMessage(Message.raw("[TaleCraft] computer #" + computer.getId() + " <- '" + line + "'"));

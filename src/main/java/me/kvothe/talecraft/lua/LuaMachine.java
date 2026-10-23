@@ -47,6 +47,17 @@ public final class LuaMachine {
     private final Deque<Varargs> events = new java.util.concurrent.ConcurrentLinkedDeque<>();
     private final StringBuilder output = new StringBuilder();
 
+    /** Message of the LuaError that ends a program on requestTerminate; the
+     * shell's pcall catches it, so the program dies but the machine survives
+     * (CC:T's "Terminated"). */
+    public static final String TERMINATED_MESSAGE = "Programa detenido";
+
+    private volatile boolean terminateRequested;
+    /** Set by the shell (tale.setProgramRunning) while a program runs inside
+     * its pcall: terminate requests only fire while this is true, so hitting
+     * Detener at an idle prompt never hurts the machine itself. */
+    private volatile boolean programRunning;
+
     private LuaThread thread;
     private LuaValue pendingChunk;
     private volatile State state = State.NEW;
@@ -137,6 +148,17 @@ public final class LuaMachine {
         if (state != State.ALIVE) {
             return;
         }
+        // A pending terminate wakes the machine from any park (sleep, event
+        // wait) so the budget hook gets to fire inside the running program
+        // and throw the termination error there.
+        if (terminateRequested && programRunning) {
+            if (sleepTicksRemaining > 0) {
+                sleepTicksRemaining = 1; // counted down below: wakes this tick
+            }
+            if (waitingForEvent) {
+                waitingForEvent = false; // resumed with nil; the hook kills it
+            }
+        }
         // A sleeping machine is parked mid-yield: count down and only resume
         // (with nil, not an event) when the timer runs out.
         boolean wakeFromSleep = false;
@@ -189,6 +211,9 @@ public final class LuaMachine {
             }
             if (EVENTWAIT.equals(result.arg(2))) {
                 waitingForEvent = true;
+                if (!programRunning) {
+                    terminateRequested = false; // idle prompt: drop stale requests
+                }
                 return;
             }
             if (isWorldCall(result)) {
@@ -412,7 +437,9 @@ public final class LuaMachine {
                 // Suspends the coroutine with the EVENTWAIT marker; the tick
                 // system parks the machine until an event is queued, and the
                 // resume value is returned to the Lua caller as the event.
-                return g.yield(EVENTWAIT);
+                Varargs result = g.yield(EVENTWAIT);
+                throwTerminateIfRequested();
+                return result;
             }
         });
         tale.set("getComputerID", new VarArgFunction() {
@@ -447,44 +474,63 @@ public final class LuaMachine {
         tale.set("getBlock", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
-                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
                         WORLDCALL, LuaValue.valueOf("getBlock"),
                         LuaValue.valueOf(args.arg(1).optint(0)),
                         LuaValue.valueOf(args.arg(2).optint(-1)),
                         LuaValue.valueOf(args.arg(3).optint(0)) }));
+                throwTerminateIfRequested();
+                return result;
             }
         });
         tale.set("detect", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
-                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
                         WORLDCALL, LuaValue.valueOf("detect"),
                         LuaValue.valueOf(args.arg(1).optint(0)),
                         LuaValue.valueOf(args.arg(2).optint(-1)),
                         LuaValue.valueOf(args.arg(3).optint(0)) }));
+                throwTerminateIfRequested();
+                return result;
             }
         });
         tale.set("chat", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
-                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
                         WORLDCALL, LuaValue.valueOf("chat"),
                         LuaValue.valueOf(args.arg(1).tojstring()) }));
+                throwTerminateIfRequested();
+                return result;
             }
         });
         tale.set("time", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
-                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
                         WORLDCALL, LuaValue.valueOf("time") }));
+                throwTerminateIfRequested();
+                return result;
             }
         });
         tale.set("sleep", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
                 // Parks the machine for N ticks (min 1), then resumes with nil.
-                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
                         SLEEPCALL, LuaValue.valueOf(args.arg(1).optint(1)) }));
+                throwTerminateIfRequested();
+                return result;
+            }
+        });
+        // Internal (TaleOS): marks whether a program is running inside the
+        // shell's pcall; terminate requests only fire while true.
+        tale.set("setProgramRunning", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                programRunning = args.arg1().optboolean(false);
+                return LuaValue.NIL;
             }
         });
         // tale.monitor([dx,dy,dz]) → drawable canvas table of the monitor block
@@ -492,11 +538,13 @@ public final class LuaMachine {
         tale.set("monitor", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
-                return g.yield(LuaValue.varargsOf(new LuaValue[] {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
                         WORLDCALL, LuaValue.valueOf("monitor"),
                         LuaValue.valueOf(args.arg(1).optint(0)),
                         LuaValue.valueOf(args.arg(2).optint(0)),
                         LuaValue.valueOf(args.arg(3).optint(0)) }));
+                throwTerminateIfRequested();
+                return result;
             }
         });
         g.set("tale", tale);
@@ -512,6 +560,32 @@ public final class LuaMachine {
 
     public boolean isRebootRequested() {
         return rebootRequested;
+    }
+
+    /** Requests termination of the running program: a catchable Lua error
+     * (TERMINATED_MESSAGE) is raised inside it — at the next yield return, or
+     * within a handful of bytecodes via the budget hook in tight loops. The
+     * shell's pcall catches it, so the program dies but the machine survives
+     * (CC:T's "Terminated"). Only fires while a program runs. */
+    public void requestTerminate() {
+        terminateRequested = true;
+    }
+
+    public boolean isProgramRunning() {
+        return programRunning;
+    }
+
+    /** Raises the termination as a LuaError wrapping a plain Lua string — the
+     * LuaValue constructor skips the position prefix and traceback that the
+     * string constructor (and Lua's own error()) would add, so pcall receives
+     * exactly TERMINATED_MESSAGE. Called from the budget hook and right after
+     * every yield returns (a sleeping program runs too few bytecodes per
+     * resume for the hook to ever fire, so the yield points must check too). */
+    private void throwTerminateIfRequested() {
+        if (terminateRequested && programRunning) {
+            terminateRequested = false;
+            throw new LuaError(LuaValue.valueOf(TERMINATED_MESSAGE));
+        }
     }
 
     public boolean isShutdownRequested() {
@@ -573,12 +647,14 @@ public final class LuaMachine {
     }
 
     /**
-     * Count hook fired by the interpreter every HOOK_INTERVAL bytecodes. On
-     * budget exhaustion it throws the pcall-proof {@link BudgetExceededException}
-     * and ratchets the hook interval down to 1 on the running coroutine, so
-     * any error-catcher that swallows the kill gets a fresh one on the very
-     * next bytecode — no Lua construct (pcall, xpcall handlers, child
-     * coroutines) can keep the machine alive past its budget.
+     * Count hook fired by the interpreter every HOOK_INTERVAL bytecodes. A
+     * requested termination throws a catchable LuaError here (the shell's
+     * pcall around the program catches it); on budget exhaustion it throws
+     * the pcall-proof {@link BudgetExceededException} and ratchets the hook
+     * interval down to 1 on the running coroutine, so any error-catcher that
+     * swallows the kill gets a fresh one on the very next bytecode — no Lua
+     * construct (pcall, xpcall handlers, child coroutines) can keep the
+     * machine alive past its budget.
      */
     private final class BudgetHook extends VarArgFunction {
         private long remaining;
@@ -589,6 +665,7 @@ public final class LuaMachine {
 
         @Override
         public Varargs invoke(Varargs args) {
+            throwTerminateIfRequested();
             if (--remaining < 0) {
                 LuaThread running = globals.running;
                 if (running != null && running.state != null) {
