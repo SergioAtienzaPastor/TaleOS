@@ -57,14 +57,9 @@ public class TaleCraftCommand extends CommandBase {
         }
         String action = line.trim();
         if ("__displaytest".equals(action)) {
-            manager.displayTest(world, new BlockPosition(x, y, z), null);
-            ctx.sendMessage(Message.raw("[TaleCraft] patrón de prueba en " + x + "," + y + "," + z));
-            return;
-        }
-        if ("__displayraw".equals(action)) {
-            manager.displayTest(world, new BlockPosition(x, y, z),
-                    "linea1 [#ff0000]ROJO\nlinea2 &aVERDE&r normal\nlinea3 <#00ffff>cyan</#00ffff>");
-            ctx.sendMessage(Message.raw("[TaleCraft] raw nameplate test en " + x + "," + y + "," + z));
+            manager.displayTest(world, new BlockPosition(x, y, z));
+            ctx.sendMessage(Message.raw("[TaleCraft] patrón de prueba (4 caras) en "
+                    + x + "," + y + "," + z));
             return;
         }
         if ("__displayclear".equals(action)) {

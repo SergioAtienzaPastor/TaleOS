@@ -99,26 +99,4 @@ class MonitorCanvasTest {
         assertEquals(MonitorCanvas.colorIndex("lime"), canvas.getPixel(0, 0));
         assertEquals(MonitorCanvas.colorIndex("red"), canvas.getPixel(2, 1)); // 'A' first row: " # "
     }
-    @Test
-    void nameplateTextIsBlankWhenCanvasIsBlack() {
-        MonitorCanvas c = new MonitorCanvas();
-        assertEquals("", c.toNameplateText());
-    }
-
-    @Test
-    void nameplateTextRendersOneBlockPerLitPixel() {
-        MonitorCanvas c = new MonitorCanvas();
-        c.setPixel(0, 0, 15);
-        c.setPixel(2, 0, 3);
-        assertEquals("█ █", c.toNameplateText());
-    }
-
-    @Test
-    void nameplateTextCropsToContentBoundingBox() {
-        MonitorCanvas c = new MonitorCanvas();
-        c.setPixel(3, 2, 15);
-        c.setPixel(5, 4, 15);
-        assertEquals("█  \n   \n  █", c.toNameplateText(),
-                "cropped to the 3x3 box around the two pixels");
-    }
 }

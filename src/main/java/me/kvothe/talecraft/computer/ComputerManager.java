@@ -155,13 +155,13 @@ public final class ComputerManager {
     public void tickWorld(World world) {
         String prefix = world.getName() + ":";
         if (pendingDisplayCleanup.remove(world.getName())) {
-            cleanDisplayEntities(world, false);
+            cleanDisplayEntities(world);
         }
         // Slow background sweep: the mannequins left by the spawn bisect only
         // become visible to the store when their chunk loads (a player walking
         // by), so a one-shot cleanup misses them. Touches loaded entities only.
         if (++worldTickCounter % 400 == 0) {
-            cleanDisplayEntities(world, true);
+            cleanDisplayEntities(world);
         }
         computers.entrySet().removeIf(entry -> {
             if (!entry.getKey().startsWith(prefix)) {
@@ -181,7 +181,7 @@ public final class ComputerManager {
         for (MonitorCanvasPage page : openMonitorPages.values()) {
             page.refreshFromCanvas();
         }
-        // In-world monitor readouts (nameplate entities); a display whose
+        // In-world monitor readouts (DisplayDebug shapes); a display whose
         // monitor block vanished removes itself from the map.
         displays.entrySet().removeIf(entry -> {
             if (!entry.getKey().startsWith(prefix)) {
@@ -193,7 +193,7 @@ public final class ComputerManager {
 
     /** Drawable canvas of the monitor block at the position (created on first
      * use; volatile by design, like the computers' transcript). Also registers
-     * the in-world display entity for the block. */
+     * the in-world display renderer for the block. */
     public MonitorCanvas canvasAt(World world, BlockPosition pos) {
         String key = key(world.getName(), pos.x, pos.y, pos.z);
         MonitorCanvas canvas = canvases.computeIfAbsent(key, k -> new MonitorCanvas());
@@ -202,32 +202,30 @@ public final class ComputerManager {
         return canvas;
     }
 
-    /** Console test hook: paints a canned pattern (or shows raw text) on the
-     * display at the position, without requiring a real monitor block. */
-    public void displayTest(World world, BlockPosition pos, String rawText) {
+    /** Console test hook: paints a canned pattern on the display at the
+     * position, rendered on all four horizontal faces at once (calibration:
+     * the red corner marker lands on a different physical corner per face).
+     * Does not require a real monitor block. */
+    public void displayTest(World world, BlockPosition pos) {
         String key = key(world.getName(), pos.x, pos.y, pos.z);
         MonitorCanvas canvas = canvases.computeIfAbsent(key, k -> new MonitorCanvas());
-        if (rawText == null) {
-            canvas.clear(0);
-            canvas.fill(0, 0, MonitorCanvas.WIDTH, 1, 15);
-            canvas.writeText(1, 3, "TALECRAFT", 4);
-            canvas.writeText(1, 10, "12:34:56", 10);
-            canvas.fill(0, MonitorCanvas.HEIGHT - 1, MonitorCanvas.WIDTH, 1, 3);
-        }
+        canvas.clear(0);
+        canvas.fill(0, 0, 2, 2, 8); // red 2x2 top-left corner marker
+        canvas.fill(0, 0, MonitorCanvas.WIDTH, 1, 15);
+        canvas.writeText(3, 3, "TALECRAFT", 4);
+        canvas.writeText(3, 10, "12:34:56", 10);
+        canvas.fill(0, MonitorCanvas.HEIGHT - 1, MonitorCanvas.WIDTH, 1, 3);
         MonitorDisplay display = displays.computeIfAbsent(key,
                 k -> new MonitorDisplay(world, pos.x, pos.y, pos.z, canvas));
         display.setTestMode(true);
-        if (rawText != null) {
-            display.setRawText(rawText);
-        }
     }
 
-    /** Console test hook: removes the test display/canvas at the position. */
+    /** Console test hook: stops the test display/canvas at the position. */
     public void displayClear(World world, BlockPosition pos) {
         String key = key(world.getName(), pos.x, pos.y, pos.z);
         MonitorDisplay display = displays.remove(key);
         if (display != null) {
-            display.despawn();
+            display.stop();
         }
         canvases.remove(key);
     }
@@ -238,12 +236,15 @@ public final class ComputerManager {
         pendingDisplayCleanup.add(world.getName());
     }
 
-    /** Removes leftover display NPCs. {@code onlyMannequins} limits the sweep
-     * to the vanilla Empty_Role entities from the spawn bisect (used by the
-     * periodic sweep so live TaleCraft displays are never touched); the manual
-     * console cleanup also removes TaleCraft_MonitorDisplay entities. Returns
-     * the count. */
-    private int cleanDisplayEntities(World world, boolean onlyMannequins) {
+    /** Removes leftover display NPCs from the pre-DisplayDebug renderer era:
+     * the vanilla Empty_Role mannequins from the spawn bisect and the
+     * TaleCraft_MonitorDisplay nameplate carriers. Both roles are orphans
+     * forever (nothing spawns them anymore), so periodic sweeps and the
+     * manual console cleanup remove both. Only loaded entities are touched —
+     * the mannequins become visible to the store when their chunk loads (a
+     * player walking by), so the periodic sweep repeats every 400 ticks.
+     * Returns the count. */
+    private int cleanDisplayEntities(World world) {
         Store<EntityStore> store = world.getEntityStore().getStore();
         int[] removed = { 0 };
         try {
@@ -254,8 +255,7 @@ public final class ComputerManager {
                         continue;
                     }
                     String role = npc.getRoleName();
-                    if ("Empty_Role".equals(role)
-                            || (!onlyMannequins && "TaleCraft_MonitorDisplay".equals(role))) {
+                    if ("Empty_Role".equals(role) || "TaleCraft_MonitorDisplay".equals(role)) {
                         cmd.removeEntity(chunk.getReferenceTo(i), RemoveReason.REMOVE);
                         removed[0]++;
                     }
@@ -331,7 +331,7 @@ public final class ComputerManager {
         canvases.clear();
         openMonitorPages.clear();
         for (MonitorDisplay display : displays.values()) {
-            display.despawn();
+            display.stop();
         }
         displays.clear();
     }
