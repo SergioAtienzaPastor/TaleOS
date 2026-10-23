@@ -52,8 +52,10 @@ public final class MonitorDisplay {
     private static final boolean FRONT_IS_POSITIVE_Z = false;
     /** Sign applied to the block yaw before rotateY. */
     private static final double YAW_SIGN = 1.0;
-    /** Flip when text comes out mirrored. */
-    private static final boolean MIRROR_U = false;
+    /** Flip when text comes out mirrored. Verified empirically: for a viewer
+     * outside the protruding face, canvas +u mapped to their left — the
+     * mirror is independent of the face yaw, so it is always flipped. */
+    private static final boolean MIRROR_U = true;
     /** Debug shapes are assumed unit cubes centered on their matrix origin. */
     private static final boolean UNIT_CUBE_CENTERED = true;
 
