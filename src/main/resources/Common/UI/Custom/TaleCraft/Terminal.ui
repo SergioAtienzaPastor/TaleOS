@@ -22,7 +22,7 @@ Group #Terminal {
     // Kills the running program and returns to the prompt (CC:T's Ctrl+T).
     $C.@SecondaryTextButton #Stop {
       Text: "Detener";
-      Anchor: (Width: 100, Height: 30);
+      Anchor: (Width: 140, Height: 30);
     }
   }
 
