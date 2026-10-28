@@ -18,33 +18,65 @@ import me.kvothe.talecraft.lua.WorldBridge;
 public final class HytaleWorldBridge implements WorldBridge {
 
     private final World world;
-    private final int originX, originY, originZ;
+    private final java.util.function.Supplier<BlockPosition> origin;
     private final int computerId;
     private final ComputerManager manager;
+    private final me.kvothe.talecraft.turtle.TurtleController turtle;
+    private final HytalePeripheralProvider peripheralProvider;
 
     private static final com.hypixel.hytale.logger.HytaleLogger LOGGER =
             com.hypixel.hytale.logger.HytaleLogger.forEnclosingClass();
 
     public HytaleWorldBridge(World world, BlockPosition computerPos, int computerId,
             ComputerManager manager) {
+        this(world, computerPos, computerId, manager, null);
+    }
+
+    public HytaleWorldBridge(World world, BlockPosition computerPos, int computerId,
+            ComputerManager manager, me.kvothe.talecraft.turtle.TurtleController turtle) {
         this.world = world;
-        this.originX = computerPos.x;
-        this.originY = computerPos.y;
-        this.originZ = computerPos.z;
+        this.origin = () -> computerPos;
         this.computerId = computerId;
         this.manager = manager;
+        this.turtle = turtle;
+        this.peripheralProvider = new HytalePeripheralProvider(world, this.origin, manager, turtle);
+    }
+
+    public HytaleWorldBridge(World world, java.util.function.Supplier<BlockPosition> computerPos,
+            int computerId, ComputerManager manager, java.util.function.Supplier<Computer> computer) {
+        this.world = world;
+        this.origin = computerPos;
+        this.computerId = computerId;
+        this.manager = manager;
+        this.turtle = null;
+        this.peripheralProvider = new HytalePeripheralProvider(world, computerPos, manager, computer);
+    }
+
+    @Override
+    public me.kvothe.talecraft.lua.TurtleBridge turtle() {
+        return turtle;
+    }
+
+    @Override
+    public HytalePeripheralProvider peripherals() {
+        return peripheralProvider;
+    }
+
+    private BlockPosition origin() {
+        BlockPosition position = origin.get();
+        return position != null ? position : new BlockPosition(0, 0, 0);
     }
 
     public int getOriginX() {
-        return originX;
+        return origin().x;
     }
 
     public int getOriginY() {
-        return originY;
+        return origin().y;
     }
 
     public int getOriginZ() {
-        return originZ;
+        return origin().z;
     }
 
     @Override
@@ -82,19 +114,20 @@ public final class HytaleWorldBridge implements WorldBridge {
         if (manager == null) {
             return null;
         }
+        BlockPosition origin = origin();
         if (dx == 0 && dy == 0 && dz == 0) {
             // No offset: search the six face neighbours for a monitor block.
             int[][] dirs = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 },
                     { 0, 0, -1 } };
             for (int[] d : dirs) {
-                MonitorCanvas canvas = canvasIfMonitor(originX + d[0], originY + d[1], originZ + d[2]);
+                MonitorCanvas canvas = canvasIfMonitor(origin.x + d[0], origin.y + d[1], origin.z + d[2]);
                 if (canvas != null) {
                     return canvas;
                 }
             }
             return null;
         }
-        return canvasIfMonitor(originX + dx, originY + dy, originZ + dz);
+        return canvasIfMonitor(origin.x + dx, origin.y + dy, origin.z + dz);
     }
 
     private MonitorCanvas canvasIfMonitor(int x, int y, int z) {

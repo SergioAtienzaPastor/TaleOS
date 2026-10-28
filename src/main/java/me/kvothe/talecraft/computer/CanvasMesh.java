@@ -27,19 +27,29 @@ public final class CanvasMesh {
     }
 
     public static List<Rect> mesh(MonitorCanvas canvas) {
+        return mesh(canvas, 0, 0, canvas.getWidth(), canvas.getHeight());
+    }
+
+    /** Meshes only a global-pixel region; returned rectangles keep global coordinates. */
+    public static List<Rect> mesh(MonitorCanvas canvas, int startX, int startY,
+            int width, int height) {
+        int endX = Math.min(canvas.getWidth(), startX + width);
+        int endY = Math.min(canvas.getHeight(), startY + height);
+        startX = Math.max(0, startX);
+        startY = Math.max(0, startY);
         List<Rect> closed = new ArrayList<>();
-        List<Rect> open = new ArrayList<>(); // runs still growing downwards
-        for (int y = 0; y < MonitorCanvas.HEIGHT; y++) {
+        List<Rect> open = new ArrayList<>();
+        for (int y = startY; y < endY; y++) {
             List<Rect> rowRuns = new ArrayList<>();
-            int x = 0;
-            while (x < MonitorCanvas.WIDTH) {
+            int x = startX;
+            while (x < endX) {
                 int color = canvas.getPixel(x, y);
                 if (color == 0) {
                     x++;
                     continue;
                 }
                 int x0 = x;
-                while (x < MonitorCanvas.WIDTH && canvas.getPixel(x, y) == color) {
+                while (x < endX && canvas.getPixel(x, y) == color) {
                     x++;
                 }
                 rowRuns.add(new Rect(x0, y, x - 1, y, color));

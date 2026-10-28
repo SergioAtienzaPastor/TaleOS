@@ -37,6 +37,13 @@
     "HitboxType": "Full",
     "Material": "Solid",
     "Opacity": "Transparent",
+    "Supporting": {
+      "Up": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
     "Support": {
       "Down": [
         {
@@ -88,5 +95,5 @@
   },
   "ItemSoundSetId": "ISS_Blocks_Wood",
   "ItemLevel": 5,
-  "MaxStack": 25
+  "MaxStack": 1
 }

@@ -107,6 +107,34 @@ def monitor_model():
     ])
 
 
+def modem_model():
+    faces = {f: "brass" for f in FACES}
+    faces["front"] = "screen"
+    return model([
+        box(10, "Base", (26, 5, 26), (0, 2.5, 0), "wood"),
+        box_mapped(11, "Radio", (22, 10, 20), (0, 10, 0), faces),
+        box(12, "AntennaFoot", (8, 3, 8), (0, 16.5, -3), "keys"),
+        box(13, "Antenna", (2, 14, 2), (0, 25, -3), "brass"),
+        box(14, "AntennaTip", (5, 4, 5), (0, 32, -3), "screen"),
+    ])
+
+
+def turtle_model():
+    return model([
+        box(10, "LeftTread", (4, 8, 28), (-13, 4, 0), "keys"),
+        box(11, "RightTread", (4, 8, 28), (13, 4, 0), "keys"),
+        box(12, "LeftFrontHub", (2, 5, 7), (-15, 4, 8), "brass"),
+        box(13, "RightFrontHub", (2, 5, 7), (15, 4, 8), "brass"),
+        box(14, "LeftRearHub", (2, 5, 7), (-15, 4, -8), "brass"),
+        box(15, "RightRearHub", (2, 5, 7), (15, 4, -8), "brass"),
+        box(16, "Chassis", (26, 10, 24), (0, 10, 0), "wood"),
+        box(17, "Body", (24, 16, 16), (0, 20, 0), "brass"),
+        box(18, "Screen", (24, 12, 2), (0, 20, 9), "screen"),
+        box(19, "TopTrim", (28, 2, 18), (0, 29, 0), "brass"),
+        box(20, "ControlDeck", (20, 2, 4), (0, 13, 12), "keys"),
+    ])
+
+
 def texture(path, prompt_glyph=True):
     """Paleta 64x64 con ruido sutil y borde interior sombreado (estilo Hytale)."""
     rng = random.Random(42)
@@ -304,12 +332,18 @@ def main():
     os.makedirs(SOUNDS, exist_ok=True)
     icons = os.path.join(RES, "Common", "Icons", "ItemsGenerated")
     os.makedirs(icons, exist_ok=True)
-    for name, builder in (("TaleCraft_Computer", computer_model), ("TaleCraft_Monitor", monitor_model)):
+    builders = (
+        ("TaleCraft_Computer", computer_model),
+        ("TaleCraft_Monitor", monitor_model),
+        ("TaleCraft_Modem", modem_model),
+        ("TaleCraft_Turtle", turtle_model),
+    )
+    for name, builder in builders:
         model_file = os.path.join(BLOCKS, name + ".blockymodel")
         tex_file = os.path.join(BLOCKS, name + "_Texture.png")
         with open(model_file, "w") as f:
             json.dump(builder(), f, separators=(",", ":"))
-        texture(tex_file, prompt_glyph=(name == "TaleCraft_Computer"))
+        texture(tex_file, prompt_glyph=(name not in ("TaleCraft_Monitor", "TaleCraft_Modem")))
         render_icon(model_file, tex_file, os.path.join(icons, name + ".png"))
     beep(os.path.join(SOUNDS, "boot_beep.ogg"))
     print("assets generados en", BLOCKS, ",", SOUNDS, "e", icons)

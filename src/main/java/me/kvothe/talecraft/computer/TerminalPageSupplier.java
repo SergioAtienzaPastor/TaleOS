@@ -55,7 +55,7 @@ public final class TerminalPageSupplier implements OpenCustomUIInteraction.Custo
     }
 
     /** Boot beep at the block. */
-    private static void playBootBeep(BlockPosition pos, ComponentAccessor<EntityStore> accessor) {
+    public static void playBootBeep(BlockPosition pos, ComponentAccessor<EntityStore> accessor) {
         int index = soundIndex("TaleCraft_Boot_Beep");
         if (index < 0) {
             index = soundIndex("SFX/TaleCraft_Boot_Beep");

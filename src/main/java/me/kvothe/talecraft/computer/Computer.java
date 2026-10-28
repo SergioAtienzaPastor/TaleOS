@@ -34,12 +34,16 @@ public final class Computer {
 
     /** TaleOS files shipped in the plugin jar under /lua/rom/. */
     private static final String[] ROM_FILES = {
-            "bios.lua", "shell.lua",
-            "programs/id.lua", "programs/ls.lua", "programs/cat.lua",
+            "bios.lua", "shell.lua", "apis/parallel.lua", "apis/window.lua", "apis/peripheral.lua",
+            "apis/rednet.lua", "apis/gps.lua",
+            "programs/id.lua", "programs/ls.lua", "programs/cat.lua", "programs/cd.lua",
             "programs/mkdir.lua", "programs/rm.lua", "programs/echo.lua",
             "programs/reboot.lua", "programs/shutdown.lua",
             "programs/lua.lua", "programs/edit.lua",
-            "programs/clear.lua", "programs/help.lua", "programs/reloj.lua",
+            "programs/clear.lua", "programs/help.lua", "programs/reloj.lua", "programs/gps.lua",
+            "programs/wget.lua", "programs/go.lua", "programs/tunnel.lua", "programs/excavate.lua",
+            "programs/turn.lua",
+            "programs/equip.lua", "programs/unequip.lua",
     };
 
     private final int id;
@@ -49,6 +53,7 @@ public final class Computer {
     private int scrollbackReadPos;
     /** Per-computer transcript log (mods/TaleCraft/logs/computer-<id>.log). */
     private BufferedWriter log;
+    private volatile boolean closed;
     private LuaMachine.State lastState = LuaMachine.State.ALIVE;
 
     private static final int SCROLLBACK_MAX_CHARS = 8000;
@@ -77,6 +82,11 @@ public final class Computer {
         this.root = root;
         VirtualFileSystem fs = new VirtualFileSystem(root, DISK_QUOTA);
         fs.mountRom(loadRomOverlay());
+        try {
+            fs.unmount("nas");
+        } catch (VirtualFileSystem.FsException e) {
+            throw new IllegalStateException("cannot reserve NAS namespace", e);
+        }
         this.machine = new LuaMachine(BUDGET_PER_TICK, fs);
         this.machine.setComputerId(id);
         this.machine.setWorldBridge(bridge);
@@ -194,6 +204,18 @@ public final class Computer {
         }
     }
 
+    public String getTerminalText() {
+        return machine.getNativeSurface().toVisualText();
+    }
+
+    public long getTerminalRevision() {
+        return machine.getNativeSurface().getRevision() * 2 + (machine.isNativeSpatial() ? 1 : 0);
+    }
+
+    public boolean isTerminalSpatial() {
+        return machine.isNativeSpatial();
+    }
+
     public void queueStdin(String line) {
         queueStdin(line, null);
     }
@@ -237,12 +259,13 @@ public final class Computer {
         this.editorOpener = opener;
     }
 
-    /** Prints a server-side message into the transcript and the log. */
+    /** Prints a server-side message into the transcript, native grid and log. */
     public void systemMessage(String s) {
         logLine("[system] " + s);
         synchronized (scrollback) {
             scrollback.append(s).append('\n');
         }
+        machine.appendSystemMessage(s);
     }
 
     /** Opens the editor UI for each queued os.openEditor request. */
@@ -300,7 +323,18 @@ public final class Computer {
     }
 
     public boolean isAlive() {
-        return machine.isAlive();
+        return !closed && machine.isAlive();
+    }
+
+    public void close() {
+        closed = true;
+        machine.cancelPendingHttp();
+        closeLog();
+        synchronized (scrollback) {
+            scrollback.setLength(0);
+            scrollbackReadPos = 0;
+        }
+        editorRequests.clear();
     }
 
     /** True after a reboot/shutdown request: the caller drops this computer

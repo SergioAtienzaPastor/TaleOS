@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Drawable surface of a Monitor block: a 40x24 pixel grid over a fixed
- * 16-color palette, plus a built-in 3x5 microfont so programs can paint text
+ * Drawable surface of a monitor structure: a per-instance pixel grid over a
+ * fixed 16-color palette, plus a built-in 3x5 microfont so programs can paint text
  * without per-pixel work. Pure in-memory state: Lua API calls mutate it from
- * the machine (tick) thread and open canvas pages push the dirty rows to
- * clients once per tick.
+ * the machine (tick) thread and independent observers track its monotonic
+ * revision before pushing changes once per tick.
  */
 public final class MonitorCanvas {
 
@@ -111,32 +111,73 @@ public final class MonitorCanvas {
         glyph(' ', "   ", "   ", "   ", "   ", "   ");
     }
 
-    private final byte[] pixels = new byte[WIDTH * HEIGHT];
-    private final BitSet dirtyRows = new BitSet(HEIGHT);
+    private int width;
+    private int height;
+    private byte[] pixels;
+    private long revision;
+    private final ThreadLocal<LegacyDirtyState> legacyDirtyState =
+            ThreadLocal.withInitial(LegacyDirtyState::new);
+
+    private static final class LegacyDirtyState {
+        private long revision = -1;
+        private byte[] pixels = new byte[0];
+    }
+
+    record Snapshot(int width, int height, byte[] pixels) {
+    }
 
     public MonitorCanvas() {
+        this(WIDTH, HEIGHT);
+    }
+
+    public MonitorCanvas(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("canvas dimensions must be positive");
+        }
+        this.width = width;
+        this.height = height;
+        this.pixels = new byte[width * height];
         clear(0);
     }
 
-    public void clear(int color) {
-        java.util.Arrays.fill(pixels, (byte) color);
-        dirtyRows.set(0, HEIGHT);
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public synchronized void clear(int color) {
+        boolean changed = false;
+        for (int i = 0; i < pixels.length; i++) {
+            if (pixels[i] != (byte) color) {
+                pixels[i] = (byte) color;
+                changed = true;
+            }
+        }
+        if (changed || revision == 0) {
+            revision++;
+        }
     }
 
     /** 0-based; out-of-range writes are ignored (scripts can't crash on it). */
-    public void setPixel(int x, int y, int color) {
-        if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+    public synchronized void setPixel(int x, int y, int color) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
             return;
         }
-        pixels[y * WIDTH + x] = (byte) color;
-        dirtyRows.set(y);
+        int index = y * width + x;
+        if (pixels[index] != (byte) color) {
+            pixels[index] = (byte) color;
+            revision++;
+        }
     }
 
-    public int getPixel(int x, int y) {
-        if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+    public synchronized int getPixel(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
             return 0;
         }
-        return pixels[y * WIDTH + x];
+        return pixels[y * width + x];
     }
 
     public void fill(int x, int y, int w, int h, int color) {
@@ -167,21 +208,53 @@ public final class MonitorCanvas {
         }
     }
 
-    /** Rows changed since the last call; the returned set is a copy. */
-    public BitSet consumeDirtyRows() {
-        BitSet copy = (BitSet) dirtyRows.clone();
-        dirtyRows.clear();
-        return copy;
+    /** Monotonic content revision; observing it never consumes another observer's update. */
+    public synchronized long getRevision() {
+        return revision;
     }
 
-    /** Marks every row dirty (new canvas page opening mid-session). */
-    public void markAllDirty() {
-        dirtyRows.set(0, HEIGHT);
+    /** Compatibility for the original single-observer API. State is per thread,
+     * not a global dirty set; new observers should use {@link #getRevision()}. */
+    public synchronized BitSet consumeDirtyRows() {
+        LegacyDirtyState state = legacyDirtyState.get();
+        BitSet changed = new BitSet(height);
+        if (state.revision != revision) {
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int index = y * width + x;
+                    if (state.revision < 0 || index >= state.pixels.length
+                            || state.pixels[index] != pixels[index]) {
+                        changed.set(y);
+                    }
+                }
+            }
+            state.pixels = pixels.clone();
+            state.revision = revision;
+        }
+        return changed;
     }
 
-    /** Hash of the full pixel grid; changes whenever any pixel changes. Used
-     * by the in-world display to re-push frames only on content changes. */
-    public int contentHash() {
+    /** Forces observers to repaint without altering the pixels. */
+    public synchronized void markAllDirty() {
+        revision++;
+    }
+
+    public synchronized int contentHash() {
         return java.util.Arrays.hashCode(pixels);
+    }
+
+    synchronized Snapshot snapshot() {
+        return new Snapshot(width, height, pixels.clone());
+    }
+
+    synchronized void restore(Snapshot snapshot) {
+        boolean changed = width != snapshot.width() || height != snapshot.height()
+                || !java.util.Arrays.equals(pixels, snapshot.pixels());
+        width = snapshot.width();
+        height = snapshot.height();
+        pixels = snapshot.pixels().clone();
+        if (changed) {
+            revision++;
+        }
     }
 }

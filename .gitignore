@@ -40,4 +40,8 @@ bin/
 .vscode/
 
 ### Mac OS ###
-.DS_Storetools/.venv/
+.DS_Store
+
+### Python ###
+__pycache__/
+tools/.venv/

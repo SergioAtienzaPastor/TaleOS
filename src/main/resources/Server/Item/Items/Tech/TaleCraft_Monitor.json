@@ -38,27 +38,14 @@
     "HitboxType": "Full",
     "Material": "Solid",
     "Opacity": "Transparent",
-    "Support": {
-      "Down": [
+    "Supporting": {
+      "Up": [
         {
           "FaceType": "Full"
         }
       ]
     },
-    "VariantRotation": "NESW",
-    "InteractionHint": "server.interactionHints.openDoor",
-    "Interactions": {
-      "Use": {
-        "Interactions": [
-          {
-            "Type": "OpenCustomUI",
-            "Page": {
-              "Id": "TaleCraftMonitor"
-            }
-          }
-        ]
-      }
-    }
+    "VariantRotation": "NESW"
   },
   "Tags": {
     "Type": [

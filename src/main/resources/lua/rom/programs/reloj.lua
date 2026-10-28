@@ -1,5 +1,5 @@
--- Reloj en el monitor adyacente: HH:MM centrado, actualizado cada segundo.
--- Ctrl: detenlo con reboot (o apaga el ordenador).
+-- Reloj en el monitor adyacente: HH:MM:SS centrado, actualizado cada segundo.
+-- Detén el programa con el botón Detener del terminal.
 local mon = tale.monitor()
 if not mon then
   print("no hay monitor adyacente")

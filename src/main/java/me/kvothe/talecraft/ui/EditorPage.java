@@ -17,13 +17,19 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.List;
+
 import me.kvothe.talecraft.computer.Computer;
 import me.kvothe.talecraft.computer.ComputerManager;
+import me.kvothe.talecraft.ui.completion.Completion;
+import me.kvothe.talecraft.ui.completion.CompletionSession;
+import me.kvothe.talecraft.ui.completion.EditorSupport;
+import me.kvothe.talecraft.ui.completion.LuaCompleter;
 
 /**
  * File editor page opened by os.openEditor (the TaleOS `edit` program): an
- * editable multiline field with Guardar / Guardar+Ejecutar / Salir. Any exit
- * path reopens the computer's terminal page. Files longer than
+ * editable multiline field with completion, Guardar / Guardar+Ejecutar / Salir.
+ * Any exit path reopens the computer's terminal page. Files longer than
  * {@link #MAX_CONTENT_CHARS} are refused whole rather than truncated silently.
  */
 public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventData> {
@@ -38,6 +44,9 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
     private final ComputerManager manager;
     private final Computer computer;
     private final String path;
+    private final LuaCompleter completer;
+    private final CompletionSession completion;
+    private List<String> visibleCandidates = List.of();
 
     public EditorPage(@Nonnull PlayerRef playerRef, ComputerManager manager, Computer computer,
             String path) {
@@ -46,6 +55,8 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
         this.manager = manager;
         this.computer = computer;
         this.path = path;
+        this.completer = new LuaCompleter(true);
+        this.completion = new CompletionSession(completer);
     }
 
     @Override
@@ -64,8 +75,14 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
                     + content.length() + " caracteres)");
             content = null;
         }
-        cmd.set("#Content.Value", content == null ? "" : content);
-        // Each button carries the current field content back with the event.
+        String draft = content == null ? "" : content;
+        cmd.set("#Content.Value", draft);
+        completion.reset(draft);
+        // MultilineTextField does not support KeyDown; completion uses buttons.
+        evt.addEventBinding(CustomUIEventBindingType.ValueChanged, "#Content",
+                new EventData().append("Action", "draft").append("@Content", "#Content.Value"), false);
+        evt.addEventBinding(CustomUIEventBindingType.Activating, "#Complete",
+                new EventData().append("Action", "complete").append("@Content", "#Content.Value"), false);
         evt.addEventBinding(CustomUIEventBindingType.Activating, "#Save",
                 new EventData().append("Action", "save").append("@Content", "#Content.Value"), false);
         evt.addEventBinding(CustomUIEventBindingType.Activating, "#Run",
@@ -79,7 +96,25 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
     @Override
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store,
             @Nonnull EditorEventData data) {
-        if ("save".equals(data.action) || "run".equals(data.action)) {
+        if ("draft".equals(data.action)) {
+            completion.valueChanged(data.content);
+            Completion suggestions = completer.complete(completion.getValue(), completion.getCaret());
+            visibleCandidates = suggestions == null ? List.of() : suggestions.candidates();
+            UICommandBuilder cmd = new UICommandBuilder();
+            cmd.set("#CompletionHint.Text", completionHint());
+            sendUpdate(cmd, false);
+        } else if ("complete".equals(data.action)) {
+            completion.valueChanged(data.content);
+            boolean changed = completion.complete();
+            visibleCandidates = completion.getCandidates();
+            UICommandBuilder cmd = new UICommandBuilder();
+            cmd.set("#Content.AutoFocus", true);
+            if (changed) {
+                cmd.set("#Content.Value", completion.getValue());
+            }
+            cmd.set("#CompletionHint.Text", completionHint());
+            sendUpdate(cmd, false);
+        } else if ("save".equals(data.action) || "run".equals(data.action)) {
             String content = data.content == null ? "" : data.content;
             if (content.length() > MAX_CONTENT_CHARS) {
                 content = content.substring(0, MAX_CONTENT_CHARS);
@@ -100,6 +135,14 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
         }
     }
 
+    private String completionHint() {
+        if (visibleCandidates.isEmpty()) {
+            return "Escribe un fragmento para ver sugerencias";
+        }
+        String candidates = String.join("  ", visibleCandidates);
+        return candidates.length() > 90 ? candidates.substring(0, 89) + "…" : candidates;
+    }
+
     /** Reopens this computer's terminal in place of the editor. */
     private void backToTerminal(Ref<EntityStore> ref, Store<EntityStore> store) {
         TerminalPage page = new TerminalPage(playerRef, manager, computer);
@@ -110,17 +153,9 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
         }
     }
 
-    /** Shell command that runs the edited file: its name without .lua. */
+    /** Shell command that runs the edited file, preserving its relative path. */
     static String runCommandFor(String path) {
-        String name = path;
-        int slash = name.lastIndexOf('/');
-        if (slash >= 0) {
-            name = name.substring(slash + 1);
-        }
-        if (name.endsWith(".lua")) {
-            name = name.substring(0, name.length() - 4);
-        }
-        return name;
+        return EditorSupport.runCommandFor(path);
     }
 
     public static class EditorEventData {

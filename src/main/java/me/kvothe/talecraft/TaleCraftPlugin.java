@@ -11,10 +11,12 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
 import me.kvothe.talecraft.computer.Computer;
+import me.kvothe.talecraft.computer.ComputerBreakSystem;
 import me.kvothe.talecraft.computer.ComputerManager;
+import me.kvothe.talecraft.computer.ComputerPlaceSystem;
 import me.kvothe.talecraft.computer.ComputerTickSystem;
-import me.kvothe.talecraft.computer.MonitorPageSupplier;
 import me.kvothe.talecraft.computer.TerminalPageSupplier;
+import me.kvothe.talecraft.computer.TurtlePageSupplier;
 import me.kvothe.talecraft.lua.LuaMachine;
 
 /**
@@ -38,11 +40,25 @@ public class TaleCraftPlugin extends JavaPlugin {
         computerManager = new ComputerManager(Path.of("mods", "TaleCraft"));
         computerManager.load();
         getEntityStoreRegistry().registerSystem(new ComputerTickSystem(computerManager));
+        getEntityStoreRegistry().registerSystem(new ComputerBreakSystem(computerManager));
+        getEntityStoreRegistry().registerSystem(new ComputerPlaceSystem(computerManager));
         // Block "Use" interactions reference this page supplier by name.
         OpenCustomUIInteraction.registerCustomPageSupplier(this, TerminalPageSupplier.class,
                 "TaleCraftComputer", new TerminalPageSupplier(computerManager));
-        OpenCustomUIInteraction.registerCustomPageSupplier(this, MonitorPageSupplier.class,
-                "TaleCraftMonitor", new MonitorPageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this, TurtlePageSupplier.class,
+                "TaleCraftTurtle", new TurtlePageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this,
+                me.kvothe.talecraft.computer.UsbDrivePageSupplier.class,
+                "TaleCraftUSBDrive", new me.kvothe.talecraft.computer.UsbDrivePageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this,
+                me.kvothe.talecraft.computer.NasPageSupplier.class,
+                "TaleCraftNAS", new me.kvothe.talecraft.computer.NasPageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this,
+                me.kvothe.talecraft.computer.PocketPageSupplier.class,
+                "TaleCraftPocket", new me.kvothe.talecraft.computer.PocketPageSupplier(computerManager));
+        getEventRegistry().register(
+                com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent.class,
+                event -> computerManager.pockets().disconnect(event.getPlayerRef().getUuid()));
         this.getCommandRegistry().registerCommand(new TaleCraftCommand(this.getName(),
                 this.getManifest().getVersion().toString(), computerManager));
         if (Boolean.parseBoolean(System.getProperty("talecraft.selftest", "false"))) {

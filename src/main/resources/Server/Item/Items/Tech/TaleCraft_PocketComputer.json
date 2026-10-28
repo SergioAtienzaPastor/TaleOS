@@ -1,0 +1,65 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.TaleCraft_PocketComputer.name",
+    "Description": "server.items.TaleCraft_PocketComputer.description"
+  },
+  "PlayerAnimationsId": "Item",
+  "Categories": [
+    "Furniture.Tech"
+  ],
+  "Icon": "Icons/ItemsGenerated/TaleCraft_PocketComputer.png",
+  "IconProperties": {
+    "Scale": 0.8,
+    "Rotation": [
+      18.0,
+      35.0,
+      12.0
+    ]
+  },
+  "Model": "Items/TaleCraft/TaleCraft_PocketComputer.blockymodel",
+  "Texture": "Items/TaleCraft/TaleCraft_PocketComputer_Texture.png",
+  "Scale": 0.8,
+  "InteractionHint": "server.interactionHints.openDoor",
+  "Interactions": {
+    "Use": {
+      "Interactions": [
+        {
+          "Type": "OpenCustomUI",
+          "Page": {
+            "Id": "TaleCraftPocket"
+          }
+        }
+      ]
+    }
+  },
+  "Tags": {
+    "Type": [
+      "Furniture"
+    ]
+  },
+  "Recipe": {
+    "TimeSeconds": 5,
+    "Input": [
+      {
+        "ItemId": "TaleCraft_Computer",
+        "Quantity": 1
+      },
+      {
+        "ItemId": "Ingredient_Bar_Copper",
+        "Quantity": 2
+      }
+    ],
+    "BenchRequirement": [
+      {
+        "Id": "Workbench",
+        "Type": "Crafting",
+        "Categories": [
+          "Workbench_Survival"
+        ]
+      }
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Wood",
+  "ItemLevel": 5,
+  "MaxStack": 1
+}

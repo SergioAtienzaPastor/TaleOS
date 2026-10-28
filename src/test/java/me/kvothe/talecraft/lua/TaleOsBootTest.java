@@ -71,6 +71,37 @@ class TaleOsBootTest {
     }
 
     @Test
+    void cdChangesWorkingDirectoryForCommandsAndPrograms() throws Exception {
+        Path root = dir.resolve("cwd");
+        Files.createDirectories(root.resolve("docs"));
+        Files.writeString(root.resolve("docs/nota.txt"), "contenido relativo");
+        Files.writeString(root.resolve("docs/hola.lua"), "print('PROGRAMA_RELATIVO_OK')");
+        LuaMachine m = boot(root, loadRomOverlay());
+        m.tick();
+        m.drainOutput();
+
+        m.queueEvent("stdin", "cd docs");
+        m.tick();
+        assertEquals("tale:/docs> ", m.getPrompt());
+        m.queueEvent("stdin", "ls");
+        m.tick();
+        String listing = m.drainOutput();
+        assertTrue(listing.contains("nota.txt") && listing.contains("hola.lua"), listing);
+        m.queueEvent("stdin", "cat nota.txt");
+        m.tick();
+        assertTrue(m.drainOutput().contains("contenido relativo"));
+        m.queueEvent("stdin", "hola");
+        m.tick();
+        assertTrue(m.drainOutput().contains("PROGRAMA_RELATIVO_OK"));
+        m.queueEvent("stdin", "cd ..");
+        m.tick();
+        assertEquals("tale> ", m.getPrompt());
+        m.queueEvent("stdin", "cat docs/nota.txt");
+        m.tick();
+        assertTrue(m.drainOutput().contains("contenido relativo"));
+    }
+
+    @Test
     void fileWrittenViaLuaReplPersistsAcrossRestart() throws Exception {
         Map<String, String> overlay = loadRomOverlay();
         LuaMachine m = boot(dir.resolve("c9"), overlay);

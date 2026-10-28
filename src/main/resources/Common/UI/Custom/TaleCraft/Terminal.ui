@@ -28,8 +28,6 @@ Group #Terminal {
 
   Group { Anchor: (Height: 6); }
 
-  // Input row on top: the transcript renders newest-first, so the command
-  // being typed sits right above where its echo and output will appear.
   Group #InputRow {
     Anchor: (Height: 38);
     LayoutMode: Left;
@@ -42,25 +40,28 @@ Group #Terminal {
 
     $C.@TextField #Input {
       FlexWeight: 1;
+      AutoFocus: true;
       PlaceholderText: "escribe un comando y pulsa Enter";
       Background: #101418;
     }
+
+  }
+
+  Label #CompletionHint {
+    Text: "TAB autocompleta; repite para ciclar";
+    Anchor: (Height: 18);
+    Style: (FontSize: 11, TextColor: #a7b7c9, VerticalAlignment: Center);
   }
 
   Group { Anchor: (Height: 8); }
 
   Group #Screen {
     FlexWeight: 1;
-    LayoutMode: Top;
+    LayoutMode: TopScrolling;
+    ScrollbarStyle: $C.@DefaultScrollbarStyle;
 
-    // Scrollable read-only transcript. The client's text field jumps to its
-    // top on every value set (the UI protocol has no scroll command), so
-    // TerminalPage renders the transcript newest-block-first: the latest
-    // output is always visible and scrolling down reveals older history.
-    $C.@MultilineTextField #Output {
-      FlexWeight: 1;
-      PlaceholderText: "";
-      IsReadOnly: true;
+    Label #Output {
+      Text: "";
       Style: (TextColor: #c8d8b8);
     }
   }

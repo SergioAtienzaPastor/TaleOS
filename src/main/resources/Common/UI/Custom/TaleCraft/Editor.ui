@@ -18,6 +18,7 @@ Group #Editor {
   // Editable file content. Client-side template from Common.ui.
   $C.@MultilineTextField #Content {
     FlexWeight: 1;
+    AutoFocus: true;
     MaxLength: 16000;
     PlaceholderText: "-- escribe tu programa Lua aquí";
     Style: (TextColor: #e8e8d8);
@@ -31,11 +32,24 @@ Group #Editor {
     Style: (FontSize: 11, TextColor: #c08888);
   }
 
+  Label #CompletionHint {
+    Text: "Escribe un fragmento para ver sugerencias";
+    Anchor: (Height: 22);
+    Style: (FontSize: 12, TextColor: #8fc9ff, VerticalAlignment: Center);
+  }
+
   Group { Anchor: (Height: 4); }
 
   Group #ButtonRow {
     Anchor: (Height: 34);
     LayoutMode: Left;
+
+    $C.@SecondaryTextButton #Complete {
+      Text: "Completar";
+      Anchor: (Width: 112, Height: 32);
+    }
+
+    Group { Anchor: (Width: 8); }
 
     $C.@TextButton #Save {
       Text: "Guardar";

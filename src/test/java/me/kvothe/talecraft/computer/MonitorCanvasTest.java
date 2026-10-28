@@ -99,4 +99,38 @@ class MonitorCanvasTest {
         assertEquals(MonitorCanvas.colorIndex("lime"), canvas.getPixel(0, 0));
         assertEquals(MonitorCanvas.colorIndex("red"), canvas.getPixel(2, 1)); // 'A' first row: " # "
     }
+
+    @Test
+    void twoRevisionObserversSeeTheSameChange() {
+        MonitorCanvas canvas = new MonitorCanvas();
+        long pageObserver = canvas.getRevision();
+        long displayObserver = canvas.getRevision();
+
+        canvas.setPixel(4, 5, MonitorCanvas.colorIndex("cyan"));
+
+        assertTrue(canvas.getRevision() > pageObserver);
+        assertTrue(canvas.getRevision() > displayObserver);
+        pageObserver = canvas.getRevision();
+        assertTrue(canvas.getRevision() > displayObserver,
+                "updating one observer must not consume the other's revision");
+        displayObserver = canvas.getRevision();
+        assertEquals(pageObserver, displayObserver);
+        assertEquals(canvas.getRevision(), canvas.getRevision());
+    }
+
+    @Test
+    void terminalAdapterUsesFourBySixCellsAndPaintsBackgroundAndCursor() {
+        MonitorCanvas canvas = new MonitorCanvas();
+        MonitorTerminal terminal = new MonitorTerminal(canvas);
+        assertEquals(10, terminal.getWidth());
+        assertEquals(4, terminal.getHeight());
+        terminal.setBackgroundColor(MonitorCanvas.colorIndex("navy"));
+        terminal.setTextColor(MonitorCanvas.colorIndex("white"));
+        terminal.setCursorBlink(true);
+        terminal.write("A");
+
+        assertEquals(MonitorCanvas.colorIndex("navy"), canvas.getPixel(3, 0));
+        assertEquals(MonitorCanvas.colorIndex("white"), canvas.getPixel(1, 0));
+        assertEquals(MonitorCanvas.colorIndex("white"), canvas.getPixel(4, 5));
+    }
 }

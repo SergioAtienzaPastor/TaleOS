@@ -21,6 +21,7 @@ public final class ComputerIdStore {
     private final Path file;
     private int nextId = 0;
     private final Map<String, Integer> byBlock = new ConcurrentHashMap<>();
+    private final Map<Integer, String> byId = new ConcurrentHashMap<>();
 
     public ComputerIdStore(Path file) {
         this.file = file;
@@ -28,17 +29,122 @@ public final class ComputerIdStore {
 
     /** Gets the id for a block position, allocating a fresh one if unknown. */
     public synchronized int idFor(String blockKey) {
-        return byBlock.computeIfAbsent(blockKey, k -> nextId++);
+        Integer existing = byBlock.get(blockKey);
+        if (existing != null) {
+            return existing;
+        }
+        int id = nextId++;
+        byBlock.put(blockKey, id);
+        byId.put(id, blockKey);
+        return id;
     }
 
-    /** If realKey has no id yet but legacyKey does, points realKey at the same
-     * id (used to adopt computers created while the world was unresolvable and
-     * the key fell back to the literal "world" prefix). */
+    public synchronized Integer idAt(String blockKey) {
+        return byBlock.get(blockKey);
+    }
+
+    /** Allocates and saves a global id shared with PenDrive metadata. */
+    public synchronized int allocateGlobalId() {
+        int id = nextId++;
+        try {
+            save();
+            return id;
+        } catch (IOException exception) {
+            nextId--;
+            throw new IllegalStateException("cannot persist global id allocation", exception);
+        }
+    }
+
+    /** Reserves an id carried by an existing PenDrive, including foreign worlds. */
+    public synchronized void reserveGlobalId(int id) {
+        if (id < 0) {
+            throw new IllegalArgumentException("negative global id: " + id);
+        }
+        if (byId.containsKey(id)) {
+            throw new IllegalStateException("global id #" + id + " already belongs to a computer");
+        }
+        int previous = nextId;
+        nextId = Math.max(nextId, id + 1);
+        try {
+            save();
+        } catch (IOException exception) {
+            nextId = previous;
+            throw new IllegalStateException("cannot persist global id reservation", exception);
+        }
+    }
+
+    /** Binds an item-carried id to its new position without ever overwriting a
+     * different machine or allowing two positions to share the same id. */
+    public synchronized int bind(String blockKey, int id) {
+        if (id < 0) {
+            throw new IllegalArgumentException("negative computer id: " + id);
+        }
+        Integer atBlock = byBlock.get(blockKey);
+        if (atBlock != null) {
+            if (atBlock == id) {
+                return id;
+            }
+            throw new IllegalStateException("position " + blockKey
+                    + " already belongs to computer #" + atBlock);
+        }
+        String atId = byId.get(id);
+        if (atId != null) {
+            throw new IllegalStateException("computer #" + id + " is already active at " + atId);
+        }
+        byBlock.put(blockKey, id);
+        byId.put(id, blockKey);
+        nextId = Math.max(nextId, id + 1);
+        return id;
+    }
+
+    /** If realKey has no id yet but legacyKey does, moves that binding to the
+     * real key (used to adopt computers created while the world was
+     * unresolvable and the key fell back to the literal "world" prefix). */
     public synchronized void adopt(String legacyKey, String realKey) {
+        if (legacyKey.equals(realKey)) {
+            return;
+        }
         Integer legacy = byBlock.get(legacyKey);
-        if (legacy != null && !byBlock.containsKey(realKey)) {
+        if (legacy == null) {
+            return;
+        }
+        Integer real = byBlock.get(realKey);
+        if (real != null && !real.equals(legacy)) {
+            throw new IllegalStateException("cannot adopt computer #" + legacy + " at " + realKey
+                    + ": position already belongs to computer #" + real);
+        }
+        byBlock.remove(legacyKey);
+        if (real == null) {
             byBlock.put(realKey, legacy);
         }
+        byId.put(legacy, realKey);
+    }
+
+    public synchronized int move(String oldKey, String newKey) {
+        Integer id = byBlock.get(oldKey);
+        if (id == null) {
+            throw new IllegalStateException("computer id not found for " + oldKey);
+        }
+        if (oldKey.equals(newKey)) {
+            return id;
+        }
+        Integer destination = byBlock.get(newKey);
+        if (destination != null) {
+            throw new IllegalStateException("cannot move computer #" + id + " to " + newKey
+                    + ": position already belongs to computer #" + destination);
+        }
+        byBlock.remove(oldKey);
+        byBlock.put(newKey, id);
+        byId.put(id, newKey);
+        return id;
+    }
+
+    public synchronized Integer unbind(String blockKey) {
+        Integer id = byBlock.remove(blockKey);
+        if (id != null) {
+            byId.remove(id, blockKey);
+        }
+        return id;
     }
 
     public synchronized void load() throws IOException {
@@ -46,8 +152,9 @@ public final class ComputerIdStore {
             return;
         }
         String json = Files.readString(file, StandardCharsets.UTF_8);
-        nextId = extractInt(json, "next", 0);
-        byBlock.clear();
+        int loadedNextId = extractInt(json, "next", 0);
+        Map<String, Integer> loadedBlocks = new ConcurrentHashMap<>();
+        Map<Integer, String> loadedIds = new ConcurrentHashMap<>();
         for (String entry : extractObjectEntries(json, "blocks")) {
             int sep = entry.lastIndexOf("\":");
             if (sep < 0) {
@@ -55,11 +162,32 @@ public final class ComputerIdStore {
             }
             String key = unquote(entry.substring(1, sep));
             int id = extractInt(entry.substring(sep + 2), "", -1);
-            if (id >= 0) {
-                byBlock.put(key, id);
-                nextId = Math.max(nextId, id + 1);
+            if (id < 0) {
+                continue;
             }
+            Integer previous = loadedBlocks.putIfAbsent(key, id);
+            String duplicate = loadedIds.putIfAbsent(id, key);
+            if (duplicate != null && key.startsWith("world:") && !duplicate.startsWith("world:")) {
+                loadedBlocks.remove(key, id);
+                loadedIds.put(id, duplicate);
+                duplicate = null;
+            } else if (duplicate != null && !key.startsWith("world:") && duplicate.startsWith("world:")) {
+                loadedBlocks.remove(duplicate);
+                loadedIds.put(id, key);
+                duplicate = null;
+            }
+            if (previous != null || duplicate != null) {
+                throw new IOException(previous != null
+                        ? "position " + key + " has multiple computer ids"
+                        : "computer #" + id + " is mapped to both " + duplicate + " and " + key);
+            }
+            loadedNextId = Math.max(loadedNextId, id + 1);
         }
+        byBlock.clear();
+        byId.clear();
+        byBlock.putAll(loadedBlocks);
+        byId.putAll(loadedIds);
+        nextId = loadedNextId;
     }
 
     public synchronized void save() throws IOException {

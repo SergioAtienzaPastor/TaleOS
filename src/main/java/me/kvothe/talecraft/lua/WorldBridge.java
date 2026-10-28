@@ -39,6 +39,14 @@ public interface WorldBridge {
         return null;
     }
 
+    default TurtleBridge turtle() {
+        return null;
+    }
+
+    default me.kvothe.talecraft.peripheral.PeripheralProvider peripherals() {
+        return me.kvothe.talecraft.peripheral.PeripheralProvider.NONE;
+    }
+
     /** No-world bridge: reads return nil, chat is dropped. */
     WorldBridge NONE = new WorldBridge() {
         @Override

@@ -13,135 +13,114 @@ import com.hypixel.hytale.server.core.modules.debug.DebugUtils;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.accessor.SectionReader;
 
-/**
- * In-world rendering of a {@link MonitorCanvas}: the canvas is meshed into
- * colored rectangles ({@link CanvasMesh}) and pushed to clients as solid
- * {@code DisplayDebug} shapes via {@link DebugUtils} — thin slabs floating a
- * few millimetres in front of the monitor's screen face, oriented by the
- * block's rotation. No entities are spawned: the vanilla client renders these
- * packets natively, in the real 16-color palette, for every player in the
- * world.
- *
- * Shapes carry a client-side TTL and are re-sent on a heartbeat while the
- * canvas is non-blank; when the canvas clears or the block disappears,
- * sending simply stops and the last frame fades out on its own (no global
- * ClearDebugShapes, which would also wipe other mods' shapes). Chunk reads go
- * through an in-memory {@link SectionReader}: an unloaded chunk means "skip
- * this tick", never teardown.
- */
+/** Renders one shared canvas, cropped over the front face of each structure block. */
 public final class MonitorDisplay {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static final int BLOCK_RECHECK_TICKS = 40;
-
-    /** Seconds a pushed frame stays on screen client-side; the heartbeat
-     * re-sends well before that so the picture never blinks. */
-    private static final float FRAME_TTL_SECONDS = 4.0f;
-    private static final int HEARTBEAT_TICKS = 40;
-
-    /** Rect slab depth, and how far the slab plane sits from the block centre
-     * (0.5 = block face; the extra millimetres avoid z-fighting). */
+    private static final float FRAME_TTL_SECONDS =
+            DisplayFramePacer.FRAME_TTL_TICKS / 20.0f - 0.01f;
     private static final double SLAB_DEPTH = 0.006;
     private static final double FACE_OFFSET = 0.507;
-
-    /** Safety cap on shapes sent per frame. */
-    private static final int MAX_RECTS = 512;
-
-    // --- Calibration constants (verified in client, see TESTING.md) --------
-    /** True when the model's screen face is local +Z at yaw 0. */
+    private static final int MAX_RECTS_PER_BLOCK = 512;
     private static final boolean FRONT_IS_POSITIVE_Z = true;
-    /** Sign applied to the block yaw before rotateY. */
     private static final double YAW_SIGN = 1.0;
-    /** Canvas-U flip needed for the text to read correctly from outside the
-     * protruding face. Tied to the front-face sign: with the slabs on +Z the
-     * unflipped U already matches the viewer's right. */
     private static final boolean MIRROR_U = false;
-    /** Debug shapes are assumed unit cubes centered on their matrix origin. */
     private static final boolean UNIT_CUBE_CENTERED = true;
-
     private static final Vector3f[] PALETTE_RGB = buildPalette();
 
     private final World world;
-    private final int x, y, z;
+    private final MonitorMultiblock.Structure structure;
     private final MonitorCanvas canvas;
+    private final DisplayFramePacer frames = new DisplayFramePacer();
+    private final boolean legacyRotation;
 
     private boolean testMode;
-    private int ticksUntilCheck = 0;
-    private int ticksUntilHeartbeat = 0;
-    private int lastRenderedHash = -1;
-    private boolean loggedYaw = false;
+    private int ticksUntilCheck;
 
     public MonitorDisplay(World world, int x, int y, int z, MonitorCanvas canvas) {
-        this.world = world;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.canvas = canvas;
+        this(world, new MonitorMultiblock.Structure(new MonitorMultiblock.Pos(x, y, z), 1, 1,
+                MonitorMultiblock.Facing.SOUTH,
+                List.of(new MonitorMultiblock.Pos(x, y, z))), canvas, true);
     }
 
-    /** Test hook (console /talecraft ... __displaytest): skip the block check
-     * and render the pattern on all four horizontal faces at once. */
+    public MonitorDisplay(World world, MonitorMultiblock.Structure structure, MonitorCanvas canvas) {
+        this(world, structure, canvas, false);
+    }
+
+    private MonitorDisplay(World world, MonitorMultiblock.Structure structure, MonitorCanvas canvas,
+            boolean legacyRotation) {
+        this.world = world;
+        this.structure = structure;
+        this.canvas = canvas;
+        this.legacyRotation = legacyRotation;
+    }
+
+    public MonitorMultiblock.Structure getStructure() {
+        return structure;
+    }
+
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
 
-    /** One tick; returns false when the monitor block is gone for good. */
+    /** Unloaded chunks are skipped and never cause teardown. */
     public boolean tick() {
         if (!testMode && --ticksUntilCheck <= 0) {
             ticksUntilCheck = BLOCK_RECHECK_TICKS;
-            Boolean stillMonitor = readBlockIsMonitor();
-            if (stillMonitor == null) {
-                return true; // chunk not in memory: neither render nor teardown
-            }
-            if (!stillMonitor) {
-                LOGGER.atInfo().log("monitor display at " + x + "," + y + "," + z
-                        + ": block gone, stopping");
+            Boolean matches = loadedBlocksMatch();
+            if (Boolean.FALSE.equals(matches)) {
                 return false;
             }
         }
-        List<CanvasMesh.Rect> mesh = CanvasMesh.mesh(canvas);
-        int hash = canvas.contentHash();
-        if (mesh.isEmpty()) {
-            lastRenderedHash = hash;
-            return true; // nothing lit: last pushed frame fades out by itself
+        long revision = canvas.getRevision();
+        boolean blank = true;
+        for (MonitorMultiblock.Pos pos : structure.blocks()) {
+            if (loaded(pos) && !CanvasMesh.mesh(canvas, structure.pixelX(pos), structure.pixelY(pos),
+                    MonitorCanvas.WIDTH, MonitorCanvas.HEIGHT).isEmpty()) {
+                blank = false;
+                break;
+            }
         }
-        if (hash != lastRenderedHash || --ticksUntilHeartbeat <= 0) {
-            if (render(mesh)) {
-                lastRenderedHash = hash;
-                ticksUntilHeartbeat = HEARTBEAT_TICKS;
+        if (frames.needsFrame(revision, blank)) {
+            boolean rendered = false;
+            for (MonitorMultiblock.Pos pos : structure.blocks()) {
+                rendered |= renderBlock(pos);
+            }
+            if (rendered || blank) {
+                frames.onRendered(revision);
             }
         }
         return true;
     }
 
-    /** Stops rendering and blanks the canvas; shapes already sent expire
-     * within FRAME_TTL_SECONDS. */
+    /** Already-sent shapes expire within their short TTL. */
     public void stop() {
-        canvas.clear(0);
-        lastRenderedHash = -1;
-        ticksUntilHeartbeat = 0;
+        frames.reset();
     }
 
-    private boolean render(List<CanvasMesh.Rect> mesh) {
+    private boolean renderBlock(MonitorMultiblock.Pos pos) {
         double[] yaws;
         if (testMode) {
             yaws = new double[] { 0, Math.PI / 2, Math.PI, -Math.PI / 2 };
         } else {
-            Double yaw = readBlockYaw();
+            Double yaw = legacyRotation ? readBlockYaw(pos) : readMatchingYaw(pos);
             if (yaw == null) {
-                return false; // chunk not in memory: retry next tick
+                return false;
             }
             yaws = new double[] { yaw };
         }
+        List<CanvasMesh.Rect> mesh = CanvasMesh.mesh(canvas, structure.pixelX(pos),
+                structure.pixelY(pos), MonitorCanvas.WIDTH, MonitorCanvas.HEIGHT);
         int sent = 0;
         for (double yaw : yaws) {
             for (CanvasMesh.Rect rect : mesh) {
-                if (sent >= MAX_RECTS) {
-                    LOGGER.atWarning().log("monitor at " + x + "," + y + "," + z
-                            + ": frame exceeds " + MAX_RECTS + " rects, truncated");
+                if (sent >= MAX_RECTS_PER_BLOCK) {
+                    LOGGER.atWarning().log("monitor block frame exceeds " + MAX_RECTS_PER_BLOCK
+                            + " rects, truncated");
                     return true;
                 }
-                DebugUtils.add(world, DebugShape.Cube, rectMatrix(rect, yaw),
+                DebugUtils.add(world, DebugShape.Cube, rectMatrix(pos, rect, yaw),
                         PALETTE_RGB[rect.color() & 15], 1.0f, FRAME_TTL_SECONDS,
                         DebugUtils.FLAG_NO_WIREFRAME);
                 sent++;
@@ -150,67 +129,90 @@ public final class MonitorDisplay {
         return true;
     }
 
-    /** Matrix placing one thin slab for the rect on the face rotated by yaw:
-     * translate to block centre, rotate the face frame, translate to the
-     * rect's centre in face-local coords (u right, v up, w out of screen),
-     * then scale the unit cube down to the slab size. */
-    private Matrix4d rectMatrix(CanvasMesh.Rect r, double yaw) {
-        double sx = r.width() / (double) MonitorCanvas.WIDTH;
-        double sy = r.height() / (double) MonitorCanvas.HEIGHT;
-        double u = (r.x0() + r.x1() + 1) / (2.0 * MonitorCanvas.WIDTH) - 0.5;
-        double v = 0.5 - (r.y0() + r.y1() + 1) / (2.0 * MonitorCanvas.HEIGHT);
-        double w = FACE_OFFSET;
-        if (!FRONT_IS_POSITIVE_Z) {
-            w = -w;
-        }
+    record LocalRect(double u, double v, double width, double height) {
+    }
+
+    static LocalRect localRect(MonitorMultiblock.Structure structure, MonitorMultiblock.Pos pos,
+            CanvasMesh.Rect r) {
+        double width = r.width() / (double) MonitorCanvas.WIDTH;
+        double height = r.height() / (double) MonitorCanvas.HEIGHT;
+        double u = (r.x0() + r.x1() + 1) / (2.0 * MonitorCanvas.WIDTH)
+                - structure.blockX(pos) - 0.5;
+        double v = 0.5 - (r.y0() + r.y1() + 1) / (2.0 * MonitorCanvas.HEIGHT)
+                + structure.blockY(pos);
+        return new LocalRect(u, v, width, height);
+    }
+
+    private Matrix4d rectMatrix(MonitorMultiblock.Pos pos, CanvasMesh.Rect r, double yaw) {
+        LocalRect local = localRect(structure, pos, r);
+        double sx = local.width();
+        double sy = local.height();
+        double u = local.u();
+        double v = local.v();
+        double w = FRONT_IS_POSITIVE_Z ? FACE_OFFSET : -FACE_OFFSET;
         if (MIRROR_U) {
             u = -u;
         }
-        Matrix4d m = new Matrix4d()
-                .translate(x + 0.5, y + 0.5, z + 0.5)
+        Matrix4d matrix = new Matrix4d()
+                .translate(pos.x() + 0.5, pos.y() + 0.5, pos.z() + 0.5)
                 .rotateY(YAW_SIGN * yaw);
         if (UNIT_CUBE_CENTERED) {
-            m.translate(u, v, w);
+            matrix.translate(u, v, w);
         } else {
-            m.translate(u - sx / 2, v - sy / 2, w - SLAB_DEPTH / 2);
+            matrix.translate(u - sx / 2, v - sy / 2, w - SLAB_DEPTH / 2);
         }
-        return m.scale(sx, sy, SLAB_DEPTH);
+        return matrix.scale(sx, sy, SLAB_DEPTH);
     }
 
-    /** Null when the chunk is not in memory; otherwise whether the block is a monitor. */
-    private Boolean readBlockIsMonitor() {
-        try {
-            SectionReader reader = new SectionReader(world.getChunkStore());
-            if (!reader.hasStorageInMemory(x, y, z)) {
-                return null;
+    /** Null means at least one loaded block is valid; only a loaded mismatch is false. */
+    private Boolean loadedBlocksMatch() {
+        for (MonitorMultiblock.Pos pos : structure.blocks()) {
+            BlockState state = read(pos);
+            if (state != null && (!state.monitor() || state.facing() != structure.facing())) {
+                return false;
             }
-            BlockType type = BlockType.getAssetMap().getAsset(reader.getBlock(x, y, z));
-            return type != null && "TaleCraft_Monitor".equals(type.getId());
+        }
+        return true;
+    }
+
+    private boolean loaded(MonitorMultiblock.Pos pos) {
+        try {
+            return new SectionReader(world.getChunkStore()).hasStorageInMemory(pos.x(), pos.y(), pos.z());
         } catch (IllegalStateException wrongThread) {
+            return false;
+        }
+    }
+
+    private Double readMatchingYaw(MonitorMultiblock.Pos pos) {
+        BlockState state = read(pos);
+        if (state == null || !state.monitor() || state.facing() != structure.facing()) {
             return null;
         }
+        return state.yaw();
     }
 
-    /** Null when the rotation cannot be read right now (chunk not in memory
-     * or unexpected index). */
-    private Double readBlockYaw() {
+    private Double readBlockYaw(MonitorMultiblock.Pos pos) {
+        BlockState state = read(pos);
+        return state == null || !state.monitor() ? null : state.yaw();
+    }
+
+    private BlockState read(MonitorMultiblock.Pos pos) {
         try {
             SectionReader reader = new SectionReader(world.getChunkStore());
-            if (!reader.hasStorageInMemory(x, y, z)) {
+            if (!reader.hasStorageInMemory(pos.x(), pos.y(), pos.z())) {
                 return null;
             }
-            int rotationIndex = reader.getRotationIndex(x, y, z);
-            double yaw = RotationTuple.get(rotationIndex).yaw().getRadians();
-            if (!loggedYaw) {
-                loggedYaw = true;
-                LOGGER.atInfo().log("monitor at " + x + "," + y + "," + z
-                        + ": rotationIndex=" + rotationIndex + " yawDeg="
-                        + Math.round(Math.toDegrees(yaw)));
-            }
-            return yaw;
+            BlockType type = BlockType.getAssetMap().getAsset(reader.getBlock(pos.x(), pos.y(), pos.z()));
+            boolean monitor = type != null && "TaleCraft_Monitor".equals(type.getId());
+            double yaw = RotationTuple.get(reader.getRotationIndex(pos.x(), pos.y(), pos.z()))
+                    .yaw().getRadians();
+            return new BlockState(monitor, MonitorMultiblock.Facing.fromYaw(yaw), yaw);
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private record BlockState(boolean monitor, MonitorMultiblock.Facing facing, double yaw) {
     }
 
     private static Vector3f[] buildPalette() {

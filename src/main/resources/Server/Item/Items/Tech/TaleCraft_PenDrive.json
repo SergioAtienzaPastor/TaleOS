@@ -1,0 +1,52 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.TaleCraft_PenDrive.name",
+    "Description": "server.items.TaleCraft_PenDrive.description"
+  },
+  "PlayerAnimationsId": "Item",
+  "Categories": [
+    "Furniture.Tech"
+  ],
+  "Icon": "Icons/ItemsGenerated/TaleCraft_PenDrive.png",
+  "IconProperties": {
+    "Scale": 0.8,
+    "Rotation": [
+      18.0,
+      35.0,
+      12.0
+    ]
+  },
+  "Model": "Items/TaleCraft/TaleCraft_PenDrive.blockymodel",
+  "Texture": "Items/TaleCraft/TaleCraft_PenDrive_Texture.png",
+  "Scale": 0.75,
+  "Tags": {
+    "Type": [
+      "Furniture"
+    ]
+  },
+  "Recipe": {
+    "TimeSeconds": 3,
+    "Input": [
+      {
+        "ItemId": "Ingredient_Bar_Copper",
+        "Quantity": 2
+      },
+      {
+        "ItemId": "Wood_Deadwood_Planks",
+        "Quantity": 1
+      }
+    ],
+    "BenchRequirement": [
+      {
+        "Id": "Workbench",
+        "Type": "Crafting",
+        "Categories": [
+          "Workbench_Survival"
+        ]
+      }
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Wood",
+  "ItemLevel": 5,
+  "MaxStack": 1
+}

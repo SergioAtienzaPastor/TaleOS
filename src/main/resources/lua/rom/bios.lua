@@ -1,27 +1,24 @@
 -- TaleOS bios — escrito desde cero para TaleCraft.
--- Prepara las APIs base (term, os) y arranca el shell desde rom/shell.lua.
+-- Prepara las APIs base (term, os), ejecuta startup.lua y arranca el shell.
 
--- term: MVP lineal sobre print/rawwrite; el terminal de rejilla llega con la UI.
 term = term or {}
-function term.write(s)
-  rawwrite(tostring(s))
+colors = {}
+for index, name in ipairs({
+  "black", "navy", "blue", "cyan", "green", "lime", "yellow", "orange",
+  "red", "pink", "magenta", "purple", "brown", "gray", "silver", "white"
+}) do
+  colors[name] = 2 ^ (index - 1)
 end
-function term.getSize()
-  return 51, 19
-end
-function term.clear()
-  -- línea de control form-feed: el ordenador limpia el scrollback al verla
-  print("\x0c")
-end
-function term.setCursorPos(x, y)
-end
+colours = colors
 
--- os sobre la tabla ya saneada (clock/time/date) del sandbox.
+function os.pullEventRaw()
+  return tale.pullEvent()
+end
 function os.pullEvent(filter)
   while true do
-    local ev = { tale.pullEvent() }
+    local ev = table.pack(tale.pullEvent(filter))
     if filter == nil or ev[1] == filter then
-      return table.unpack(ev)
+      return table.unpack(ev, 1, ev.n)
     end
   end
 end
@@ -35,18 +32,48 @@ function os.shutdown()
   tale.shutdown()
 end
 function os.sleep(seconds)
-  -- 20 ticks por segundo de servidor; mínimo un tick
-  tale.sleep(math.max(1, math.ceil((seconds or 0) * 20)))
+  local timer = os.startTimer(seconds or 0)
+  while true do
+    local event, id = os.pullEventRaw()
+    if event == "timer" and id == timer then
+      return
+    end
+  end
 end
+
+local function loadRom(path)
+  local src = fs.read(path)
+  if not src then
+    error("TaleOS: " .. path .. " no encontrado")
+  end
+  local fn, err = load(src, "@" .. path)
+  if not fn then
+    error("TaleOS: " .. tostring(err))
+  end
+  return fn
+end
+
+parallel = loadRom("rom/apis/parallel.lua")()
+window = loadRom("rom/apis/window.lua")()
+peripheral = loadRom("rom/apis/peripheral.lua")(peripheral)
+rednet = loadRom("rom/apis/rednet.lua")()
+gps = loadRom("rom/apis/gps.lua")()
 
 print("TaleOS v0.1 (TaleCraft)")
 
-local src = fs.read("rom/shell.lua")
-if not src then
-  error("TaleOS: rom/shell.lua no encontrado")
+local startup = fs.read("startup.lua")
+if startup then
+  local fn, err = load(startup, "@startup.lua")
+  if not fn then
+    print("startup.lua: " .. tostring(err))
+  else
+    tale.setProgramRunning(true)
+    local ok, runErr = pcall(fn)
+    tale.setProgramRunning(false)
+    if not ok then
+      print("startup.lua: " .. tostring(runErr))
+    end
+  end
 end
-local fn, err = load(src, "@rom/shell.lua")
-if not fn then
-  error("TaleOS: " .. tostring(err))
-end
-fn()
+
+loadRom("rom/shell.lua")()

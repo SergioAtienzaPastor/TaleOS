@@ -90,13 +90,15 @@ public final class FsLib {
         t.set("getCapacity", new Fn(fs) {
             @Override
             LuaValue run(Varargs a) throws Exception {
-                return LuaValue.valueOf(fs.getQuotaBytes());
+                return LuaValue.valueOf(a.arg1().isnil() ? fs.getQuotaBytes()
+                        : fs.getQuotaBytes(a.arg1().checkjstring()));
             }
         });
         t.set("getFreeSpace", new Fn(fs) {
             @Override
             LuaValue run(Varargs a) throws Exception {
-                return LuaValue.valueOf(fs.getFreeBytes());
+                return LuaValue.valueOf(a.arg1().isnil() ? fs.getFreeBytes()
+                        : fs.getFreeBytes(a.arg1().checkjstring()));
             }
         });
         return t;

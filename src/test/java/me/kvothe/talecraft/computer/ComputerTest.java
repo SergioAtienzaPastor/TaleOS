@@ -80,4 +80,23 @@ class ComputerTest {
         assertEquals("foo.lua|" + who, requested.toString());
         assertFalse(c.getScrollback().contains(""), "control chars must stay out of the transcript");
     }
+
+    @Test
+    void spatialClearSwitchesNativeProjection() throws Exception {
+        Computer c = bootComputer();
+        assertFalse(c.isTerminalSpatial());
+        c.queueStdin("clear");
+        c.tick();
+        assertTrue(c.isTerminalSpatial());
+        assertEquals("", c.getTerminalText().trim());
+    }
+
+    @Test
+    void systemMessagesRemainSeparateAndVisibleOnBothChannels() throws Exception {
+        Computer c = bootComputer();
+        c.systemMessage("aviso turtle");
+        assertTrue(c.getScrollback().contains("aviso turtle"));
+        assertTrue(c.getTerminalText().contains("aviso turtle"));
+        assertFalse(c.getScrollback().contains(Computer.EDITOR_MARK + ""));
+    }
 }

@@ -1,6 +1,9 @@
 package me.kvothe.talecraft.lua;
 
 import java.util.Deque;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaError;
@@ -13,7 +16,16 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 
 import me.kvothe.talecraft.computer.Computer;
 import me.kvothe.talecraft.computer.MonitorCanvas;
+import me.kvothe.talecraft.computer.MonitorTerminal;
+import me.kvothe.talecraft.computer.TerminalSurface;
+import me.kvothe.talecraft.computer.TerminalTarget;
+import me.kvothe.talecraft.net.HttpBridge;
+import me.kvothe.talecraft.net.HttpResult;
 import me.kvothe.talecraft.os.VirtualFileSystem;
+import me.kvothe.talecraft.peripheral.Peripheral;
+import me.kvothe.talecraft.peripheral.PeripheralHandle;
+import me.kvothe.talecraft.peripheral.PeripheralRegistry;
+import me.kvothe.talecraft.peripheral.monitor.MonitorPeripheral;
 
 /**
  * One sandboxed Lua virtual machine for a single computer.
@@ -44,8 +56,42 @@ public final class LuaMachine {
     private final LuaValue sethook; // captured debug.sethook, hidden from scripts
     private final BudgetHook budgetHook = new BudgetHook();
     private final long budgetPerTick;
-    private final Deque<Varargs> events = new java.util.concurrent.ConcurrentLinkedDeque<>();
+    public static final int MAX_EVENT_QUEUE = 256;
+    private final Deque<QueuedEvent> events = new java.util.concurrent.ConcurrentLinkedDeque<>();
+    private final AtomicInteger eventCount = new AtomicInteger();
+    private final Map<Long, Timer> timers = new LinkedHashMap<>();
+    private long currentTick;
+    private long nextTimerId;
     private final StringBuilder output = new StringBuilder();
+    private final TerminalSurface nativeSurface = new TerminalSurface(51, 19);
+    private final Map<MonitorCanvas, LuaTable> monitorTables = new java.util.IdentityHashMap<>();
+    private final Map<String, LuaTable> peripheralTables = new LinkedHashMap<>();
+    private final PeripheralRegistry peripherals = new PeripheralRegistry(null);
+    private volatile boolean nativeSpatial;
+    private LuaTable nativeTerminal;
+    private LuaTable currentTerminal;
+
+    private static final class QueuedEvent {
+        private final Varargs values;
+        private final Timer timer;
+
+        private QueuedEvent(Varargs values, Timer timer) {
+            this.values = values;
+            this.timer = timer;
+        }
+    }
+
+    private static final class Timer {
+        private final long id;
+        private final long dueTick;
+        private boolean fired;
+        private volatile boolean cancelled;
+
+        private Timer(long id, long dueTick) {
+            this.id = id;
+            this.dueTick = dueTick;
+        }
+    }
 
     /** Message of the LuaError that ends a program on requestTerminate; the
      * shell's pcall catches it, so the program dies but the machine survives
@@ -66,15 +112,32 @@ public final class LuaMachine {
     private volatile boolean rebootRequested;
     private volatile boolean shutdownRequested;
     private volatile WorldBridge worldBridge = WorldBridge.NONE;
+    private volatile HttpBridge httpBridge;
+    private volatile java.util.concurrent.CompletableFuture<HttpResult> pendingHttp;
+    private volatile long httpRequestSerial;
 
     /** Marker used in the yield of a world call (see WorldBridge). */
     private static final LuaValue WORLDCALL = LuaValue.valueOf("tale:worldcall");
+    private static final LuaValue PERIPHERAL_ERROR = LuaValue.valueOf("tale:peripheral_error");
+    /** Marker used by http.get while the asynchronous request runs. */
+    private static final LuaValue HTTPCALL = LuaValue.valueOf("tale:httpcall");
     /** Marker used by tale.sleep: yield {"tale:sleep", ticks}. */
     private static final LuaValue SLEEPCALL = LuaValue.valueOf("tale:sleep");
     /** Yield marker of tale.pullEvent: the machine parks until an event arrives. */
     private static final LuaValue EVENTWAIT = LuaValue.valueOf("tale:wait_event");
     /** World calls beyond this per tick get nil instead of executing. */
     private static final int MAX_WORLDCALLS_PER_TICK = 32;
+    private static final String[] TURTLE_METHODS = {
+            "forward", "back", "up", "down", "turnLeft", "turnRight",
+            "detect", "detectUp", "detectDown", "inspect", "inspectUp", "inspectDown",
+            "select", "getSelectedSlot", "getItemCount", "getItemSpace", "getItemDetail",
+            "transferTo", "compare", "compareUp", "compareDown", "compareTo",
+            "equip", "unequip", "equipLeft", "equipRight", "getEquippedLeft", "getEquippedRight",
+            "getFuelLevel", "getFuelLimit", "refuel", "dig", "digUp", "digDown",
+            "attack", "attackUp", "attackDown", "craft",
+            "place", "placeUp", "placeDown", "suck", "suckUp", "suckDown",
+            "drop", "dropUp", "dropDown"
+    };
     /** Ticks the machine stays parked because of tale.sleep. */
     private int sleepTicksRemaining;
     /** True while the machine sits in tale.pullEvent with nothing to deliver. */
@@ -93,8 +156,10 @@ public final class LuaMachine {
         this.globals = JsePlatform.debugGlobals();
         this.sethook = globals.get("debug").get("sethook");
         stripGlobals(globals);
+        installTermApi(globals);
         installPrint(globals);
         installTaleApi(globals);
+        installPeripheralApi(globals);
         installErrorGuard(globals);
         if (fs != null) {
             globals.set("fs", FsLib.create(fs));
@@ -127,14 +192,108 @@ public final class LuaMachine {
         this.state = State.ALIVE;
     }
 
-    /** Queues an event; the next tick resumes the machine with it. */
-    public void queueEvent(String name, String... args) {
+    /**
+     * Queues a typed event in FIFO order. Returns false when the 256-event
+     * bound is full; accepted values are strings, numbers, booleans, tables and
+     * nil. This is also the entry point for future network events.
+     */
+    public boolean queueEvent(String name, Object... args) {
         LuaValue[] values = new LuaValue[args.length + 1];
         values[0] = LuaValue.valueOf(name);
         for (int i = 0; i < args.length; i++) {
-            values[i + 1] = LuaValue.valueOf(args[i]);
+            values[i + 1] = eventValue(args[i]);
         }
-        events.add(LuaValue.varargsOf(values));
+        return offerEvent(LuaValue.varargsOf(values), null);
+    }
+
+    private static LuaValue eventValue(Object value) {
+        if (value == null || value == LuaValue.NIL) {
+            return LuaValue.NIL;
+        }
+        if (value instanceof LuaValue lua) {
+            if (lua.isnil() || lua.isstring() || lua.isnumber() || lua.isboolean() || lua.istable()) {
+                return lua;
+            }
+            throw new IllegalArgumentException("unsupported Lua event value: " + lua.typename());
+        }
+        if (value instanceof String string) {
+            return LuaValue.valueOf(string);
+        }
+        if (value instanceof Boolean bool) {
+            return LuaValue.valueOf(bool);
+        }
+        if (value instanceof Number number) {
+            return LuaValue.valueOf(number.doubleValue());
+        }
+        throw new IllegalArgumentException("unsupported event value type: "
+                + value.getClass().getName());
+    }
+
+    private boolean offerEvent(Varargs values, Timer timer) {
+        while (true) {
+            int size = eventCount.get();
+            if (size >= MAX_EVENT_QUEUE) {
+                return false;
+            }
+            if (eventCount.compareAndSet(size, size + 1)) {
+                events.add(new QueuedEvent(values, timer));
+                return true;
+            }
+        }
+    }
+
+    private Varargs pollEvent() {
+        while (true) {
+            QueuedEvent event = events.poll();
+            if (event == null) {
+                return null;
+            }
+            eventCount.decrementAndGet();
+            if (event.timer == null || !event.timer.cancelled) {
+                if (event.timer != null) {
+                    timers.remove(event.timer.id, event.timer);
+                }
+                return event.values;
+            }
+        }
+    }
+
+    public int getQueuedEventCount() {
+        return eventCount.get();
+    }
+
+    private long startTimer(double seconds) {
+        if (!Double.isFinite(seconds) || seconds < 0) {
+            throw new LuaError("timer seconds must be a finite, non-negative number");
+        }
+        long ticks = Math.max(1, (long) Math.ceil(seconds * 20.0));
+        long id = ++nextTimerId;
+        timers.put(id, new Timer(id, currentTick + ticks));
+        return id;
+    }
+
+    private void cancelTimer(long id) {
+        Timer timer = timers.remove(id);
+        if (timer != null) {
+            timer.cancelled = true;
+        }
+    }
+
+    private void fireDueTimers() {
+        currentTick++;
+        var iterator = timers.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Long, Timer> entry = iterator.next();
+            Timer timer = entry.getValue();
+            if (!timer.cancelled && !timer.fired && timer.dueTick <= currentTick) {
+                LuaValue id = LuaValue.valueOf(entry.getKey().doubleValue());
+                timer.fired = true;
+                if (!offerEvent(LuaValue.varargsOf(new LuaValue[] {
+                        LuaValue.valueOf("timer"), id }), timer)) {
+                    iterator.remove();
+                }
+            }
+        }
     }
 
     /**
@@ -148,6 +307,13 @@ public final class LuaMachine {
         if (state != State.ALIVE) {
             return;
         }
+        for (PeripheralRegistry.Change change : peripherals.refresh()) {
+            if (!change.attached()) {
+                peripheralTables.remove(change.name());
+            }
+            queueEvent(change.attached() ? "peripheral" : "peripheral_detach", change.name());
+        }
+        fireDueTimers();
         // A pending terminate wakes the machine from any park (sleep, event
         // wait) so the budget hook gets to fire inside the running program
         // and throw the termination error there.
@@ -178,14 +344,14 @@ public final class LuaMachine {
             args = LuaValue.NIL;
         } else if (waitingForEvent) {
             // Parked in pullEvent: only resume when there is an event to deliver.
-            Varargs ev = events.poll();
+            Varargs ev = pollEvent();
             if (ev == null) {
                 return;
             }
             waitingForEvent = false;
             args = ev;
         } else {
-            Varargs ev = events.poll();
+            Varargs ev = pollEvent();
             args = ev != null ? ev : LuaValue.NIL;
         }
         int worldcalls = 0;
@@ -222,6 +388,10 @@ public final class LuaMachine {
                         : LuaValue.NIL;
                 continue;
             }
+            if (HTTPCALL.equals(result.arg(2))) {
+                startHttpCall(result.arg(3).checkjstring());
+                return;
+            }
             return;
         }
     }
@@ -255,70 +425,195 @@ public final class LuaMachine {
                 return LuaValue.TRUE;
             case "time":
                 return LuaValue.valueOf(bridge.getTime());
+            case "turtle": {
+                TurtleBridge turtle = bridge.turtle();
+                if (turtle == null) {
+                    return LuaValue.NIL;
+                }
+                try {
+                    return turtle.call(yieldValues.arg(4).tojstring(), yieldValues.subargs(5));
+                } catch (RuntimeException exception) {
+                    System.err.println("[TaleCraft] turtle call failed: " + yieldValues.arg(4));
+                    exception.printStackTrace();
+                    throw exception;
+                }
+            }
+            case "peripheral": {
+                String action = yieldValues.arg(4).checkjstring();
+                String name = yieldValues.arg(5).checkjstring();
+                PeripheralHandle handle = peripherals.handle(name);
+                if (handle == null) {
+                    return LuaValue.NIL;
+                }
+                return switch (action) {
+                    case "type" -> {
+                        String type = handle.getType();
+                        yield type == null ? LuaValue.NIL : LuaValue.valueOf(type);
+                    }
+                    case "methods" -> methodNames(handle.getMethods());
+                    case "wrap" -> handle.isPresent()
+                            ? registeredPeripheralTable(handle) : LuaValue.NIL;
+                    default -> LuaValue.NIL;
+                };
+            }
+            case "peripheralNames": {
+                LuaTable names = new LuaTable();
+                int index = 1;
+                for (String name : bridge.peripherals().snapshot().keySet()) {
+                    names.set(index++, LuaValue.valueOf(name));
+                }
+                return names;
+            }
+            case "peripheralCall": {
+                try {
+                    PeripheralHandle handle = peripherals.handle(yieldValues.arg(4).checkjstring());
+                    return handle == null ? LuaValue.NIL : handle.call(
+                            yieldValues.arg(5).checkjstring(), yieldValues.subargs(6));
+                } catch (RuntimeException e) {
+                    String message = e.getMessage();
+                    return LuaValue.varargsOf(PERIPHERAL_ERROR,
+                            LuaValue.valueOf(message == null ? e.getClass().getSimpleName() : message));
+                }
+            }
             case "monitor": {
-                MonitorCanvas canvas = bridge.monitorAt(
-                        yieldValues.arg(4).optint(0), yieldValues.arg(5).optint(0),
-                        yieldValues.arg(6).optint(0));
-                return canvas == null ? LuaValue.NIL : monitorTable(canvas);
+                int dx = yieldValues.arg(4).optint(0);
+                int dy = yieldValues.arg(5).optint(0);
+                int dz = yieldValues.arg(6).optint(0);
+                if (dx == 0 && dy == 0 && dz == 0) {
+                    Map<String, Peripheral> snapshot = bridge.peripherals().snapshot();
+                    for (String side : new String[] { "right", "left", "top", "bottom", "front", "back" }) {
+                        if (snapshot.get(side) instanceof MonitorPeripheral monitor) {
+                            PeripheralHandle handle = peripherals.handle(side);
+                            return monitorTables.computeIfAbsent(monitor.getCanvas(),
+                                    ignored -> registeredMonitorTable(handle));
+                        }
+                    }
+                } else {
+                    String alias = "@" + dx + "," + dy + "," + dz;
+                    if (bridge.peripherals().find(alias) instanceof MonitorPeripheral monitor) {
+                        PeripheralHandle handle = peripherals.handle(alias);
+                        return monitorTables.computeIfAbsent(monitor.getCanvas(),
+                                ignored -> registeredMonitorTable(handle));
+                    }
+                }
+                MonitorCanvas canvas = bridge.monitorAt(dx, dy, dz);
+                return canvas == null ? LuaValue.NIL : monitorTables.computeIfAbsent(canvas, this::monitorTable);
             }
             default:
                 return LuaValue.NIL;
         }
     }
 
-    /** Lua table of a monitor canvas: setPixel/getPixel/fill/clear/write plus
-     * getSize. Coordinates are 1-based with the origin at the top-left; colors
-     * are palette names (MonitorCanvas.PALETTE). */
-    private static LuaTable monitorTable(MonitorCanvas canvas) {
+    private Varargs methodNames(java.util.List<String> methods) {
+        if (methods == null) {
+            return LuaValue.NIL;
+        }
+        LuaTable result = new LuaTable();
+        int index = 1;
+        for (String method : methods) {
+            result.set(index++, LuaValue.valueOf(method));
+        }
+        return result;
+    }
+
+    private LuaTable registeredPeripheralTable(PeripheralHandle handle) {
+        if (handle.resolve() instanceof MonitorPeripheral monitor) {
+            return monitorTables.computeIfAbsent(monitor.getCanvas(),
+                    ignored -> registeredMonitorTable(handle));
+        }
+        return peripheralTables.computeIfAbsent(handle.getName(), ignored -> {
+            LuaTable table = new LuaTable();
+            for (String method : handle.getMethods()) {
+                table.set(method, peripheralFunction(handle, method));
+            }
+            return table;
+        });
+    }
+
+    private LuaTable registeredMonitorTable(PeripheralHandle handle) {
+        LuaTable monitor = new LuaTable();
+        for (String method : handle.getMethods()) {
+            monitor.set(method, peripheralFunction(handle, method));
+        }
+        monitor.set("__getCell", peripheralFunction(handle, "__getCell"));
+        monitor.set("__setCell", peripheralFunction(handle, "__setCell"));
+        LuaTable terminal = new LuaTable();
+        for (String method : new String[] { "write", "blit", "clear", "clearLine", "scroll",
+                "setCursorPos", "getCursorPos", "setCursorBlink", "getCursorBlink", "setTextColor",
+                "getTextColor", "setBackgroundColor", "getBackgroundColor", "isColor",
+                "__getCell", "__setCell" }) {
+            terminal.set(method, monitor.get(method));
+        }
+        terminal.set("getSize", monitor.get("getTerminalSize"));
+        monitor.set("__terminalRedirect", terminal);
+        return monitor;
+    }
+
+    private VarArgFunction peripheralFunction(PeripheralHandle handle, String method) {
+        return new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                Varargs result = globals.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("peripheralCall"),
+                        LuaValue.valueOf(handle.getName()), LuaValue.valueOf(method) }, args));
+                return finishPeripheralCall(result);
+            }
+        };
+    }
+
+    private Varargs finishPeripheralCall(Varargs result) {
+        throwTerminateIfRequested();
+        if (PERIPHERAL_ERROR.equals(result.arg1())) {
+            throw new LuaError(result.arg(2));
+        }
+        return result;
+    }
+
+    /** Pixel-compatible monitor table. term.redirect uses its character-terminal facade. */
+    private LuaTable monitorTable(MonitorCanvas canvas) {
+        MonitorTerminal adapter = new MonitorTerminal(canvas);
+        LuaTable terminal = terminalTable(adapter, false);
         LuaTable mon = new LuaTable();
-        mon.set("getSize", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs a) {
-                return LuaValue.varargsOf(LuaValue.valueOf(MonitorCanvas.WIDTH),
-                        LuaValue.valueOf(MonitorCanvas.HEIGHT));
+        mon.set("__terminalRedirect", terminal);
+        mon.set("getSize", fn(a -> LuaValue.varargsOf(LuaValue.valueOf(canvas.getWidth()),
+                LuaValue.valueOf(canvas.getHeight()))));
+        mon.set("getTerminalSize", terminal.get("getSize"));
+        mon.set("setPixel", fn(a -> {
+            canvas.setPixel(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1, checkColor(a.arg(3)));
+            return LuaValue.NIL;
+        }));
+        mon.set("getPixel", fn(a -> {
+            int c = canvas.getPixel(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1);
+            return LuaValue.valueOf(MonitorCanvas.PALETTE[c]);
+        }));
+        mon.set("fill", fn(a -> {
+            canvas.fill(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1,
+                    a.arg(3).checkint(), a.arg(4).checkint(), checkColor(a.arg(5)));
+            return LuaValue.NIL;
+        }));
+        mon.set("clear", fn(a -> {
+            if (a.narg() == 0) {
+                adapter.clear();
+            } else {
+                canvas.clear(checkColor(a.arg1()));
             }
-        });
-        mon.set("setPixel", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs a) {
-                canvas.setPixel(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1, checkColor(a.arg(3)));
+            return LuaValue.NIL;
+        }));
+        mon.set("write", fn(a -> {
+            if (a.narg() < 3) {
+                adapter.write(a.arg1().tojstring());
                 return LuaValue.NIL;
             }
-        });
-        mon.set("getPixel", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs a) {
-                int c = canvas.getPixel(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1);
-                return LuaValue.valueOf(MonitorCanvas.PALETTE[c]);
-            }
-        });
-        mon.set("fill", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs a) {
-                canvas.fill(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1,
-                        a.arg(3).checkint(), a.arg(4).checkint(), checkColor(a.arg(5)));
-                return LuaValue.NIL;
-            }
-        });
-        mon.set("clear", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs a) {
-                int color = a.arg(1).isnil() ? 0 : checkColor(a.arg(1));
-                canvas.clear(color);
-                return LuaValue.NIL;
-            }
-        });
-        mon.set("write", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs a) {
-                String text = a.arg(3).checkjstring();
-                int color = a.arg(4).isnil()
-                        ? MonitorCanvas.colorIndex("white")
-                        : checkColor(a.arg(4));
-                canvas.writeText(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1, text, color);
-                return LuaValue.NIL;
-            }
-        });
+            String text = a.arg(3).checkjstring();
+            int color = a.arg(4).isnil() ? MonitorCanvas.colorIndex("white") : checkColor(a.arg(4));
+            canvas.writeText(a.arg(1).checkint() - 1, a.arg(2).checkint() - 1, text, color);
+            return LuaValue.NIL;
+        }));
+        for (String method : new String[] { "blit", "clearLine", "scroll", "setCursorPos",
+                "getCursorPos", "setCursorBlink", "getCursorBlink", "setTextColor", "getTextColor",
+                "setBackgroundColor", "getBackgroundColor", "isColor", "__getCell", "__setCell" }) {
+            mon.set(method, terminal.get(method));
+        }
         return mon;
     }
 
@@ -332,8 +627,163 @@ public final class LuaMachine {
         return index;
     }
 
+    public void setHttpBridge(HttpBridge bridge) {
+        cancelPendingHttp();
+        this.httpBridge = bridge;
+        if (bridge == null || !bridge.isEnabled()) {
+            globals.set("http", LuaValue.NIL);
+        } else {
+            installHttpApi(globals);
+        }
+    }
+
+    private void installHttpApi(Globals g) {
+        LuaTable http = new LuaTable();
+        http.set("get", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        HTTPCALL, LuaValue.valueOf(args.arg1().checkjstring()) }));
+                throwTerminateIfRequested();
+                return result;
+            }
+        });
+        g.set("http", http);
+    }
+
+    private void startHttpCall(String url) {
+        waitingForEvent = true;
+        long requestId = ++httpRequestSerial;
+        try {
+            java.util.concurrent.CompletableFuture<HttpResult> request = httpBridge.get(this, url);
+            pendingHttp = request;
+            request.whenComplete((response, failure) -> {
+                if (requestId != httpRequestSerial) {
+                    return;
+                }
+                pendingHttp = null;
+                offerEvent(failure == null ? httpSuccess(response) : httpFailure(failure), null);
+            });
+        } catch (Throwable failure) {
+            if (requestId == httpRequestSerial) {
+                pendingHttp = null;
+                offerEvent(httpFailure(failure), null);
+            }
+        }
+    }
+
+    private static Varargs httpSuccess(HttpResult result) {
+        LuaTable response = new LuaTable();
+        response.set("readAll", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return LuaValue.valueOf(result.body());
+            }
+        });
+        response.set("getResponseCode", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return LuaValue.varargsOf(LuaValue.valueOf(result.statusCode()),
+                        LuaValue.valueOf(result.reason()));
+            }
+        });
+        response.set("close", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return LuaValue.NIL;
+            }
+        });
+        return response;
+    }
+
+    private static Varargs httpFailure(Throwable failure) {
+        Throwable cause = failure instanceof java.util.concurrent.CompletionException
+                && failure.getCause() != null ? failure.getCause() : failure;
+        String message = cause.getMessage();
+        if (message == null || message.isBlank()) {
+            message = cause.getClass().getSimpleName();
+        }
+        return LuaValue.varargsOf(LuaValue.NIL, LuaValue.valueOf(message));
+    }
+
+    public void cancelPendingHttp() {
+        httpRequestSerial++;
+        pendingHttp = null;
+        HttpBridge bridge = httpBridge;
+        if (bridge != null) {
+            bridge.cancel(this);
+        }
+    }
+
+    public void invalidatePeripherals() {
+        peripherals.invalidate();
+    }
+
     public void setWorldBridge(WorldBridge bridge) {
         this.worldBridge = bridge == null ? WorldBridge.NONE : bridge;
+        peripherals.setProvider(this.worldBridge.peripherals());
+        if (this.worldBridge.turtle() == null) {
+            globals.set("turtle", LuaValue.NIL);
+        } else {
+            installTurtleApi(globals);
+        }
+    }
+
+    private void installPeripheralApi(Globals g) {
+        LuaTable peripheral = new LuaTable();
+        peripheral.set("getNames", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("peripheralNames") }));
+                throwTerminateIfRequested();
+                return result;
+            }
+        });
+        for (String function : new String[] { "getType", "getMethods", "_wrap" }) {
+            peripheral.set(function, new VarArgFunction() {
+                @Override
+                public Varargs invoke(Varargs args) {
+                    String action = switch (function) {
+                        case "getType" -> "type";
+                        case "getMethods" -> "methods";
+                        default -> "wrap";
+                    };
+                    Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
+                            WORLDCALL, LuaValue.valueOf("peripheral"), LuaValue.valueOf(action),
+                            LuaValue.valueOf(args.arg1().checkjstring()) }));
+                    throwTerminateIfRequested();
+                    return result;
+                }
+            });
+        }
+        peripheral.set("call", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
+                        WORLDCALL, LuaValue.valueOf("peripheralCall"),
+                        LuaValue.valueOf(args.arg(1).checkjstring()),
+                        LuaValue.valueOf(args.arg(2).checkjstring()) }, args.subargs(3)));
+                return finishPeripheralCall(result);
+            }
+        });
+        g.set("peripheral", peripheral);
+    }
+
+    private void installTurtleApi(Globals g) {
+        LuaTable turtle = new LuaTable();
+        for (String method : TURTLE_METHODS) {
+            turtle.set(method, new VarArgFunction() {
+                @Override
+                public Varargs invoke(Varargs args) {
+                    Varargs result = g.yield(LuaValue.varargsOf(new LuaValue[] {
+                            WORLDCALL, LuaValue.valueOf("turtle"), LuaValue.valueOf(method) }, args));
+                    throwTerminateIfRequested();
+                    return result;
+                }
+            });
+        }
+        g.set("turtle", turtle);
     }
 
     public State getState() {
@@ -348,7 +798,7 @@ public final class LuaMachine {
         return error;
     }
 
-    /** Everything printed since the last {@link #drainOutput()}. */
+    /** Native transcript output and control lines since the last drain. */
     public String drainOutput() {
         synchronized (output) {
             String out = output.toString();
@@ -357,11 +807,12 @@ public final class LuaMachine {
         }
     }
 
-    /** Appends an echo line (prompt + submitted input) to the output buffer. */
+    /** Appends shell echo to the transcript and projects its visible text onto the native grid. */
     public void appendEcho(String s) {
         synchronized (output) {
             output.append(s);
         }
+        nativeSurface.write(s.replace(Computer.ECHO_MARK + "", ""));
     }
 
     public String getPrompt() {
@@ -394,39 +845,211 @@ public final class LuaMachine {
                 return LuaValue.TRUE;
             }
         });
+        safeOs.set("startTimer", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return LuaValue.valueOf(startTimer(args.arg1().checkdouble()));
+            }
+        });
+        safeOs.set("cancelTimer", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                cancelTimer(args.arg1().checklong());
+                return LuaValue.NIL;
+            }
+        });
+        safeOs.set("queueEvent", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                String name = args.arg1().checkjstring();
+                LuaValue[] values = new LuaValue[args.narg() - 1];
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = args.arg(i + 2);
+                }
+                return LuaValue.valueOf(queueEvent(name, (Object[]) values));
+            }
+        });
         g.set("os", safeOs);
     }
 
+    private interface LuaCall {
+        Varargs call(Varargs args);
+    }
+
+    private static VarArgFunction fn(LuaCall call) {
+        return new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return call.call(args);
+            }
+        };
+    }
+
+    private void installTermApi(Globals g) {
+        nativeTerminal = terminalTable(nativeSurface, true);
+        currentTerminal = nativeTerminal;
+        LuaTable term = new LuaTable();
+        for (String method : new String[] { "write", "blit", "clear", "clearLine", "scroll",
+                "getSize", "setCursorPos", "getCursorPos", "setCursorBlink", "getCursorBlink",
+                "setTextColor", "getTextColor", "setBackgroundColor", "getBackgroundColor", "isColor" }) {
+            term.set(method, fn(args -> currentTerminal.get(method).invoke(args)));
+        }
+        term.set("native", fn(args -> nativeTerminal));
+        term.set("current", fn(args -> currentTerminal));
+        term.set("redirect", fn(args -> {
+            LuaTable requested = args.arg1().checktable();
+            LuaValue adapter = requested.get("__terminalRedirect");
+            LuaTable next = adapter.istable() ? adapter.checktable() : requested;
+            if (!next.get("write").isfunction() || !next.get("getSize").isfunction()) {
+                throw new LuaError("term.redirect expects a terminal object");
+            }
+            LuaTable previous = currentTerminal;
+            currentTerminal = next;
+            return previous;
+        }));
+        g.set("term", term);
+    }
+
+    private LuaTable terminalTable(TerminalTarget target, boolean mirrorNative) {
+        LuaTable table = new LuaTable();
+        table.set("write", fn(args -> {
+            String text = args.arg1().tojstring();
+            if (mirrorNative) {
+                appendNativeOutput(text);
+            }
+            target.write(text);
+            return LuaValue.NIL;
+        }));
+        table.set("blit", fn(args -> {
+            markNativeSpatial(mirrorNative);
+            target.blit(args.arg(1).checkjstring(), args.arg(2).checkjstring(), args.arg(3).checkjstring());
+            return LuaValue.NIL;
+        }));
+        table.set("clear", fn(args -> {
+            if (mirrorNative) {
+                markNativeSpatial(true);
+                appendNativeOutput("\f");
+            }
+            target.clear();
+            return LuaValue.NIL;
+        }));
+        table.set("clearLine", fn(args -> {
+            markNativeSpatial(mirrorNative);
+            target.clearLine();
+            return LuaValue.NIL;
+        }));
+        table.set("scroll", fn(args -> {
+            markNativeSpatial(mirrorNative);
+            target.scroll(args.arg1().checkint());
+            return LuaValue.NIL;
+        }));
+        table.set("getSize", fn(args -> LuaValue.varargsOf(
+                LuaValue.valueOf(target.getWidth()), LuaValue.valueOf(target.getHeight()))));
+        table.set("setCursorPos", fn(args -> {
+            markNativeSpatial(mirrorNative);
+            target.setCursorPos(args.arg(1).checkint() - 1, args.arg(2).checkint() - 1);
+            return LuaValue.NIL;
+        }));
+        table.set("getCursorPos", fn(args -> LuaValue.varargsOf(
+                LuaValue.valueOf(target.getCursorX() + 1), LuaValue.valueOf(target.getCursorY() + 1))));
+        table.set("setCursorBlink", fn(args -> {
+            markNativeSpatial(mirrorNative);
+            target.setCursorBlink(args.arg1().optboolean(false));
+            return LuaValue.NIL;
+        }));
+        table.set("getCursorBlink", fn(args -> LuaValue.valueOf(target.getCursorBlink())));
+        table.set("setTextColor", fn(args -> {
+            target.setTextColor(terminalColor(args.arg1()));
+            return LuaValue.NIL;
+        }));
+        table.set("getTextColor", fn(args -> LuaValue.valueOf(1 << target.getTextColor())));
+        table.set("setBackgroundColor", fn(args -> {
+            target.setBackgroundColor(terminalColor(args.arg1()));
+            return LuaValue.NIL;
+        }));
+        table.set("getBackgroundColor", fn(args -> LuaValue.valueOf(1 << target.getBackgroundColor())));
+        table.set("isColor", fn(args -> LuaValue.valueOf(target.isColor())));
+        table.set("__getCell", fn(args -> {
+            int x = args.arg(1).checkint() - 1;
+            int y = args.arg(2).checkint() - 1;
+            return LuaValue.varargsOf(new LuaValue[] {
+                    LuaValue.valueOf(String.valueOf(target.getChar(x, y))),
+                    LuaValue.valueOf(1 << target.getCellTextColor(x, y)),
+                    LuaValue.valueOf(1 << target.getCellBackgroundColor(x, y)) });
+        }));
+        table.set("__setCell", fn(args -> {
+            markNativeSpatial(mirrorNative);
+            String character = args.arg(3).checkjstring();
+            if (character.length() != 1) {
+                throw new LuaError("terminal cell must contain exactly one character");
+            }
+            target.setCell(args.arg(1).checkint() - 1, args.arg(2).checkint() - 1,
+                    character.charAt(0), terminalColor(args.arg(4)), terminalColor(args.arg(5)));
+            return LuaValue.NIL;
+        }));
+        return table;
+    }
+
+    private static int terminalColor(LuaValue value) {
+        if (value.isnumber()) {
+            int color = value.checkint();
+            if (color > 0 && color <= 32768 && (color & (color - 1)) == 0) {
+                return Integer.numberOfTrailingZeros(color);
+            }
+            throw new LuaError("terminal color must be one power of two between 1 and 32768");
+        }
+        return checkColor(value);
+    }
+
+    private Varargs invokeCurrent(String method, Varargs args) {
+        return currentTerminal.get(method).invoke(args);
+    }
+
+    private void appendNativeOutput(String text) {
+        synchronized (output) {
+            output.append(text);
+        }
+    }
+
+    public TerminalSurface getNativeSurface() {
+        return nativeSurface;
+    }
+
+    public boolean isNativeSpatial() {
+        return nativeSpatial;
+    }
+
+    private void markNativeSpatial(boolean nativeTarget) {
+        if (nativeTarget) {
+            nativeSpatial = true;
+        }
+    }
+
+    public void appendSystemMessage(String message) {
+        nativeSurface.write(message + "\n");
+    }
+
     private void installPrint(Globals g) {
-        g.set("print", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs args) {
-                StringBuilder line = new StringBuilder();
-                for (int i = 1; i <= args.narg(); i++) {
-                    if (i > 1) {
-                        line.append('\t');
-                    }
-                    line.append(args.arg(i).tojstring());
+        g.set("print", fn(args -> {
+            StringBuilder line = new StringBuilder();
+            for (int i = 1; i <= args.narg(); i++) {
+                if (i > 1) {
+                    line.append('\t');
                 }
-                synchronized (output) {
-                    output.append(line).append('\n');
-                }
-                return LuaValue.NIL;
+                line.append(args.arg(i).tojstring());
             }
-        });
-        // Raw write: appends without a trailing newline, so term.write can keep
-        // the prompt and the typed line on the same visual line.
-        g.set("rawwrite", new VarArgFunction() {
-            @Override
-            public Varargs invoke(Varargs args) {
-                synchronized (output) {
-                    for (int i = 1; i <= args.narg(); i++) {
-                        output.append(args.arg(i).tojstring());
-                    }
-                }
-                return LuaValue.NIL;
+            line.append('\n');
+            return invokeCurrent("write", LuaValue.valueOf(line.toString()));
+        }));
+        g.set("rawwrite", fn(args -> {
+            StringBuilder text = new StringBuilder();
+            for (int i = 1; i <= args.narg(); i++) {
+                text.append(args.arg(i).tojstring());
             }
-        });
+            appendNativeOutput(text.toString());
+            nativeSurface.write(text.toString());
+            return LuaValue.NIL;
+        }));
     }
 
     private void installTaleApi(Globals g) {
@@ -434,10 +1057,9 @@ public final class LuaMachine {
         tale.set("pullEvent", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
-                // Suspends the coroutine with the EVENTWAIT marker; the tick
-                // system parks the machine until an event is queued, and the
-                // resume value is returned to the Lua caller as the event.
-                Varargs result = g.yield(EVENTWAIT);
+                // The optional filter is visible to parallel when this yields
+                // inside a child coroutine; the machine itself only needs EVENTWAIT.
+                Varargs result = g.yield(LuaValue.varargsOf(EVENTWAIT, args.arg1()));
                 throwTerminateIfRequested();
                 return result;
             }
@@ -569,6 +1191,7 @@ public final class LuaMachine {
      * (CC:T's "Terminated"). Only fires while a program runs. */
     public void requestTerminate() {
         terminateRequested = true;
+        cancelPendingHttp();
     }
 
     public boolean isProgramRunning() {

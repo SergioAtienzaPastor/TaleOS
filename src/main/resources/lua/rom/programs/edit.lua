@@ -5,4 +5,4 @@ if not file then
   print("uso: edit <archivo>")
   return
 end
-os.openEditor(file)
+os.openEditor(shell.resolve(file))

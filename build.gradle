@@ -58,6 +58,7 @@ dependencies {
     // Lua runtime (pure Java; embedded in the plugin jar via shadow below).
     implementation 'org.luaj:luaj-jse:3.0.1'
 
+    testImplementation files("$hytaleHome/install/$patchline/package/game/latest/Server/HytaleServer.jar")
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -156,4 +157,5 @@ tasks.named('build') {
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'java.util.logging.manager', 'com.hypixel.hytale.logger.backend.HytaleLogManager'
 }
