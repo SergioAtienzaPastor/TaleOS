@@ -13,6 +13,16 @@ public final class UiItemStacks {
         if (stack == null) {
             return null;
         }
+        if (me.kvothe.talecraft.storage.PenDriveItemMetadata.isPenDrive(stack)) {
+            Integer id = me.kvothe.talecraft.storage.PenDriveItemMetadata.id(stack);
+            if (id != null) {
+                BsonDocument metadata = me.kvothe.talecraft.storage.PenDriveItemMetadata.create(id,
+                        me.kvothe.talecraft.storage.PenDriveItemMetadata.label(stack)).getMetadata();
+                metadata.remove(me.kvothe.talecraft.storage.PenDriveItemMetadata.ID_KEY);
+                metadata.remove(me.kvothe.talecraft.storage.PenDriveItemMetadata.LABEL_KEY);
+                return stack.withMetadata(metadata);
+            }
+        }
         if (stack.getItemId().startsWith("TaleCraft_")) {
             return stack.withMetadata((BsonDocument) null);
         }

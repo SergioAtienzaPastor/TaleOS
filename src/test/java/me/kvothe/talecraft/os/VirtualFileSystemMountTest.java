@@ -73,6 +73,7 @@ class VirtualFileSystemMountTest {
         assertThrows(VirtualFileSystem.FsException.class,
                 () -> fs.write("nas/22/compartido.txt", "otra copia"));
         assertFalse(fs.list("").contains("nas"));
+        assertEquals(List.of(), fs.list("nas"));
 
         fs.mount("nas/22", dir.resolve("pendrives/22"), 1000);
         fs.write("nas/22/compartido.txt", "PenDrive real");

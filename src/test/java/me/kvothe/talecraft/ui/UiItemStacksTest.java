@@ -84,7 +84,7 @@ class UiItemStacksTest {
     }
 
     @Test
-    void taleCraftDisplayCopyHasNoClientIncompatibleMetadata() {
+    void penDriveDisplayKeepsOnlySafeNameMetadata() {
         ItemStack original = PenDriveItemMetadata.create(19, "Respaldo")
                 .withMetadata(ComputerItemMetadata.COMPUTER_ID_KEY, new org.bson.BsonInt32(8))
                 .withMetadata(ComputerItemMetadata.BLOCK_HOLDER_KEY,
@@ -96,7 +96,12 @@ class UiItemStacksTest {
         ItemStack display = UiItemStacks.forDisplay(original);
 
         assertNotSame(original, display);
-        assertEquals(null, display.getMetadata());
+        assertFalse(display.getMetadata().containsKey(PenDriveItemMetadata.ID_KEY));
+        assertFalse(display.getMetadata().containsKey(PenDriveItemMetadata.LABEL_KEY));
+        assertFalse(display.getMetadata().containsKey(ComputerItemMetadata.COMPUTER_ID_KEY));
+        assertFalse(display.getMetadata().containsKey(ComputerItemMetadata.BLOCK_HOLDER_KEY));
+        assertFalse(display.getMetadata().containsKey(PocketComputerItemMetadata.UUID_KEY));
+        assertFalse(display.getMetadata().containsKey("VanillaClientValue"));
         assertEquals(19, PenDriveItemMetadata.id(original));
         assertEquals("Respaldo", PenDriveItemMetadata.label(original));
         assertEquals(8, original.getMetadata().getInt32(ComputerItemMetadata.COMPUTER_ID_KEY)

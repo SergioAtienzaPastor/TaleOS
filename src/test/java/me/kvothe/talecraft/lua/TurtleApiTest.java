@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
@@ -265,6 +266,24 @@ class TurtleApiTest {
         blockedMachine.tick();
         assertEquals(List.of("detect", "dig"), blocked.methods);
         assertEquals("Excavating 1x3 face...\nexcavate: blocked\n", blockedMachine.drainOutput());
+    }
+
+    @Test
+    void turtleCdAcceptsMountedNasDriveId(@TempDir Path dir) throws Exception {
+        LuaMachine machine = RomTestSupport.boot(dir.resolve("turtle"), null);
+        machine.setWorldBridge(new FakeWorld(new FakeTurtle()));
+        machine.getFileSystem().mount("nas/22", dir.resolve("drive22"), 1000);
+        Files.createDirectories(dir.resolve("drive22"));
+        Files.writeString(dir.resolve("drive22/prueba.txt"), "contenido");
+        machine.tick();
+        machine.drainOutput();
+
+        machine.queueEvent("stdin", "cd 22");
+        machine.tick();
+        assertEquals("tale:/nas/22> ", machine.getPrompt());
+        machine.queueEvent("stdin", "ls");
+        machine.tick();
+        assertTrue(machine.drainOutput().contains("prueba.txt"));
     }
 
     private static String programWithArguments(String name, String argumentDeclaration) throws Exception {

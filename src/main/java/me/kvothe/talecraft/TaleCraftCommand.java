@@ -66,6 +66,10 @@ public class TaleCraftCommand extends CommandBase {
             return;
         }
         String action = line.trim();
+        if ("__nasdebug".equals(action)) {
+            ctx.sendMessage(localized("[TaleCraft] NAS drives: " + manager.nas().driveLocations()));
+            return;
+        }
         if ("__displaytest".equals(action)) {
             manager.displayTest(world, new BlockPosition(x, y, z));
             ctx.sendMessage(localized("[TaleCraft] patrón de prueba (4 caras) en "

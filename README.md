@@ -52,7 +52,8 @@ sandboxed and safe for multiplayer servers.
   to mount persistent files at `usb`, `usb2`, etc. IDs, labels and 1 MB quotas are independent
   per medium. The `usb_drive` peripheral supports labels, mount paths and safe ejection.
 - **Stackable NAS**: each `TaleCraft_NAS` holds 8 PenDrives. Connected units share their media
-  with every running Computer/Turtle/Pocket within 16 blocks, using stable `nas/<id>` paths. The same
+  with every running Computer/Turtle/Pocket within 16 blocks, using stable `nas/<id>` paths. `cd <id>`
+  is a shortcut for `cd nas/<id>`, and the NAS interface shows each medium as `PenDrive #<id>`. The same
   files can be read or executed by several machines and a PenDrive cannot be inserted twice.
 - **Speakers**: place a `TaleCraft_Speaker` or equip it on a Turtle and call
   `playSound(name[, volume[, pitch]])` with any registered SoundEvent. Sounds are positional

@@ -172,4 +172,21 @@ class TaleOsBootTest {
             me.kvothe.talecraft.I18n.setLanguage(previous);
         }
     }
+
+    @Test
+    void cdAcceptsMountedNasDriveId() throws Exception {
+        LuaMachine m = boot(dir.resolve("nas-shortcut"), loadRomOverlay());
+        m.getFileSystem().mount("nas/22", dir.resolve("drive22"), 1000);
+        Files.createDirectories(dir.resolve("drive22"));
+        Files.writeString(dir.resolve("drive22/prueba.txt"), "contenido");
+        m.tick();
+        m.drainOutput();
+
+        m.queueEvent("stdin", "cd 22");
+        m.tick();
+        assertEquals("tale:/nas/22> ", m.getPrompt());
+        m.queueEvent("stdin", "ls");
+        m.tick();
+        assertTrue(m.drainOutput().contains("prueba.txt"));
+    }
 }

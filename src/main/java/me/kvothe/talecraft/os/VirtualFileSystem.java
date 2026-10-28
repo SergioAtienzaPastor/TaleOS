@@ -256,7 +256,15 @@ public final class VirtualFileSystem {
     /** Names directly inside a directory, including child mount points, sorted. */
     public List<String> list(String path) throws FsException, IOException {
         String rel = normalizeRel(path);
-        Resolved resolved = resolveMount(rel);
+        Resolved resolved;
+        try {
+            resolved = resolveMount(rel);
+        } catch (FsException exception) {
+            if (rel.equals("nas") && detached.contains("nas")) {
+                return List.of();
+            }
+            throw exception;
+        }
         TreeSet<String> names = new TreeSet<>();
         for (String mounted : mounts.keySet()) {
             if (mounted.isEmpty()) {

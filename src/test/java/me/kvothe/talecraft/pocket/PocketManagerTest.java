@@ -229,6 +229,40 @@ class PocketManagerTest {
     }
 
     @Test
+    void pocketCdAcceptsMountedNasDriveId() throws Exception {
+        Fixture fixture = fixture(12, UUID.randomUUID());
+        Computer computer = pockets.boot(holder(fixture, (short) 0));
+        var hub = computers.usbDrives().hub();
+        hub.insert("world:1:64:1#0", 22, "Compartido");
+        String pocketKey = me.kvothe.talecraft.storage.NasManager.pocketKey(12);
+        hub.attachComputer("world:1:64:1#0", pocketKey,
+                new me.kvothe.talecraft.storage.PenDriveHub.ComputerAccess() {
+                    @Override
+                    public me.kvothe.talecraft.os.VirtualFileSystem fileSystem() {
+                        return computer.getFileSystem();
+                    }
+
+                    @Override
+                    public boolean alive() {
+                        return computer.isAlive();
+                    }
+
+                    @Override
+                    public void usbEvent(String event, String side) {
+                    }
+                }, "nas", "nas/22");
+        computer.getFileSystem().write("nas/22/prueba.txt", "contenido");
+        computer.drainOutput();
+
+        computer.queueStdin("cd 22");
+        computer.tick();
+        assertEquals("tale:/nas/22> ", computer.getPrompt());
+        computer.queueStdin("ls");
+        computer.tick();
+        assertTrue(computer.drainOutput().contains("prueba.txt"));
+    }
+
+    @Test
     void ticksOnlyInTheHoldersWorld() {
         Fixture fixture = fixture(10, UUID.randomUUID());
         Computer computer = pockets.boot(holder(fixture, (short) 0));

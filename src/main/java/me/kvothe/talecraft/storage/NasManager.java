@@ -116,6 +116,7 @@ public final class NasManager {
         }
         Set<String> component = connectedUnitsWithin(units, world.getName(), origin, RANGE);
         Set<String> desired = new HashSet<>();
+        Set<String> desiredMountPaths = new HashSet<>();
         for (String unit : component) {
             syncUnit(world, positionOf(unit));
             for (int slot = 0; slot < SLOTS; slot++) {
@@ -123,9 +124,11 @@ public final class NasManager {
                 PenDriveHub.Drive drive = hub.atLocation(location);
                 if (drive != null) {
                     desired.add(location);
+                    desiredMountPaths.add("nas/" + drive.id());
                 }
             }
         }
+        removeStaleNasMounts(computer.getFileSystem(), desiredMountPaths);
         Set<String> current = attachments.computeIfAbsent(computerKey, ignored -> new HashSet<>());
         for (String location : new ArrayList<>(current)) {
             PenDriveHub.Drive drive = hub.atLocation(location);
@@ -151,6 +154,19 @@ public final class NasManager {
         }
         if (current.isEmpty()) {
             attachments.remove(computerKey);
+        }
+    }
+
+    static void removeStaleNasMounts(VirtualFileSystem fs, Set<String> desiredMountPaths) {
+        for (String mounted : fs.getMountPaths()) {
+            if (mounted.startsWith("nas/") && !desiredMountPaths.contains(mounted)) {
+                try {
+                    fs.unmount(mounted);
+                } catch (VirtualFileSystem.FsException exception) {
+                    throw new IllegalStateException("cannot remove stale NAS mount " + mounted,
+                            exception);
+                }
+            }
         }
     }
 
@@ -225,6 +241,11 @@ public final class NasManager {
             hub.setLabel(location, label);
         }
         return drive;
+    }
+
+    public synchronized List<String> driveLocations() {
+        return hub.locations().stream().map(location -> location + "=" + hub.atLocation(location).id())
+                .toList();
     }
 
     public synchronized void unmountComputer(String computerKey) {
