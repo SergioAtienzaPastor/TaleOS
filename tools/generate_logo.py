@@ -104,18 +104,18 @@ def main():
                   fill="#6f5434", outline="#c39a55", width=sc(5))
         d.ellipse((sc(cx - 10), sc(cy - 10), sc(cx + 10), sc(cy + 10)), fill="#18242b")
 
-    # Keyboard chassis.
-    polygon(d, [(181, 632), (672, 632), (813, 718), (308, 718)], "#4c3d31", "#b38a4c", 5)
-    polygon(d, [(308, 718), (813, 718), (813, 775), (308, 775)], "#241f20", "#725537", 4)
-    polygon(d, [(181, 632), (308, 718), (308, 775), (181, 692)], "#302824", "#725537", 4)
-    polygon(d, [(215, 650), (650, 650), (749, 704), (318, 704)], "#131f28", "#6e5b40", 3)
+    # Keyboard chassis, with depth receding up-right like the monitor.
+    polygon(d, [(180, 700), (680, 700), (812, 620), (312, 620)], "#4c3d31", "#b38a4c", 5)
+    polygon(d, [(180, 700), (680, 700), (680, 758), (180, 758)], "#241f20", "#725537", 4)
+    polygon(d, [(680, 700), (812, 620), (812, 678), (680, 758)], "#302824", "#725537", 4)
+    polygon(d, [(230, 684), (650, 684), (745, 632), (325, 632)], "#131f28", "#6e5b40", 3)
 
     # Individual keyboard keys, projected along the top face.
     for row in range(3):
         for col in range(10):
-            x = 252 + col * 39 + row * 13
-            y = 657 + row * 14
-            polygon(d, [(x, y), (x + 26, y), (x + 37, y + 8), (x + 11, y + 8)],
+            x = 230 + col * 39 + row * 16
+            y = 680 - row * 16
+            polygon(d, [(x, y), (x + 26, y), (x + 39, y - 9), (x + 13, y - 9)],
                     "#719b89" if (row + col) % 4 else "#b69050", "#182a2c", 1)
 
     # Monitor shell: side, top, then brass front.
