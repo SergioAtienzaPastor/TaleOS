@@ -41,10 +41,18 @@ function os.sleep(seconds)
   end
 end
 
+local luaError = error
+function error(message, level)
+  if type(message) == "string" then
+    message = tale.tr(message)
+  end
+  return luaError(message, (level or 1) + 1)
+end
+
 local function loadRom(path)
   local src = fs.read(path)
   if not src then
-    error("TaleOS: " .. path .. " no encontrado")
+    error("TaleOS: " .. path .. tale.tr(" not found"))
   end
   local fn, err = load(src, "@" .. path)
   if not fn then

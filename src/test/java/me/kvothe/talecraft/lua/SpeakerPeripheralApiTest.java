@@ -76,7 +76,7 @@ class SpeakerPeripheralApiTest {
         assertTrue(output.contains("speaker\n"), output);
         assertTrue(output.contains("playSound\n"), output);
         assertTrue(output.contains("true\n"), output);
-        assertTrue(output.contains("false\tlímite de un sonido por equipo y tick\n"), output);
-        assertTrue(output.contains("false\tSoundEvent no registrado: missing\n"), output);
+        assertTrue(output.contains("false\tlimit of one sound per computer and tick\n"), output);
+        assertTrue(output.contains("false\tUnregistered SoundEvent: missing\n"), output);
     }
 }

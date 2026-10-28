@@ -75,11 +75,11 @@ local function shellLoop()
         local name = words[1]
         local src, path = findProgram(name)
         if not src then
-          print("comando desconocido: " .. name)
+          print(tale.tr("Unknown command: ") .. name)
         else
           local fn, err = load(src, "@" .. path)
           if not fn then
-            print("error cargando " .. name .. ": " .. tostring(err))
+            print(tale.tr("Error loading ") .. name .. ": " .. tostring(err))
           else
             -- Marca "programa en ejecución" para que el botón Detener solo
             -- mate programas y nunca a la propia shell.

@@ -52,6 +52,10 @@ public final class TurtlePage extends TerminalPage {
             @Nonnull UIEventBuilder evt, @Nonnull Store<EntityStore> store) {
         super.build(ref, cmd, evt, store);
         cmd.set("#Title.Text", "Turtle #" + getComputer().getId());
+        cmd.set("#Stop.Text", me.kvothe.talecraft.I18n.t("Stop program"));
+        cmd.set("#LeftUpgradeLabel.Text", me.kvothe.talecraft.I18n.t("Left upgrade"));
+        cmd.set("#RightUpgradeLabel.Text", me.kvothe.talecraft.I18n.t("Right upgrade"));
+        cmd.set("#PlayerInventoryLabel.Text", me.kvothe.talecraft.I18n.t("YOUR INVENTORY"));
         bindGrid(evt, "#TurtleGrid", "turtle");
         bindGrid(evt, "#LeftToolGrid", "leftTool");
         bindGrid(evt, "#RightToolGrid", "rightTool");
@@ -117,7 +121,8 @@ public final class TurtlePage extends TerminalPage {
                 } else if (kind.equals("turtle")) {
                     turtle.call("select", LuaValue.valueOf(slot + 1));
                     UICommandBuilder cmd = new UICommandBuilder();
-                    cmd.set("#ToolHint.Text", "Slot activo: " + (turtle.getSelectedSlot() + 1));
+                    cmd.set("#ToolHint.Text", me.kvothe.talecraft.I18n.t("Active slot: ")
+                            + (turtle.getSelectedSlot() + 1));
                     sendUpdate(cmd, false);
                 } else if (isToolSlot(kind) && turtle.getInventory().getItemStack(
                         (short) containerSlot(kind, slot)) != null) {
@@ -150,9 +155,9 @@ public final class TurtlePage extends TerminalPage {
 
     private void updateDragHint() {
         UICommandBuilder cmd = new UICommandBuilder();
-        cmd.set("#DragHint.Text", draggedKind == null
-                ? "Arrastra objetos entre las cuadrículas para moverlos"
-                : "Suelta el objeto en el slot de destino");
+        cmd.set("#DragHint.Text", me.kvothe.talecraft.I18n.t(draggedKind == null
+                ? "Drag items between grids to move them"
+                : "Drop the item in the destination slot"));
         sendUpdate(cmd, false);
     }
 
@@ -267,12 +272,13 @@ public final class TurtlePage extends TerminalPage {
                 player.getInventory().getHotbar().getCapacity());
         setGrid(cmd, "#BackpackGrid", player.getInventory().getBackpack(), 0,
                 player.getInventory().getBackpack().getCapacity());
-        cmd.set("#Facing.Text", "Dirección: " + turtle.getFacing());
-        cmd.set("#ToolHint.Text", "Slot activo: " + (turtle.getSelectedSlot() + 1)
-                + " · arrastra herramientas y mejoras para equiparlas o retirarlas");
-        cmd.set("#DragHint.Text", draggedKind == null
-                ? "Arrastra objetos entre las cuadrículas para moverlos"
-                : "Suelta el objeto en el slot de destino");
+        cmd.set("#Facing.Text", me.kvothe.talecraft.I18n.t("Facing: ") + turtle.getFacing());
+        cmd.set("#ToolHint.Text", me.kvothe.talecraft.I18n.t("Active slot: ")
+                + (turtle.getSelectedSlot() + 1) + me.kvothe.talecraft.I18n.t(
+                        " · drag tools and upgrades to equip or remove them"));
+        cmd.set("#DragHint.Text", me.kvothe.talecraft.I18n.t(draggedKind == null
+                ? "Drag items between grids to move them"
+                : "Drop the item in the destination slot"));
     }
 
     private static void setGrid(UICommandBuilder cmd, String selector,

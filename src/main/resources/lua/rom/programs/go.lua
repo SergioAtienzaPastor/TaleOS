@@ -9,12 +9,12 @@ local moves = {
 }
 
 if not turtle then
-  print("go: turtle API not available")
+  print(tale.tr("go: turtle API not available"))
   return
 end
 
 if not moves[direction] then
-  print("usage: go <forward|back|up|down|left|right> [count]")
+  print(tale.tr("usage: go <forward|back|up|down|left|right> [count]"))
   return
 end
 
@@ -22,7 +22,7 @@ local count = 1
 if countText ~= nil then
   count = tonumber(countText)
   if not count or count <= 0 or count % 1 ~= 0 then
-    print("go: count must be a positive integer")
+    print(tale.tr("go: count must be a positive integer"))
     return
   end
 end
@@ -30,7 +30,7 @@ end
 for _ = 1, count do
   local ok, reason = turtle[moves[direction]]()
   if not ok then
-    print("go: " .. tostring(reason or "movement failed"))
+    print("go: " .. tostring(reason or tale.tr("movement failed")))
     return
   end
 end

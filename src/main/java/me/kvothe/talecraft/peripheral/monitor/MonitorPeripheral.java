@@ -156,7 +156,7 @@ public final class MonitorPeripheral implements Peripheral {
         String name = value.checkjstring();
         int index = MonitorCanvas.colorIndex(name);
         if (index < 0) {
-            throw new LuaError("color desconocido: " + name);
+            throw new LuaError(me.kvothe.talecraft.I18n.t("Unknown color: ") + name);
         }
         return index;
     }

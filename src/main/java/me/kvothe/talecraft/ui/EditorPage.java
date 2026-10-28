@@ -64,15 +64,21 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
             @Nonnull UIEventBuilder evt, @Nonnull Store<EntityStore> store) {
         cmd.append(LAYOUT);
         cmd.set("#Title.Text", "Editor — " + path + "  ·  Computer #" + computer.getId());
+        cmd.set("#Content.PlaceholderText", me.kvothe.talecraft.I18n.t("-- write your Lua program here"));
+        cmd.set("#Complete.Text", me.kvothe.talecraft.I18n.t("Complete"));
+        cmd.set("#Save.Text", me.kvothe.talecraft.I18n.t("Save"));
+        cmd.set("#Run.Text", me.kvothe.talecraft.I18n.t("Save and run"));
+        cmd.set("#Exit.Text", me.kvothe.talecraft.I18n.t("Exit"));
+        cmd.set("#CompletionHint.Text", me.kvothe.talecraft.I18n.t("Type a fragment to see suggestions"));
         String content = null;
         try {
             content = computer.getFileSystem().read(path);
         } catch (Exception e) {
-            cmd.set("#Status.Text", "no se pudo leer: " + e.getMessage());
+            cmd.set("#Status.Text", me.kvothe.talecraft.I18n.t("Could not read: ") + e.getMessage());
         }
         if (content != null && content.length() > MAX_CONTENT_CHARS) {
-            cmd.set("#Status.Text", "archivo demasiado grande para el editor ("
-                    + content.length() + " caracteres)");
+            cmd.set("#Status.Text", me.kvothe.talecraft.I18n.t("File too large for the editor (")
+                    + content.length() + me.kvothe.talecraft.I18n.t(" characters)"));
             content = null;
         }
         String draft = content == null ? "" : content;
@@ -121,10 +127,11 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
             }
             try {
                 computer.getFileSystem().write(path, content);
-                computer.systemMessage("edit: guardado " + path
-                        + " (" + content.length() + " caracteres)");
+                computer.systemMessage("edit: " + me.kvothe.talecraft.I18n.t("saved ") + path
+                        + " (" + content.length() + me.kvothe.talecraft.I18n.t(" characters)"));
             } catch (Exception e) {
-                computer.systemMessage("edit: no se pudo guardar " + path + ": " + e.getMessage());
+                computer.systemMessage("edit: " + me.kvothe.talecraft.I18n.t("could not save ")
+                        + path + ": " + e.getMessage());
             }
             backToTerminal(ref, store);
             if ("run".equals(data.action)) {
@@ -137,7 +144,7 @@ public class EditorPage extends InteractiveCustomUIPage<EditorPage.EditorEventDa
 
     private String completionHint() {
         if (visibleCandidates.isEmpty()) {
-            return "Escribe un fragmento para ver sugerencias";
+            return me.kvothe.talecraft.I18n.t("Type a fragment to see suggestions");
         }
         String candidates = String.join("  ", visibleCandidates);
         return candidates.length() > 90 ? candidates.substring(0, 89) + "…" : candidates;

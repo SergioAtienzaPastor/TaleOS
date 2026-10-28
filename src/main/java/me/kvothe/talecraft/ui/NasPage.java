@@ -46,6 +46,8 @@ public final class NasPage extends InteractiveCustomUIPage<TerminalPage.Terminal
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder cmd,
             @Nonnull UIEventBuilder evt, @Nonnull Store<EntityStore> store) {
         cmd.append("TaleCraft/NAS.ui");
+        cmd.set("#BaysLabel.Text", me.kvothe.talecraft.I18n.t("PENDRIVE BAYS"));
+        cmd.set("#PlayerInventoryLabel.Text", me.kvothe.talecraft.I18n.t("YOUR INVENTORY"));
         bindGrid(evt, "#DriveGrid", "drive");
         bindGrid(evt, "#HotbarGrid", "hotbar");
         bindGrid(evt, "#BackpackGrid", "backpack");
@@ -204,11 +206,12 @@ public final class NasPage extends InteractiveCustomUIPage<TerminalPage.Terminal
                 }
             }
         }
-        cmd.set("#Status.Text", inserted + "/8 PenDrives · equipos a " + NasManager.RANGE
-                + " bloques · rutas nas/<id>");
-        cmd.set("#DragHint.Text", draggedKind == null
-                ? "Arrastra PenDrives entre las bahías y tu inventario"
-                : "Suelta el PenDrive en el slot de destino");
+        cmd.set("#Status.Text", inserted + "/8 PenDrives" + me.kvothe.talecraft.I18n.t(
+                " · computers within ") + NasManager.RANGE + me.kvothe.talecraft.I18n.t(
+                        " blocks · nas/<id> paths"));
+        cmd.set("#DragHint.Text", me.kvothe.talecraft.I18n.t(draggedKind == null
+                ? "Drag PenDrives between the bays and your inventory"
+                : "Drop the PenDrive in the destination slot"));
     }
 
     private static void setGrid(UICommandBuilder cmd, String selector, ItemContainer container) {

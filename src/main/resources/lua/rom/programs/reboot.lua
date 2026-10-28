@@ -1,2 +1,2 @@
-print("reiniciando...")
+print(tale.tr("Rebooting..."))
 os.reboot()

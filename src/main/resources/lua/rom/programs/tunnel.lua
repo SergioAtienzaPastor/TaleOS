@@ -2,14 +2,14 @@ local lengthText = ...
 local length = 1
 
 if not turtle then
-  print("tunnel: turtle API not available")
+  print(tale.tr("tunnel: turtle API not available"))
   return
 end
 
 if lengthText ~= nil then
   length = tonumber(lengthText)
   if not length or length <= 0 or length % 1 ~= 0 then
-    print("tunnel: length must be a positive integer")
+    print(tale.tr("tunnel: length must be a positive integer"))
     return
   end
 end
@@ -20,7 +20,7 @@ local function dig(direction)
   while detect() do
     local ok, reason = digBlock()
     if not ok then
-      return nil, reason or "no se pudo excavar"
+      return nil, reason or tale.tr("could not excavate")
     end
     tale.sleep(2)
   end
@@ -41,13 +41,13 @@ end
 
 local function check(result, reason)
   if not result then
-    print("tunnel: " .. tostring(reason or "movimiento bloqueado"))
+    print("tunnel: " .. tostring(reason or tale.tr("movement blocked")))
     return false
   end
   return true
 end
 
-print("Excavando túnel de 3x3...")
+print(tale.tr("Digging 3x3 tunnel..."))
 for section = 1, length do
   if not check(dig("Up")) then return end
 
@@ -70,4 +70,4 @@ for section = 1, length do
     if not check(move("")) then return end
   end
 end
-print("Túnel completado: " .. length .. " secciones")
+print(tale.tr("Tunnel completed: ") .. length .. tale.tr(" sections"))

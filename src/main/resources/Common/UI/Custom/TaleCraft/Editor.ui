@@ -20,7 +20,7 @@ Group #Editor {
     FlexWeight: 1;
     AutoFocus: true;
     MaxLength: 16000;
-    PlaceholderText: "-- escribe tu programa Lua aquí";
+    PlaceholderText: "-- write your Lua program here";
     Style: (TextColor: #e8e8d8);
   }
 
@@ -33,7 +33,7 @@ Group #Editor {
   }
 
   Label #CompletionHint {
-    Text: "Escribe un fragmento para ver sugerencias";
+    Text: "Type a fragment to see suggestions";
     Anchor: (Height: 22);
     Style: (FontSize: 12, TextColor: #8fc9ff, VerticalAlignment: Center);
   }
@@ -45,29 +45,29 @@ Group #Editor {
     LayoutMode: Left;
 
     $C.@SecondaryTextButton #Complete {
-      Text: "Completar";
-      Anchor: (Width: 112, Height: 32);
+      Text: "Complete";
+      Anchor: (Width: 140, Height: 32);
     }
 
     Group { Anchor: (Width: 8); }
 
     $C.@TextButton #Save {
-      Text: "Guardar";
+      Text: "Save";
       Anchor: (Width: 110, Height: 32);
     }
 
     Group { Anchor: (Width: 8); }
 
     $C.@SecondaryTextButton #Run {
-      Text: "Guardar y ejecutar";
+      Text: "Save and run";
       Anchor: (Width: 170, Height: 32);
     }
 
-    // pushes Salir to the far right
+    // pushes Exit to the far right
     Group { FlexWeight: 1; }
 
     $C.@SecondaryTextButton #Exit {
-      Text: "Salir";
+      Text: "Exit";
       Anchor: (Width: 90, Height: 32);
     }
   }

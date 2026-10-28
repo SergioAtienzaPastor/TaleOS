@@ -236,9 +236,9 @@ class PocketManagerTest {
         computer.queueStdin("id");
 
         pockets.tickWorld(new Object());
-        assertFalse(computer.drainOutput().contains("ordenador #10"));
+        assertFalse(computer.drainOutput().contains("Computer #10"));
         pockets.tickWorld(fixture.player.world);
-        assertTrue(computer.drainOutput().contains("ordenador #10"));
+        assertTrue(computer.drainOutput().contains("Computer #10"));
     }
 
     @Test

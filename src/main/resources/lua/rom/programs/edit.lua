@@ -2,7 +2,7 @@
 -- Guardar y ejecutar y Salir). Cierra el editor para volver al terminal.
 local file = ...
 if not file then
-  print("uso: edit <archivo>")
+  print(tale.tr("Usage: edit <file>"))
   return
 end
 os.openEditor(shell.resolve(file))

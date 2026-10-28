@@ -102,6 +102,21 @@ Then `cat hello.txt` again after a server restart — files survive.
 - HTTP is asynchronous and limited to GET text requests. Timeouts, response-size limits, per-computer
   concurrency and global download bandwidth are enforced. Redirects are validated again.
 
+### Language configuration
+
+TaleCraft supports English and Spanish. The default language is English (`en`). To use Spanish,
+set `language` to `es` in `mods/TaleCraft/config.json` and restart the server:
+
+```json
+{
+  "language": "es"
+}
+```
+
+The setting translates the interfaces, TaleOS commands, Turtle messages, peripherals, and admin
+output. Lua API names and user program output are not changed. Existing configurations without a
+`language` entry use English.
+
 ### HTTP configuration
 
 The server creates `mods/TaleCraft/config.json` on startup; restart after editing it. The default

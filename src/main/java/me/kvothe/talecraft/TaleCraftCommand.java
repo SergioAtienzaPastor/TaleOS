@@ -34,14 +34,15 @@ public class TaleCraftCommand extends CommandBase {
     private final RequiredArg<String> lineArg;
 
     public TaleCraftCommand(String pluginName, String pluginVersion, ComputerManager manager) {
-        super("talecraft", pluginName + " v" + pluginVersion
-                + ": ejecuta una línea de shell en un Computer (admin/test)");
+        super("talecraft", pluginName + " v" + pluginVersion + me.kvothe.talecraft.I18n.t(
+                ": ejecuta una línea de shell en un Computer (admin/test)"));
         this.manager = manager;
-        this.worldArg = withRequiredArg("world", "mundo del bloque", ArgTypes.WORLD);
-        this.xArg = withRequiredArg("x", "coordenada x del bloque", ArgTypes.INTEGER);
-        this.yArg = withRequiredArg("y", "coordenada y del bloque", ArgTypes.INTEGER);
-        this.zArg = withRequiredArg("z", "coordenada z del bloque", ArgTypes.INTEGER);
-        this.lineArg = withRequiredArg("linea", "línea de shell a ejecutar", ArgTypes.GREEDY_STRING);
+        this.worldArg = withRequiredArg("world", me.kvothe.talecraft.I18n.t("mundo del bloque"), ArgTypes.WORLD);
+        this.xArg = withRequiredArg("x", me.kvothe.talecraft.I18n.t("coordenada x del bloque"), ArgTypes.INTEGER);
+        this.yArg = withRequiredArg("y", me.kvothe.talecraft.I18n.t("coordenada y del bloque"), ArgTypes.INTEGER);
+        this.zArg = withRequiredArg("z", me.kvothe.talecraft.I18n.t("coordenada z del bloque"), ArgTypes.INTEGER);
+        this.lineArg = withRequiredArg("linea", me.kvothe.talecraft.I18n.t("línea de shell a ejecutar"),
+                ArgTypes.GREEDY_STRING);
     }
 
     @Override
@@ -53,7 +54,7 @@ public class TaleCraftCommand extends CommandBase {
         String line = ctx.get(lineArg);
         if ("__probe".equals(line == null ? "" : line.trim())) {
             HytaleWorldBridge.debugProbe(world, x, y, z);
-            ctx.sendMessage(Message.raw("[TaleCraft] probe en el log del servidor"));
+            ctx.sendMessage(localized("[TaleCraft] probe en el log del servidor"));
             return;
         }
         world.execute(() -> executeOnWorld(ctx, world, x, y, z, line));
@@ -61,43 +62,43 @@ public class TaleCraftCommand extends CommandBase {
 
     private void executeOnWorld(CommandContext ctx, World world, int x, int y, int z, String line) {
         if (line == null || line.isBlank()) {
-            ctx.sendMessage(Message.raw("[TaleCraft] línea vacía"));
+            ctx.sendMessage(localized("[TaleCraft] línea vacía"));
             return;
         }
         String action = line.trim();
         if ("__displaytest".equals(action)) {
             manager.displayTest(world, new BlockPosition(x, y, z));
-            ctx.sendMessage(Message.raw("[TaleCraft] patrón de prueba (4 caras) en "
+            ctx.sendMessage(localized("[TaleCraft] patrón de prueba (4 caras) en "
                     + x + "," + y + "," + z));
             return;
         }
         if ("__displayclear".equals(action)) {
             manager.displayClear(world, new BlockPosition(x, y, z));
-            ctx.sendMessage(Message.raw("[TaleCraft] display limpiado en " + x + "," + y + "," + z));
+            ctx.sendMessage(localized("[TaleCraft] display limpiado en " + x + "," + y + "," + z));
             return;
         }
         if ("__blockid".equals(action)) {
             {
                 String id = new HytaleWorldBridge(world, new BlockPosition(x, y, z), -1, manager)
                         .getBlockId(x, y, z);
-                ctx.sendMessage(Message.raw("[TaleCraft] bloque en " + x + "," + y + "," + z + " = " + id));
+                ctx.sendMessage(localized("[TaleCraft] bloque en " + x + "," + y + "," + z + " = " + id));
             }
             return;
         }
         if ("__cleanmobs".equals(action)) {
             manager.requestDisplayCleanup(world);
-            ctx.sendMessage(Message.raw("[TaleCraft] limpieza de displays/maniquís programada en "
+            ctx.sendMessage(localized("[TaleCraft] limpieza de displays/maniquís programada en "
                     + world.getName()));
             return;
         }
         if ("__stop".equals(action)) {
             BlockPosition pos = new BlockPosition(x, y, z);
             if (!manager.isRunningAt(world, pos)) {
-                ctx.sendMessage(Message.raw("[TaleCraft] no hay ningún ordenador encendido ahí"));
+                ctx.sendMessage(localized("[TaleCraft] no hay ningún ordenador encendido ahí"));
                 return;
             }
             manager.bootAt(world, pos).requestTerminate();
-            ctx.sendMessage(Message.raw("[TaleCraft] terminate enviado"));
+            ctx.sendMessage(localized("[TaleCraft] terminate enviado"));
             return;
         }
         if ("__modemplace".equals(action)) {
@@ -123,10 +124,10 @@ public class TaleCraftCommand extends CommandBase {
                     ? action.substring("__usbinsert".length()).trim() : null;
             try {
                 var drive = manager.usbDrives().insertAdmin(world, new BlockPosition(x, y, z), label);
-                ctx.sendMessage(Message.raw("[TaleCraft] PenDrive #" + drive.id()
+                ctx.sendMessage(localized("[TaleCraft] PenDrive #" + drive.id()
                         + " insertado: " + drive.label()));
             } catch (RuntimeException exception) {
-                ctx.sendMessage(Message.raw("[TaleCraft] no se pudo insertar: " + exception.getMessage()));
+                ctx.sendMessage(localized("[TaleCraft] no se pudo insertar: " + exception.getMessage()));
             }
             return;
         }
@@ -138,16 +139,16 @@ public class TaleCraftCommand extends CommandBase {
         if (action.startsWith("__nasinsert ")) {
             String[] parts = action.split(" ", 3);
             if (parts.length < 2) {
-                ctx.sendMessage(Message.raw("[TaleCraft] uso: __nasinsert <slot 0-7> [etiqueta]"));
+                ctx.sendMessage(localized("[TaleCraft] uso: __nasinsert <slot 0-7> [etiqueta]"));
                 return;
             }
             try {
                 var drive = manager.nas().insertAdmin(world, new BlockPosition(x, y, z),
                         Integer.parseInt(parts[1]), parts.length == 3 ? parts[2] : null);
-                ctx.sendMessage(Message.raw("[TaleCraft] NAS PenDrive #" + drive.id()
+                ctx.sendMessage(localized("[TaleCraft] NAS PenDrive #" + drive.id()
                         + " insertado: " + drive.label()));
             } catch (RuntimeException exception) {
-                ctx.sendMessage(Message.raw("[TaleCraft] no se pudo insertar en NAS: "
+                ctx.sendMessage(localized("[TaleCraft] no se pudo insertar en NAS: "
                         + exception.getMessage()));
             }
             return;
@@ -159,7 +160,7 @@ public class TaleCraftCommand extends CommandBase {
         if (action.startsWith("__turtlegive ")) {
             String[] parts = action.split(" ");
             if (parts.length != 3) {
-                ctx.sendMessage(Message.raw("[TaleCraft] uso: __turtlegive <item> <cantidad>"));
+                ctx.sendMessage(localized("[TaleCraft] uso: __turtlegive <item> <cantidad>"));
                 return;
             }
             Computer turtle = manager.bootTurtleAt(world, new BlockPosition(x, y, z));
@@ -167,33 +168,33 @@ public class TaleCraftCommand extends CommandBase {
                 var controller = manager.turtleControllerAt(world, new BlockPosition(x, y, z));
                 var inventory = controller.getInventory();
                 if (inventory == null) {
-                    ctx.sendMessage(Message.raw("[TaleCraft] inventario no disponible"));
+                    ctx.sendMessage(localized("[TaleCraft] inventario no disponible"));
                     return;
                 }
                 var stack = new com.hypixel.hytale.server.core.inventory.ItemStack(
                         parts[1], Integer.parseInt(parts[2]));
                 boolean added = inventory.addItemStack(stack).succeeded();
-                ctx.sendMessage(Message.raw("[TaleCraft] turtle #" + turtle.getId()
+                ctx.sendMessage(localized("[TaleCraft] turtle #" + turtle.getId()
                         + " recibido=" + added));
             }
             return;
         }
         if ("__turtleboot".equals(action)) {
             Computer turtle = manager.bootTurtleAt(world, new BlockPosition(x, y, z));
-            ctx.sendMessage(Message.raw("[TaleCraft] turtle #" + turtle.getId() + " lista"));
+            ctx.sendMessage(localized("[TaleCraft] turtle #" + turtle.getId() + " lista"));
             return;
         }
         if (action.startsWith("__turtle ")) {
             Computer turtle = manager.bootTurtleAt(world, new BlockPosition(x, y, z));
             String turtleLine = action.substring("__turtle ".length());
             turtle.queueStdin(turtleLine);
-            ctx.sendMessage(Message.raw("[TaleCraft] turtle #" + turtle.getId()
+            ctx.sendMessage(localized("[TaleCraft] turtle #" + turtle.getId()
                     + " <- '" + turtleLine + "'"));
             return;
         }
         Computer computer = manager.bootAt(world, new BlockPosition(x, y, z));
         computer.queueStdin(line);
-        ctx.sendMessage(Message.raw("[TaleCraft] computer #" + computer.getId() + " <- '" + line + "'"));
+        ctx.sendMessage(localized("[TaleCraft] computer #" + computer.getId() + " <- '" + line + "'"));
     }
 
     private void placeAdminBlock(CommandContext ctx, World world, int x, int y, int z,
@@ -201,11 +202,11 @@ public class TaleCraftCommand extends CommandBase {
         ChunkStore chunks = world.getChunkStore();
         SectionReader reader = new SectionReader(chunks);
         if (!reader.hasStorageInMemory(x, y, z)) {
-            ctx.sendMessage(Message.raw("[TaleCraft] chunk no cargado"));
+            ctx.sendMessage(localized("[TaleCraft] chunk no cargado"));
             return;
         }
         if (reader.getBlock(x, y, z) != BlockType.EMPTY_ID) {
-            ctx.sendMessage(Message.raw("[TaleCraft] destino ocupado"));
+            ctx.sendMessage(localized("[TaleCraft] destino ocupado"));
             return;
         }
         BlockType type = BlockType.getAssetMap().getAsset(blockId);
@@ -228,6 +229,11 @@ public class TaleCraftCommand extends CommandBase {
         if (placed && me.kvothe.talecraft.storage.NasManager.BLOCK_ID.equals(blockId)) {
             manager.nas().registerUnit(world, new BlockPosition(x, y, z));
         }
-        ctx.sendMessage(Message.raw("[TaleCraft] " + label + " colocado=" + placed));
+        ctx.sendMessage(localized("[TaleCraft] " + me.kvothe.talecraft.I18n.t(label)
+                + " colocado=" + placed));
+    }
+
+    private static Message localized(String text) {
+        return Message.raw(me.kvothe.talecraft.I18n.t(text));
     }
 }

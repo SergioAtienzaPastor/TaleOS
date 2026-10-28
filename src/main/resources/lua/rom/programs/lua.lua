@@ -1,5 +1,5 @@
 -- Mini REPL de Lua. "exit" para volver al shell.
-print('Lua REPL — "exit" para salir')
+print(tale.tr('Lua REPL — type "exit" to leave'))
 while true do
   tale.setPrompt("lua> ")
   local ev, line = tale.pullEvent()

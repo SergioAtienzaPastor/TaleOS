@@ -1,6 +1,6 @@
 local path = ...
 if not path then
-  print("uso: mkdir <directorio>")
+  print(tale.tr("Usage: mkdir <directory>"))
   return
 end
 local ok, err = pcall(fs.mkdir, path)

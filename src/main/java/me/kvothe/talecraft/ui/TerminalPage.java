@@ -69,6 +69,9 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
         lastRevision = computer.getTerminalRevision();
         lastPrompt = computer.getPrompt();
         cmd.set("#Title.Text", (readOnly ? "Monitor — Computer #" : "Computer #") + computer.getId());
+        cmd.set("#Stop.Text", me.kvothe.talecraft.I18n.t("Stop"));
+        cmd.set("#Input.PlaceholderText", me.kvothe.talecraft.I18n.t("Type a command and press Enter"));
+        cmd.set("#CompletionHint.Text", me.kvothe.talecraft.I18n.t("TAB completes; press again to cycle"));
         cmd.set("#Output.Text", lastShown);
         cmd.set("#Prompt.Text", lastPrompt);
         completion.reset("");
@@ -136,7 +139,7 @@ public class TerminalPage extends InteractiveCustomUIPage<TerminalPage.TerminalE
 
     private String completionHint() {
         if (visibleCandidates.isEmpty()) {
-            return "Escribe para ver sugerencias";
+            return me.kvothe.talecraft.I18n.t("Type to see suggestions");
         }
         String candidates = String.join("  ", visibleCandidates);
         return candidates.length() > 90 ? candidates.substring(0, 89) + "…" : candidates;

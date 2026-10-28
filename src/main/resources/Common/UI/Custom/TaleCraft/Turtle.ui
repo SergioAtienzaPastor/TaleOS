@@ -23,7 +23,7 @@ Group #Terminal {
       Group { FlexWeight: 1; }
 
       $C.@SecondaryTextButton #Stop {
-        Text: "Detener programa";
+        Text: "Stop program";
         Anchor: (Width: 180, Height: 36);
       }
     }
@@ -44,7 +44,7 @@ Group #Terminal {
       $C.@TextField #Input {
         FlexWeight: 1;
         AutoFocus: true;
-        PlaceholderText: "Escribe un comando y pulsa Enter";
+        PlaceholderText: "Type a command and press Enter";
         Background: #0b1118(0.01);
         Style: (FontSize: 16);
       }
@@ -52,7 +52,7 @@ Group #Terminal {
     }
 
     Label #CompletionHint {
-      Text: "TAB autocompleta; repite para ciclar";
+      Text: "TAB completes; press again to cycle";
       Anchor: (Height: 22);
       Style: (FontSize: 12, TextColor: #a7b7c9, VerticalAlignment: Center);
     }
@@ -74,7 +74,7 @@ Group #Terminal {
 
     Label #Facing {
       Anchor: (Height: 30);
-      Text: "Dirección";
+      Text: "Facing";
       Style: (FontSize: 15, TextColor: #a7b7c9, VerticalAlignment: Center);
     }
   }
@@ -111,7 +111,7 @@ Group #Terminal {
 
     Label #ToolHint {
       Anchor: (Height: 34);
-      Text: "Slot activo";
+      Text: "Active slot";
       Style: (FontSize: 14, TextColor: #a7b7c9, VerticalAlignment: Center);
     }
 
@@ -122,8 +122,8 @@ Group #Terminal {
       Group {
         Anchor: (Width: 232);
         LayoutMode: Top;
-        Label {
-          Text: "Mejora izquierda";
+        Label #LeftUpgradeLabel {
+          Text: "Left upgrade";
           Anchor: (Height: 30);
           Style: (FontSize: 15, TextColor: #b9c6d4);
         }
@@ -142,8 +142,8 @@ Group #Terminal {
       Group {
         FlexWeight: 1;
         LayoutMode: Top;
-        Label {
-          Text: "Mejora derecha";
+        Label #RightUpgradeLabel {
+          Text: "Right upgrade";
           Anchor: (Height: 30);
           Style: (FontSize: 15, TextColor: #b9c6d4);
         }
@@ -162,12 +162,12 @@ Group #Terminal {
 
     Label #DragHint {
       Anchor: (Height: 38);
-      Text: "Arrastra objetos entre las cuadrículas";
+      Text: "Drag items between grids";
       Style: (FontSize: 14, TextColor: #a7b7c9, VerticalAlignment: Center);
     }
 
-    Label {
-      Text: "TU INVENTARIO";
+    Label #PlayerInventoryLabel {
+      Text: "YOUR INVENTORY";
       Anchor: (Height: 36);
       Style: (FontSize: 18, TextColor: #e4d39c, RenderBold: true);
     }

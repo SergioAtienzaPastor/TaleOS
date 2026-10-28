@@ -7,12 +7,12 @@ Group #UsbDrive {
   Padding: (Full: 20);
 
   Label #Title {
-    Text: "Lector USB";
+    Text: "USB Drive";
     Anchor: (Height: 48);
     Style: (FontSize: 24, TextColor: #9ed8d0, RenderBold: true, VerticalAlignment: Center);
   }
 
-  Label {
+  Label #DriveLabel {
     Text: "PENDRIVE";
     Anchor: (Height: 32);
     Style: (FontSize: 17, TextColor: #d9e2e8, RenderBold: true);
@@ -37,19 +37,19 @@ Group #UsbDrive {
   }
 
   Label #Status {
-    Text: "Inserta un PenDrive";
+    Text: "Insert a PenDrive";
     Anchor: (Height: 36);
     Style: (FontSize: 15, TextColor: #9ed8d0, VerticalAlignment: Center);
   }
 
   Label #DragHint {
-    Text: "Arrastra un PenDrive al lector o retíralo a tu inventario";
+    Text: "Drag a PenDrive into the reader or remove it to your inventory";
     Anchor: (Height: 42);
     Style: (FontSize: 13, TextColor: #a7b7c9, VerticalAlignment: Center);
   }
 
-  Label {
-    Text: "TU INVENTARIO";
+  Label #PlayerInventoryLabel {
+    Text: "YOUR INVENTORY";
     Anchor: (Height: 38);
     Style: (FontSize: 17, TextColor: #d9e2e8, RenderBold: true);
   }

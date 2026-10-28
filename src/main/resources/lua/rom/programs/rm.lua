@@ -1,6 +1,6 @@
 local path = ...
 if not path then
-  print("uso: rm <archivo|directorio>")
+  print(tale.tr("Usage: rm <file|directory>"))
   return
 end
 local ok, err = pcall(fs.delete, path)

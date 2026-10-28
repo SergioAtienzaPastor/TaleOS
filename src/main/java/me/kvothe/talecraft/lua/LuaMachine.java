@@ -96,7 +96,7 @@ public final class LuaMachine {
     /** Message of the LuaError that ends a program on requestTerminate; the
      * shell's pcall catches it, so the program dies but the machine survives
      * (CC:T's "Terminated"). */
-    public static final String TERMINATED_MESSAGE = "Programa detenido";
+    public static final String TERMINATED_MESSAGE = "Program terminated";
 
     private volatile boolean terminateRequested;
     /** Set by the shell (tale.setProgramRunning) while a program runs inside
@@ -621,8 +621,9 @@ public final class LuaMachine {
         String name = v.checkjstring();
         int index = MonitorCanvas.colorIndex(name);
         if (index < 0) {
-            throw new LuaError("color desconocido: " + name
-                    + " (paleta: " + String.join(", ", MonitorCanvas.PALETTE) + ")");
+            throw new LuaError(me.kvothe.talecraft.I18n.t("Unknown color: ") + name
+                    + me.kvothe.talecraft.I18n.t(" (palette: ")
+                    + String.join(", ", MonitorCanvas.PALETTE) + ")");
         }
         return index;
     }
@@ -703,7 +704,8 @@ public final class LuaMachine {
         if (message == null || message.isBlank()) {
             message = cause.getClass().getSimpleName();
         }
-        return LuaValue.varargsOf(LuaValue.NIL, LuaValue.valueOf(message));
+        return LuaValue.varargsOf(LuaValue.NIL,
+                LuaValue.valueOf(me.kvothe.talecraft.I18n.t(message)));
     }
 
     public void cancelPendingHttp() {
@@ -1054,6 +1056,18 @@ public final class LuaMachine {
 
     private void installTaleApi(Globals g) {
         LuaTable tale = new LuaTable();
+        tale.set("tr", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return LuaValue.valueOf(me.kvothe.talecraft.I18n.t(args.arg1().checkjstring()));
+            }
+        });
+        tale.set("language", new VarArgFunction() {
+            @Override
+            public Varargs invoke(Varargs args) {
+                return LuaValue.valueOf(me.kvothe.talecraft.I18n.language());
+            }
+        });
         tale.set("pullEvent", new VarArgFunction() {
             @Override
             public Varargs invoke(Varargs args) {
@@ -1207,7 +1221,7 @@ public final class LuaMachine {
     private void throwTerminateIfRequested() {
         if (terminateRequested && programRunning) {
             terminateRequested = false;
-            throw new LuaError(LuaValue.valueOf(TERMINATED_MESSAGE));
+            throw new LuaError(LuaValue.valueOf(me.kvothe.talecraft.I18n.t(TERMINATED_MESSAGE)));
         }
     }
 

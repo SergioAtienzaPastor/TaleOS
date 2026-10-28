@@ -97,7 +97,7 @@ class SpeakerPeripheralTest {
         backend.fail = true;
         Varargs result = play(speaker, LuaValue.valueOf("known"));
         assertFalse(result.arg1().toboolean());
-        assertEquals("no se pudo reproducir el SoundEvent", result.arg(2).tojstring());
+        assertEquals("could not play the SoundEvent", result.arg(2).tojstring());
     }
 
     @Test
@@ -110,7 +110,7 @@ class SpeakerPeripheralTest {
         assertTrue(play(left, LuaValue.valueOf("known")).arg1().toboolean());
         Varargs limited = play(right, LuaValue.valueOf("known"));
         assertFalse(limited.arg1().toboolean());
-        assertEquals("límite de un sonido por equipo y tick", limited.arg(2).tojstring());
+        assertEquals("limit of one sound per computer and tick", limited.arg(2).tojstring());
         assertEquals(1, backend.plays);
 
         computerLimiter.beginTick();

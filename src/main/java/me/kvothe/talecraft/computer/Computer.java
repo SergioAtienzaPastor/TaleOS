@@ -118,7 +118,8 @@ public final class Computer {
         if (now != lastState) {
             lastState = now;
             if (now == LuaMachine.State.DEAD) {
-                String msg = "\n[máquina detenida: " + machine.getError() + "]\n";
+                String msg = "\n[" + me.kvothe.talecraft.I18n.t("Machine stopped: ")
+                        + machine.getError() + "]\n";
                 machine.appendEcho(msg);
                 pullMachineOutput();
                 logLine("[DEAD] " + machine.getError());
@@ -261,6 +262,7 @@ public final class Computer {
 
     /** Prints a server-side message into the transcript, native grid and log. */
     public void systemMessage(String s) {
+        s = me.kvothe.talecraft.I18n.t(s);
         logLine("[system] " + s);
         synchronized (scrollback) {
             scrollback.append(s).append('\n');
@@ -278,7 +280,8 @@ public final class Computer {
         EditorOpener opener = editorOpener;
         if (opener == null) {
             for (String path : pending) {
-                systemMessage("edit: editor no disponible en este contexto (" + path + ")");
+                systemMessage(me.kvothe.talecraft.I18n.t("edit: editor unavailable in this context (")
+                        + path + ")");
             }
             return;
         }

@@ -31,7 +31,6 @@ public class TaleCraftPlugin extends JavaPlugin {
 
     public TaleCraftPlugin(@Nonnull JavaPluginInit init) {
         super(init);
-        LOGGER.atInfo().log("TaleCraft iniciado, version " + this.getManifest().getVersion().toString());
     }
 
     @Override
@@ -39,6 +38,8 @@ public class TaleCraftPlugin extends JavaPlugin {
         LOGGER.atInfo().log("Setting up plugin " + this.getName());
         computerManager = new ComputerManager(Path.of("mods", "TaleCraft"));
         computerManager.load();
+        LOGGER.atInfo().log(me.kvothe.talecraft.I18n.t("TaleCraft started, version ")
+                + this.getManifest().getVersion().toString());
         getEntityStoreRegistry().registerSystem(new ComputerTickSystem(computerManager));
         getEntityStoreRegistry().registerSystem(new ComputerBreakSystem(computerManager));
         getEntityStoreRegistry().registerSystem(new ComputerPlaceSystem(computerManager));

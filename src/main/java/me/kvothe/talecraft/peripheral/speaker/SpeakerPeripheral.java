@@ -67,7 +67,7 @@ public final class SpeakerPeripheral implements Peripheral {
         }
         String soundEvent = backend.resolve(name);
         if (soundEvent == null) {
-            return failure("SoundEvent no registrado: " + name);
+            return failure(me.kvothe.talecraft.I18n.t("Unregistered SoundEvent: ") + name);
         }
         if (!rateLimiter.tryAcquire()) {
             return failure("límite de un sonido por equipo y tick");
@@ -81,6 +81,7 @@ public final class SpeakerPeripheral implements Peripheral {
     }
 
     private static Varargs failure(String reason) {
-        return LuaValue.varargsOf(LuaValue.FALSE, LuaValue.valueOf(reason));
+        return LuaValue.varargsOf(LuaValue.FALSE,
+                LuaValue.valueOf(me.kvothe.talecraft.I18n.t(reason)));
     }
 }

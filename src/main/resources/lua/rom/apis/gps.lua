@@ -78,11 +78,11 @@ end
 
 function gps.trilaterate(references)
   if type(references) ~= "table" or #references < 4 then
-    return nil, "at least four references are required"
+    return nil, tale.tr("at least four references are required")
   end
   for _, reference in ipairs(references) do
     if not validReference(reference) then
-      return nil, "invalid GPS reference"
+      return nil, tale.tr("invalid GPS reference")
     end
   end
   for a = 1, #references - 3 do
@@ -97,13 +97,13 @@ function gps.trilaterate(references)
       end
     end
   end
-  return nil, "references must be non-coplanar and have consistent distances"
+  return nil, tale.tr("references must be non-coplanar and have consistent distances")
 end
 
 local function openGpsModem()
   local side, modem = firstModem()
   if not modem then
-    return nil, "no wireless modem attached"
+    return nil, tale.tr("no wireless modem attached")
   end
   local wasOpen = modem.isOpen(gps.CHANNEL)
   if not wasOpen then
@@ -128,7 +128,7 @@ function gps.locate(timeout)
       if closeOnExit then
         modem.close(gps.CHANNEL)
       end
-      return nil, "GPS needs at least four non-coplanar references with consistent distances"
+      return nil, tale.tr("GPS needs at least four non-coplanar references with consistent distances")
     elseif event == "modem_message" and eventSide == side and channel == gps.CHANNEL
         and type(payload) == "table" and payload.gps == "response" and payload.request == request
         and finite(payload.x) and finite(payload.y) and finite(payload.z)

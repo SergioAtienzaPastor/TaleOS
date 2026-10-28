@@ -53,7 +53,7 @@ class TaleOsBootTest {
 
         m.queueEvent("stdin", "id");
         m.tick();
-        assertTrue(m.drainOutput().contains("ordenador #7"));
+        assertTrue(m.drainOutput().contains("Computer #7"));
         assertTrue(m.isAlive());
 
         m.queueEvent("stdin", "ls rom");
@@ -67,7 +67,7 @@ class TaleOsBootTest {
 
         m.queueEvent("stdin", "noexiste");
         m.tick();
-        assertTrue(m.drainOutput().contains("comando desconocido"));
+        assertTrue(m.drainOutput().contains("Unknown command:"));
     }
 
     @Test
@@ -149,5 +149,27 @@ class TaleOsBootTest {
         m.queueEvent("stdin", "ls rom");
         m.tick();
         assertTrue(m.drainOutput().contains("shell.lua"), "rom/shell.lua must still be there");
+    }
+
+    @Test
+    void spanishLocalizesShellWithoutChangingUserOutput() throws Exception {
+        String previous = me.kvothe.talecraft.I18n.language();
+        try {
+            me.kvothe.talecraft.I18n.setLanguage("es");
+            LuaMachine m = boot(dir.resolve("spanish"), loadRomOverlay());
+            m.tick();
+            m.drainOutput();
+            m.queueEvent("stdin", "id");
+            m.tick();
+            assertTrue(m.drainOutput().contains("ordenador #7"));
+            m.queueEvent("stdin", "noexiste");
+            m.tick();
+            assertTrue(m.drainOutput().contains("comando desconocido:"));
+            m.queueEvent("stdin", "echo Mensaje personalizado");
+            m.tick();
+            assertTrue(m.drainOutput().contains("Mensaje personalizado"));
+        } finally {
+            me.kvothe.talecraft.I18n.setLanguage(previous);
+        }
     }
 }

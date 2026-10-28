@@ -46,6 +46,8 @@ public final class UsbDrivePage extends InteractiveCustomUIPage<TerminalPage.Ter
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder cmd,
             @Nonnull UIEventBuilder evt, @Nonnull Store<EntityStore> store) {
         cmd.append("TaleCraft/USB_Drive.ui");
+        cmd.set("#Title.Text", me.kvothe.talecraft.I18n.t("USB Drive"));
+        cmd.set("#PlayerInventoryLabel.Text", me.kvothe.talecraft.I18n.t("YOUR INVENTORY"));
         bindGrid(evt, "#DriveGrid", "drive");
         bindGrid(evt, "#HotbarGrid", "hotbar");
         bindGrid(evt, "#BackpackGrid", "backpack");
@@ -201,12 +203,12 @@ public final class UsbDrivePage extends InteractiveCustomUIPage<TerminalPage.Ter
         setGrid(cmd, "#BackpackGrid", player.getInventory().getBackpack());
         ItemStack stack = drive == null ? null : drive.getItemStack((short) 0);
         Integer id = PenDriveItemMetadata.id(stack);
-        cmd.set("#Status.Text", id == null ? "Inserta un PenDrive"
+        cmd.set("#Status.Text", id == null ? me.kvothe.talecraft.I18n.t("Insert a PenDrive")
                 : PenDriveItemMetadata.label(stack) + " · " + PenDriveHub.PENDRIVE_QUOTA_BYTES / 1000
                         + " kB · ID " + id);
-        cmd.set("#DragHint.Text", draggedKind == null
-                ? "Arrastra un PenDrive al lector o retíralo a tu inventario"
-                : "Suelta el PenDrive en el slot de destino");
+        cmd.set("#DragHint.Text", me.kvothe.talecraft.I18n.t(draggedKind == null
+                ? "Drag a PenDrive into the reader or remove it to your inventory"
+                : "Drop the PenDrive in the destination slot"));
     }
 
     private static void setGrid(UICommandBuilder cmd, String selector, ItemContainer container) {

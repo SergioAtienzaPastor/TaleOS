@@ -1,5 +1,5 @@
 server.items.TaleCraft_Turtle.name = Turtle
-server.items.TaleCraft_Turtle.description = Programmable robot with 16 inventory slots and one tool slot.
+server.items.TaleCraft_Turtle.description = Programmable robot with 16 inventory slots and two upgrade slots.
 server.items.TaleCraft_Computer.name = TaleCraft Computer
 server.items.TaleCraft_Computer.description = Programmable computer running TaleOS and Lua.
 server.items.TaleCraft_Monitor.name = TaleCraft Monitor

@@ -226,7 +226,7 @@ class TurtleApiTest {
         assertTrue(turtle.methods.contains("down"));
         assertTrue(turtle.methods.contains("digUp"));
         assertEquals(1, turtle.methods.stream().filter("forward"::equals).count());
-        assertEquals("Excavando túnel de 3x3...\nTúnel completado: 2 secciones\n",
+        assertEquals("Digging 3x3 tunnel...\nTunnel completed: 2 sections\n",
                 machine.drainOutput());
     }
 
@@ -243,7 +243,7 @@ class TurtleApiTest {
         assertEquals(List.of("dig", "forward", "digUp", "digDown",
                 "dig", "forward", "digUp", "digDown"), turtle.methods.stream()
                         .filter(name -> name.startsWith("dig") || name.equals("forward")).toList());
-        assertEquals("Excavando frente de 1x3...\nExcavación completada: 2 secciones\n",
+        assertEquals("Excavating 1x3 face...\nExcavation completed: 2 sections\n",
                 machine.drainOutput());
     }
 
@@ -264,7 +264,7 @@ class TurtleApiTest {
                 "excavate-blocked");
         blockedMachine.tick();
         assertEquals(List.of("detect", "dig"), blocked.methods);
-        assertEquals("Excavando frente de 1x3...\nexcavate: blocked\n", blockedMachine.drainOutput());
+        assertEquals("Excavating 1x3 face...\nexcavate: blocked\n", blockedMachine.drainOutput());
     }
 
     private static String programWithArguments(String name, String argumentDeclaration) throws Exception {

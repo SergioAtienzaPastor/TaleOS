@@ -905,7 +905,8 @@ public final class TurtleController implements TurtleBridge {
             BlockOperations.setBlock(chunks, section, target.x, target.y, target.z,
                     BlockType.EMPTY_ID, BlockType.EMPTY, 0, 0, SetBlockSettings.NO_DROP_ITEMS);
             manager.unbindAt(world, target);
-            return TurtleResult.fail("no se pudo restaurar la máquina: " + e.getMessage());
+            return TurtleResult.fail(me.kvothe.talecraft.I18n.t("Could not restore machine: ")
+                    + e.getMessage());
         }
         inventory.removeItemStackFromSlot((short) selected, 1);
         return TurtleResult.OK;

@@ -3,10 +3,10 @@ if action == "host" then
   local x, y, z = select(2, ...)
   x, y, z = tonumber(x), tonumber(y), tonumber(z)
   if not x or not y or not z then
-    print("uso: gps host <x> <y> <z>")
+    print(tale.tr("Usage: gps host <x> <y> <z>"))
     return
   end
-  print("GPS host en " .. x .. ", " .. y .. ", " .. z .. " (Ctrl+T para detener)")
+  print(tale.tr("GPS host at ") .. x .. ", " .. y .. ", " .. z .. tale.tr(" (use Stop to terminate)"))
   gps.host(x, y, z)
 elseif action == "locate" or action == nil then
   local x, y, z = gps.locate()
@@ -16,5 +16,5 @@ elseif action == "locate" or action == nil then
     print("gps: " .. tostring(y))
   end
 else
-  print("uso: gps [locate] | gps host <x> <y> <z>")
+  print(tale.tr("Usage: gps [locate] | gps host <x> <y> <z>"))
 end

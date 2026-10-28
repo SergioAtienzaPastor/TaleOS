@@ -40,7 +40,11 @@ public final class PeripheralHandle {
         if (!peripheral.supportsMethod(method)) {
             throw new LuaError("No such method " + method + " on " + peripheral.getType());
         }
-        return peripheral.call(method, args);
+        try {
+            return peripheral.call(method, args);
+        } catch (LuaError error) {
+            throw new LuaError(me.kvothe.talecraft.I18n.t(error.getMessage()));
+        }
     }
 
     public Peripheral resolve() {

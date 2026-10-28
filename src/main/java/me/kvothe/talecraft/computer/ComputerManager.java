@@ -95,6 +95,8 @@ public final class ComputerManager {
     }
 
     public void load() {
+        me.kvothe.talecraft.I18n.setLanguage(
+                me.kvothe.talecraft.net.LanguageConfig.load(dataDir.resolve("config.json")));
         httpService = new me.kvothe.talecraft.net.HttpService(dataDir.resolve("config.json"));
         me.kvothe.talecraft.net.ModemConfig.Values modemConfig =
                 me.kvothe.talecraft.net.ModemConfig.load(dataDir.resolve("config.json"));

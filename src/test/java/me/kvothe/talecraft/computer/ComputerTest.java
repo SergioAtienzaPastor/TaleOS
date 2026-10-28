@@ -36,10 +36,10 @@ class ComputerTest {
         c.drainOutput();
         c.queueStdin("id");
         c.tick();
-        assertTrue(c.drainOutput().contains("ordenador #42"));
+        assertTrue(c.drainOutput().contains("Computer #42"));
         c.queueStdin("help");
         c.tick();
-        assertTrue(c.drainOutput().contains("comandos"));
+        assertTrue(c.drainOutput().contains("commands"));
     }
 
     @Test
@@ -54,7 +54,7 @@ class ComputerTest {
         // new output still works after the wipe
         c.queueStdin("id");
         c.tick();
-        assertTrue(c.getScrollback().contains("ordenador #42"));
+        assertTrue(c.getScrollback().contains("Computer #42"));
     }
 
     @Test
@@ -64,7 +64,7 @@ class ComputerTest {
         c.queueStdin("edit foo.lua");
         c.tick();
         String out = c.drainOutput();
-        assertTrue(out.contains("editor no disponible"), "got: " + out);
+        assertTrue(out.contains("editor unavailable"), "got: " + out);
         assertFalse(out.contains(""), "control chars must never reach the transcript");
     }
 

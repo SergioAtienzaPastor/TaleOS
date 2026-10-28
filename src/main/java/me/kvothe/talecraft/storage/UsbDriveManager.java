@@ -334,13 +334,14 @@ public final class UsbDriveManager {
 
     public synchronized void assertCanInsert(World world, BlockPosition position, ItemStack stack) {
         if (!PenDriveItemMetadata.isPenDrive(stack)) {
-            throw new IllegalArgumentException("El lector USB sólo acepta PenDrives");
+            throw new IllegalArgumentException(me.kvothe.talecraft.I18n.t("The USB drive only accepts PenDrives"));
         }
         Integer id = PenDriveItemMetadata.id(stack);
         PenDriveHub.Drive claimed = id == null ? null : hub.byId(id);
         String location = computers.key(world.getName(), position.x, position.y, position.z);
         if (claimed != null && hub.atLocation(location) != claimed) {
-            throw new IllegalStateException("PenDrive #" + id + " ya está insertado en otro lector");
+            throw new IllegalStateException("PenDrive #" + id + me.kvothe.talecraft.I18n.t(
+                    " is already inserted in another reader"));
         }
     }
 
@@ -348,15 +349,15 @@ public final class UsbDriveManager {
             String label) {
         ItemContainer container = containerAt(world, position);
         if (container == null) {
-            throw new IllegalStateException("lector USB no disponible");
+            throw new IllegalStateException(me.kvothe.talecraft.I18n.t("USB drive unavailable"));
         }
         ItemStack existing = container.getItemStack((short) 0);
         if (existing != null && !existing.isEmpty()) {
-            throw new IllegalStateException("el lector no está vacío");
+            throw new IllegalStateException(me.kvothe.talecraft.I18n.t("The drive slot is not empty"));
         }
         ItemStack inserted = PenDriveItemMetadata.unassigned();
         if (!container.replaceItemStackInSlot((short) 0, existing, inserted).succeeded()) {
-            throw new IllegalStateException("no se pudo insertar el PenDrive");
+            throw new IllegalStateException(me.kvothe.talecraft.I18n.t("Could not insert the PenDrive"));
         }
         try {
             PenDriveHub.Drive drive = sync(world, position);

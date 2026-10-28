@@ -86,7 +86,7 @@ class WgetTest {
     @Test
     void wgetDownloadsWithoutExecutingAndRejectsHttpErrorsAndOversize() throws Exception {
         machine.queueEvent("stdin", "wget " + baseUrl + "/ok.lua hola.lua");
-        String output = awaitOutput("Guardado hola.lua");
+        String output = awaitOutput("Saved hola.lua");
         assertEquals("print('NO_DEBE_EJECUTARSE')", Files.readString(computerRoot.resolve("hola.lua")));
         assertFalse(output.contains("NO_DEBE_EJECUTARSE\n"), "downloaded code must not run automatically");
 

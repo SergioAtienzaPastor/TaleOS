@@ -1,11 +1,11 @@
 local path = ...
 if not path then
-  print("uso: cat <archivo>")
+  print(tale.tr("Usage: cat <file>"))
   return
 end
 local content = fs.read(path)
 if not content then
-  print("cat: no existe: " .. path)
+  print("cat: " .. tale.tr("not found: ") .. path)
   return
 end
 print(content)

@@ -1,1 +1,1 @@
-print("ordenador #" .. os.getComputerID())
+print(tale.tr("Computer #") .. os.getComputerID())

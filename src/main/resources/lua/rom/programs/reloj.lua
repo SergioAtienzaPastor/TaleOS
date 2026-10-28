@@ -2,8 +2,8 @@
 -- Detén el programa con el botón Detener del terminal.
 local mon = tale.monitor()
 if not mon then
-  print("no hay monitor adyacente")
-  print("coloca un Monitor tocando el ordenador")
+  print(tale.tr("No adjacent monitor"))
+  print(tale.tr("Place a Monitor next to the computer"))
   return
 end
 local w, h = mon.getSize()

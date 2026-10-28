@@ -12,8 +12,8 @@ Group #Nas {
     Style: (FontSize: 24, TextColor: #9ed8d0, RenderBold: true, VerticalAlignment: Center);
   }
 
-  Label {
-    Text: "BAHÍAS PENDRIVE";
+  Label #BaysLabel {
+    Text: "PENDRIVE BAYS";
     Anchor: (Height: 30);
     Style: (FontSize: 17, TextColor: #d9e2e8, RenderBold: true);
   }
@@ -43,13 +43,13 @@ Group #Nas {
   }
 
   Label #DragHint {
-    Text: "Arrastra PenDrives entre las bahías y tu inventario";
+    Text: "Drag PenDrives between the bays and your inventory";
     Anchor: (Height: 42);
     Style: (FontSize: 13, TextColor: #a7b7c9, VerticalAlignment: Center);
   }
 
-  Label {
-    Text: "TU INVENTARIO";
+  Label #PlayerInventoryLabel {
+    Text: "YOUR INVENTORY";
     Anchor: (Height: 38);
     Style: (FontSize: 17, TextColor: #d9e2e8, RenderBold: true);
   }

@@ -187,13 +187,15 @@ public final class NasManager {
     public synchronized void assertCanInsert(World world, BlockPosition position, int slot,
             ItemStack stack) {
         if (slot < 0 || slot >= SLOTS || !PenDriveItemMetadata.isPenDrive(stack)) {
-            throw new IllegalArgumentException("El NAS solo acepta PenDrives en sus 8 bahías");
+            throw new IllegalArgumentException(me.kvothe.talecraft.I18n.t(
+                    "The NAS only accepts PenDrives in its 8 bays"));
         }
         Integer id = PenDriveItemMetadata.id(stack);
         PenDriveHub.Drive claimed = id == null ? null : hub.byId(id);
         String location = slotLocation(location(world, position), slot);
         if (claimed != null && hub.atLocation(location) != claimed) {
-            throw new IllegalStateException("PenDrive #" + id + " ya está insertado en otro lector");
+            throw new IllegalStateException("PenDrive #" + id + me.kvothe.talecraft.I18n.t(
+                    " is already inserted in another reader"));
         }
     }
 
@@ -201,15 +203,15 @@ public final class NasManager {
             String label) {
         ItemContainer container = containerAt(world, position);
         if (container == null || slot < 0 || slot >= SLOTS) {
-            throw new IllegalStateException("NAS o bahía no disponible");
+            throw new IllegalStateException(me.kvothe.talecraft.I18n.t("NAS or bay unavailable"));
         }
         ItemStack existing = container.getItemStack((short) slot);
         if (existing != null && !existing.isEmpty()) {
-            throw new IllegalStateException("la bahía no está vacía");
+            throw new IllegalStateException(me.kvothe.talecraft.I18n.t("The bay is not empty"));
         }
         ItemStack inserted = PenDriveItemMetadata.unassigned();
         if (!container.replaceItemStackInSlot((short) slot, existing, inserted).succeeded()) {
-            throw new IllegalStateException("no se pudo insertar el PenDrive");
+            throw new IllegalStateException(me.kvothe.talecraft.I18n.t("Could not insert the PenDrive"));
         }
         syncUnit(world, position);
         String location = slotLocation(location(world, position), slot);

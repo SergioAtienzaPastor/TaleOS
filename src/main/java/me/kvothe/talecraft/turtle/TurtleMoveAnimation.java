@@ -18,7 +18,7 @@ final class TurtleMoveAnimation {
         if (z != 0) {
             return z > 0 ? "MovePosZ" : "MoveNegZ";
         }
-        throw new IllegalArgumentException("El desplazamiento no puede ser cero");
+        throw new IllegalArgumentException("Movement cannot be zero");
     }
 
     static String turnStateFor(boolean left) {

@@ -119,7 +119,7 @@ public final class FsLib {
             try {
                 return run(a);
             } catch (Exception e) {
-                throw new LuaError("fs: " + e.getMessage());
+                throw new LuaError("fs: " + me.kvothe.talecraft.I18n.t(e.getMessage()));
             }
         }
     }

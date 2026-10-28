@@ -11,6 +11,7 @@ import java.util.Map;
 final class HttpConfig {
     static final String DEFAULT_JSON = """
         {
+          "language": "en",
           "http": {
             "enabled": true,
             "max_requests": 16,

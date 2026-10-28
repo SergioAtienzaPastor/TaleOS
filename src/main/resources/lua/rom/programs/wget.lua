@@ -1,10 +1,10 @@
 local url, path = ...
 if not url then
-  print("Uso: wget <url> [archivo]")
+  print(tale.tr("Usage: wget <url> [file]"))
   return
 end
 if type(http) ~= "table" or type(http.get) ~= "function" then
-  print("wget: HTTP está desactivado en mods/TaleCraft/config.json")
+  print(tale.tr("wget: HTTP is disabled in mods/TaleCraft/config.json"))
   return
 end
 
@@ -13,7 +13,7 @@ if not path or path == "" then
   path = clean:match("([^/]+)/?$") or "download"
 end
 
-print("Descargando " .. url)
+print(tale.tr("Downloading ") .. url)
 local response, err = http.get(url)
 if not response then
   print("wget: " .. tostring(err))
@@ -31,7 +31,7 @@ local body = response.readAll()
 response.close()
 local ok, writeErr = pcall(fs.write, path, body)
 if not ok then
-  print("wget: no se pudo guardar " .. path .. ": " .. tostring(writeErr))
+  print("wget: " .. tale.tr("could not save ") .. path .. ": " .. tostring(writeErr))
   return
 end
-print("Guardado " .. path .. " (" .. tostring(#body) .. " bytes)")
+print(tale.tr("Saved ") .. path .. " (" .. tostring(#body) .. " bytes)")
