@@ -23,8 +23,9 @@ TaleCraft was written from scratch. These projects inspired it or helped build i
 ## Assets
 
 All models (`.blockymodel`), textures, icons and sounds in this repository are original
-and generated programmatically (`tools/generate_assets.py`). Concept art was generated
-locally with ComfyUI/SDXL and retouched by script.
+and generated programmatically (`tools/generate_assets.py`). The TaleCraft logo is also
+original and reproducible with `tools/generate_logo.py`. Concept art was generated locally
+with ComfyUI/SDXL and retouched by script.
 
 ## Built by
 
