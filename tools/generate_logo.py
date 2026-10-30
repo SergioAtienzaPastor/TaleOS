@@ -150,7 +150,7 @@ def main():
     rounded(d, (543, 576, 622, 590), 5, fill="#6c4f32")
 
     # Wordmark.
-    centered_text(d, 858, "TALECRAFT", font(FONT_BOLD, 73), "#f1e6cb")
+    centered_text(d, 858, "TALEOS", font(FONT_BOLD, 73), "#f1e6cb")
     centered_text(d, 944, "PROGRAMMABLE COMPUTERS FOR HYTALE", font(FONT_BOLD, 19), "#69b9ab")
 
     border = ImageDraw.Draw(image)

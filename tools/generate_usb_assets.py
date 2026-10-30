@@ -8,7 +8,7 @@ from PIL import Image
 
 from generate_assets import BLOCKS, CELL, FACES, RES, box, box_mapped, model, render_icon
 
-ITEMS = os.path.join(RES, "Common", "Items", "TaleCraft")
+ITEMS = os.path.join(RES, "Common", "Items", "TaleOS")
 ICONS = os.path.join(RES, "Common", "Icons", "ItemsGenerated")
 
 
@@ -61,8 +61,8 @@ def main():
     os.makedirs(ITEMS, exist_ok=True)
     os.makedirs(ICONS, exist_ok=True)
     jobs = [
-        ("TaleCraft_PenDrive", pendrive_model, ITEMS, True),
-        ("TaleCraft_USB_Drive", reader_model, BLOCKS, False),
+        ("TaleOS_PenDrive", pendrive_model, ITEMS, True),
+        ("TaleOS_USB_Drive", reader_model, BLOCKS, False),
     ]
     for name, builder, directory, pendrive in jobs:
         model_path = os.path.join(directory, name + ".blockymodel")

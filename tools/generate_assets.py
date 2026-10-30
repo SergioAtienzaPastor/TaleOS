@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genera los assets propios de TaleCraft (modelos .blockymodel, texturas 64px
+"""Genera los assets propios de TaleOS (modelos .blockymodel, texturas 64px
 paleta con ruido, beep .ogg) — pipeline 100% por script, sin Blockbench ni fal.
 
 Uso (venv de ComfyUI: numpy+Pillow+soundfile):
@@ -20,8 +20,8 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.normpath(os.path.join(HERE, "..", "src", "main", "resources"))
-BLOCKS = os.path.join(RES, "Common", "Blocks", "TaleCraft")
-SOUNDS = os.path.join(RES, "Common", "Sounds", "TaleCraft")
+BLOCKS = os.path.join(RES, "Common", "Blocks", "TaleOS")
+SOUNDS = os.path.join(RES, "Common", "Sounds", "TaleOS")
 
 CELL = {"brass": (0, 0), "wood": (32, 0), "screen": (0, 32), "keys": (32, 32)}
 FACES = ["front", "back", "right", "bottom", "left", "top"]
@@ -333,17 +333,17 @@ def main():
     icons = os.path.join(RES, "Common", "Icons", "ItemsGenerated")
     os.makedirs(icons, exist_ok=True)
     builders = (
-        ("TaleCraft_Computer", computer_model),
-        ("TaleCraft_Monitor", monitor_model),
-        ("TaleCraft_Modem", modem_model),
-        ("TaleCraft_Turtle", turtle_model),
+        ("TaleOS_Computer", computer_model),
+        ("TaleOS_Monitor", monitor_model),
+        ("TaleOS_Modem", modem_model),
+        ("TaleOS_Turtle", turtle_model),
     )
     for name, builder in builders:
         model_file = os.path.join(BLOCKS, name + ".blockymodel")
         tex_file = os.path.join(BLOCKS, name + "_Texture.png")
         with open(model_file, "w") as f:
             json.dump(builder(), f, separators=(",", ":"))
-        texture(tex_file, prompt_glyph=(name not in ("TaleCraft_Monitor", "TaleCraft_Modem")))
+        texture(tex_file, prompt_glyph=(name not in ("TaleOS_Monitor", "TaleOS_Modem")))
         render_icon(model_file, tex_file, os.path.join(icons, name + ".png"))
     beep(os.path.join(SOUNDS, "boot_beep.ogg"))
     print("assets generados en", BLOCKS, ",", SOUNDS, "e", icons)

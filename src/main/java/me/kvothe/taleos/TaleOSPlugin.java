@@ -1,0 +1,100 @@
+package me.kvothe.taleos;
+
+import java.nio.file.Path;
+
+import javax.annotation.Nonnull;
+
+import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.BlockPosition;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.config.server.OpenCustomUIInteraction;
+import com.hypixel.hytale.server.core.plugin.JavaPlugin;
+import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+
+import me.kvothe.taleos.computer.Computer;
+import me.kvothe.taleos.computer.ComputerBreakSystem;
+import me.kvothe.taleos.computer.ComputerManager;
+import me.kvothe.taleos.computer.ComputerPlaceSystem;
+import me.kvothe.taleos.computer.ComputerTickSystem;
+import me.kvothe.taleos.computer.TerminalPageSupplier;
+import me.kvothe.taleos.computer.TurtlePageSupplier;
+import me.kvothe.taleos.lua.LuaMachine;
+
+/**
+ * TaleOS: programmable Lua computers for Hytale. Entrypoint of the plugin;
+ * registers blocks, commands and event listeners from {@link #setup()}.
+ */
+public class TaleOSPlugin extends JavaPlugin {
+
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+
+    private ComputerManager computerManager;
+
+    public TaleOSPlugin(@Nonnull JavaPluginInit init) {
+        super(init);
+    }
+
+    @Override
+    protected void setup() {
+        LOGGER.atInfo().log("Setting up plugin " + this.getName());
+        computerManager = new ComputerManager(Path.of("mods", "TaleOS"));
+        computerManager.load();
+        LOGGER.atInfo().log(me.kvothe.taleos.I18n.t("TaleOS started, version ")
+                + this.getManifest().getVersion().toString());
+        getEntityStoreRegistry().registerSystem(new ComputerTickSystem(computerManager));
+        getEntityStoreRegistry().registerSystem(new ComputerBreakSystem(computerManager));
+        getEntityStoreRegistry().registerSystem(new ComputerPlaceSystem(computerManager));
+        // Block "Use" interactions reference this page supplier by name.
+        OpenCustomUIInteraction.registerCustomPageSupplier(this, TerminalPageSupplier.class,
+                "TaleOSComputer", new TerminalPageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this, TurtlePageSupplier.class,
+                "TaleOSTurtle", new TurtlePageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this,
+                me.kvothe.taleos.computer.UsbDrivePageSupplier.class,
+                "TaleOSUSBDrive", new me.kvothe.taleos.computer.UsbDrivePageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this,
+                me.kvothe.taleos.computer.NasPageSupplier.class,
+                "TaleOSNAS", new me.kvothe.taleos.computer.NasPageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this,
+                me.kvothe.taleos.computer.PocketPageSupplier.class,
+                "TaleOSPocket", new me.kvothe.taleos.computer.PocketPageSupplier(computerManager));
+        getEventRegistry().register(
+                com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent.class,
+                event -> computerManager.pockets().disconnect(event.getPlayerRef().getUuid()));
+        this.getCommandRegistry().registerCommand(new TaleOSCommand(this.getName(),
+                this.getManifest().getVersion().toString(), computerManager));
+        if (Boolean.parseBoolean(System.getProperty("taleos.selftest", "false"))) {
+            runSelfTest();
+        }
+    }
+
+    /**
+     * Headless smoke test enabled with -Dtaleos.selftest=true: boots a
+     * computer without world context, drives the shell over stdin events and
+     * verifies an infinite loop dies by budget without harming the server.
+     */
+    private void runSelfTest() {
+        try {
+            Computer c = computerManager.bootAt(null, new BlockPosition(0, 64, 0));
+            String boot = c.drainOutput();
+            boolean bootOk = boot.contains("TaleOS v0.1") && boot.contains("tale>");
+            LOGGER.atInfo().log("[selftest] boot to TaleOS prompt: " + bootOk);
+            c.queueStdin("id");
+            c.tick();
+            LOGGER.atInfo().log("[selftest] id command output: " + c.drainOutput().trim());
+            LuaMachine rogue = new LuaMachine(100_000);
+            rogue.load("while true do end", "rogue");
+            rogue.tick();
+            LOGGER.atInfo().log("[selftest] infinite-loop machine state (expected DEAD): " + rogue.getState());
+            LOGGER.atInfo().log("[selftest] server still alive after the budget kill");
+        } catch (Throwable t) {
+            LOGGER.atSevere().log("[selftest] FAILED: " + t);
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        if (computerManager != null) {
+            computerManager.shutdown();
+        }
+    }
+}

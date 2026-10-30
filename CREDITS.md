@@ -1,13 +1,13 @@
 # Credits
 
-TaleCraft was written from scratch. These projects inspired it or helped build it:
+TaleOS was written from scratch. These projects inspired it or helped build it:
 
 ## Inspiration (design references, no code copied)
 
 - **Dan200** — ComputerCraft, the original programmable-computers mod.
 - **SquidDev & the CC:Tweaked contributors** — [CC: Tweaked](https://github.com/cc-tweaked/CC-Tweaked),
   studied as the architectural reference (coroutine VM, instruction limits, rom layout,
-  terminal design). CC:T's license restricts its code to Minecraft mods; TaleCraft
+  terminal design). CC:T's license restricts its code to Minecraft mods; TaleOS
   reimplements the ideas from zero for Hytale.
 - **quantumsheep** — *Computale* (Hytale), proof the concept fits Hytale.
 - **Arcane Loader** (Hytale) — reference for Lua runtimes embedded in Hytale servers.
@@ -23,7 +23,7 @@ TaleCraft was written from scratch. These projects inspired it or helped build i
 ## Assets
 
 All models (`.blockymodel`), textures, icons and sounds in this repository are original
-and generated programmatically (`tools/generate_assets.py`). The TaleCraft logo is also
+and generated programmatically (`tools/generate_assets.py`). The TaleOS logo is also
 original and reproducible with `tools/generate_logo.py`. Concept art was generated locally
 with ComfyUI/SDXL and retouched by script.
 

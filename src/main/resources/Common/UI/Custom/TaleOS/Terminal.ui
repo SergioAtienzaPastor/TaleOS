@@ -1,0 +1,68 @@
+// TaleOS terminal page. Layout path: TaleOS/Terminal.ui
+$C = "../Common.ui";
+
+Group #Terminal {
+  Anchor: (Width: 720, Height: 430);
+  Background: #101418(0.97);
+  LayoutMode: Top;
+  Padding: (Full: 14);
+
+  Group #TitleRow {
+    Anchor: (Height: 32);
+    LayoutMode: Left;
+
+    Label #Title {
+      Text: "Computer";
+      Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true, VerticalAlignment: Center);
+    }
+
+    // pushes Detener to the far right
+    Group { FlexWeight: 1; }
+
+    // Kills the running program and returns to the prompt (CC:T's Ctrl+T).
+    $C.@SecondaryTextButton #Stop {
+      Text: "Stop";
+      Anchor: (Width: 140, Height: 30);
+    }
+  }
+
+  Group { Anchor: (Height: 6); }
+
+  Group #InputRow {
+    Anchor: (Height: 38);
+    LayoutMode: Left;
+    Padding: (Left: 10);
+
+    Label #Prompt {
+      Text: "tale> ";
+      Style: (FontSize: 13, TextColor: #c8d8b8, VerticalAlignment: Center);
+    }
+
+    $C.@TextField #Input {
+      FlexWeight: 1;
+      AutoFocus: true;
+      PlaceholderText: "Type a command and press Enter";
+      Background: #101418;
+    }
+
+  }
+
+  Label #CompletionHint {
+    Text: "TAB completes; press again to cycle";
+    Anchor: (Height: 18);
+    Style: (FontSize: 11, TextColor: #a7b7c9, VerticalAlignment: Center);
+  }
+
+  Group { Anchor: (Height: 8); }
+
+  Group #Screen {
+    FlexWeight: 1;
+    LayoutMode: TopScrolling;
+    ScrollbarStyle: $C.@DefaultScrollbarStyle;
+
+    Label #Output {
+      Text: "";
+      Style: (TextColor: #c8d8b8);
+    }
+  }
+}

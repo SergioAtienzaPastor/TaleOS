@@ -1,6 +1,6 @@
-# TaleCraft
+# TaleOS
 
-![TaleCraft — programmable computers for Hytale](docs/logo.png)
+![TaleOS — programmable computers for Hytale](docs/logo.png)
 
 **Programmable Lua computers for Hytale** — a ComputerCraft-style server plugin: craft a
 Computer block, press F, and you get a real terminal running **TaleOS**, a small Lua OS,
@@ -9,10 +9,14 @@ sandboxed and safe for multiplayer servers.
 > Early Access project, built for Hytale server 0.6.2 (Java 25). Server-side plugin: players
 > only need the vanilla client (assets are delivered by the server).
 
+**Documentation:** visit the [TaleOS Wiki](https://sergioatienzapastor.github.io/TaleOS/wiki/)
+for guides, every crafting recipe, shell commands, Lua APIs, peripherals, examples and server
+configuration. The wiki is also bundled at [docs/wiki/index.html](docs/wiki/index.html).
+
 ## Installation
 
-1. Download `talecraft-0.1.0.jar` from
-   [GitHub Releases](https://github.com/SergioAtienzaPastor/TaleCraft/releases/latest).
+1. Download `taleos-0.1.0.jar` from
+   [CurseForge](https://www.curseforge.com/hytale/mods/taleos).
 2. Copy it into the server's `Server/mods/` directory.
 3. Restart the Hytale server. No client-side installation is required.
 
@@ -32,7 +36,7 @@ sandboxed and safe for multiplayer servers.
   timers, `parallel.waitForAny`/`waitForAll`, and automatic execution of the computer's
   `startup.lua` before the shell (also after reboot).
 - **Per-computer filesystem**: jailed, 1 MB quota, persists across restarts
-  (`mods/TaleCraft/computers/<id>/`). Read-only `rom/` with TaleOS.
+  (`mods/TaleOS/computers/<id>/`). Read-only `rom/` with TaleOS.
 - **World API v1**: `tale.getBlock(dx,dy,dz)`, `tale.detect(...)`, `tale.chat(msg)`,
   `tale.time()` — executed safely on the tick thread.
 - **Peripherals**: discover adjacent devices with `peripheral.getNames/wrap/find`, receive
@@ -48,17 +52,17 @@ sandboxed and safe for multiplayer servers.
   there is no F/page interface. Compatible monitors form shared rectangles up to 8×8 blocks,
   preserve their content on resize/split and emit `monitor_resize`; every block renders its own
   crop of the shared canvas.
-- **PenDrives and USB drives**: insert a `TaleCraft_PenDrive` into a `TaleCraft_USB_Drive`
+- **PenDrives and USB drives**: insert a `TaleOS_PenDrive` into a `TaleOS_USB_Drive`
   to mount persistent files at `usb`, `usb2`, etc. IDs, labels and 1 MB quotas are independent
   per medium. The `usb_drive` peripheral supports labels, mount paths and safe ejection.
-- **Stackable NAS**: each `TaleCraft_NAS` holds 8 PenDrives. Connected units share their media
+- **Stackable NAS**: each `TaleOS_NAS` holds 8 PenDrives. Connected units share their media
   with every running Computer/Turtle/Pocket within 16 blocks, using stable `nas/<id>` paths. `cd <id>`
   is a shortcut for `cd nas/<id>`, and the NAS interface shows each medium as `PenDrive #<id>`. The same
   files can be read or executed by several machines and a PenDrive cannot be inserted twice.
-- **Speakers**: place a `TaleCraft_Speaker` or equip it on a Turtle and call
+- **Speakers**: place a `TaleOS_Speaker` or equip it on a Turtle and call
   `playSound(name[, volume[, pitch]])` with any registered SoundEvent. Sounds are positional
   and rate-limited; arbitrary audio streaming is not included.
-- **Pocket Computer**: use a `TaleCraft_PocketComputer` item to open a mobile terminal.
+- **Pocket Computer**: use a `TaleOS_PocketComputer` item to open a mobile terminal.
   Files and identity persist, while execution suspends when the item is dropped, its holder
   disconnects or changes worlds. Nearby NAS media follows the player and is unmounted on suspension.
   Duplicate stacks cannot run two sessions on the same disk.
@@ -73,7 +77,7 @@ sandboxed and safe for multiplayer servers.
   Actions return `true` or `false, reason`. ROM programs include `go`, `turn`, `tunnel`,
   `excavate`, `equip` and `unequip`. `tunnel N` digs a 3×3 cross-section. Slots are numbered
   1–16 from Lua; tools must be appropriate for the block being mined. Equipped tools and weapons
-  do not lose durability when the Turtle uses them. Modems and the `TaleCraft_Crafting_Upgrade`
+  do not lose durability when the Turtle uses them. Modems and the `TaleOS_Crafting_Upgrade`
   can occupy either upgrade slot; crafting supports ordinary
   tier-0 Crafting recipes and preserves inventory/metadata when planning its output.
 
@@ -105,8 +109,8 @@ Then `cat hello.txt` again after a server restart — files survive.
 
 ### Language configuration
 
-TaleCraft supports English and Spanish. The default language is English (`en`). To use Spanish,
-set `language` to `es` in `mods/TaleCraft/config.json` and restart the server:
+TaleOS supports English and Spanish. The default language is English (`en`). To use Spanish,
+set `language` to `es` in `mods/TaleOS/config.json` and restart the server:
 
 ```json
 {
@@ -120,7 +124,7 @@ output. Lua API names and user program output are not changed. Existing configur
 
 ### HTTP configuration
 
-The server creates `mods/TaleCraft/config.json` on startup; restart after editing it. The default
+The server creates `mods/TaleOS/config.json` on startup; restart after editing it. The default
 configuration enables HTTP, allows 16 concurrent requests per computer, uses a 30-second timeout,
 allows 16 redirects, limits each download to 16 MiB and global download throughput to 32 MiB/s.
 `max_requests = 0` removes the per-computer concurrency limit.
@@ -157,24 +161,24 @@ program
 
 ### Console/admin command
 
-`/talecraft <mundo> <x> <y> <z> <línea de shell>` boots the computer at that block (if
+`/taleos <mundo> <x> <y> <z> <línea de shell>` boots the computer at that block (if
 needed) and queues one shell line — scriptable from the server console for tests and
-admin work. `/talecraft <mundo> <x> <y> <z> __probe` logs chunk/section diagnostics.
-Every computer also writes a transcript to `mods/TaleCraft/logs/computer-<id>.log`.
+admin work. `/taleos <mundo> <x> <y> <z> __probe` logs chunk/section diagnostics.
+Every computer also writes a transcript to `mods/TaleOS/logs/computer-<id>.log`.
 
 ## For developers
 
 ```bash
-./gradlew build          # fat jar with LuaJ embedded -> build/libs/talecraft-*.jar
+./gradlew build          # fat jar with LuaJ embedded -> build/libs/taleos-*.jar
 ./gradlew test           # 25+ headless tests (runtime, sandbox, fs, TaleOS boot)
 python tools/generate_assets.py   # regenerates models/textures/sound (needs numpy, Pillow, soundfile)
 ```
 
 The Hytale server jar is resolved via the `hytale_home` property (see `gradle.properties`).
-`-Dtalecraft.selftest=true` runs a headless in-server smoke test at startup (boot to prompt,
+`-Dtaleos.selftest=true` runs a headless in-server smoke test at startup (boot to prompt,
 stdin command, budget kill).
 
 ## License and credits
 
-TaleCraft is **MPL-2.0** (see `LICENSE`). It is a clean-room reimplementation inspired by
+TaleOS is **MPL-2.0** (see `LICENSE`). It is a clean-room reimplementation inspired by
 ComputerCraft/CC:Tweaked — no code or assets were copied. See `CREDITS.md`.

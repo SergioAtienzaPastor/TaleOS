@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The complete TaleOS wiki: guides, crafting recipes, Lua APIs, peripherals, Turtle programming and server configuration for Hytale.">
+  <title>TaleOS Wiki</title>
+  <link rel="icon" href="../logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-button" type="button" aria-label="Toggle navigation">Menu</button>
+  <a class="brand" href="#home" data-target="home">
+    <img src="../logo.png" alt="TaleOS logo">
+    <span><strong>TaleOS</strong><small>Programmable computers for Hytale</small></span>
+  </a>
+  <div class="search-wrap">
+    <input id="search" type="search" placeholder="Search the wiki… (press /)" aria-label="Search the wiki" autocomplete="off">
+    <div id="search-results" role="listbox"></div>
+  </div>
+  <a class="download-button" href="https://www.curseforge.com/hytale/mods/taleos" target="_blank" rel="noopener noreferrer">Download</a>
+  <span class="version">v0.1.0 · Early Access</span>
+</header>
+
+<nav class="sidebar" aria-label="Wiki navigation">
+  <div class="nav-group"><h2>Start here</h2>
+    <a href="#home" data-target="home">Overview</a>
+    <a href="#getting-started" data-target="getting-started">Getting started</a>
+    <a href="#recipes" data-target="recipes">Crafting recipes</a>
+    <a href="#computers" data-target="computers">Computers &amp; files</a>
+    <a href="#shell" data-target="shell">Shell commands</a>
+    <a href="#programming" data-target="programming">Your first programs</a>
+  </div>
+  <div class="nav-group"><h2>Lua APIs</h2>
+    <a href="#api-fs" data-target="api-fs">fs · Filesystem</a>
+    <a href="#api-os" data-target="api-os">os · System &amp; events</a>
+    <a href="#events" data-target="events">Event reference</a>
+    <a href="#api-term" data-target="api-term">term · Terminal</a>
+    <a href="#colors" data-target="colors">colors &amp; colours</a>
+    <a href="#api-window" data-target="api-window">window · Clipped surfaces</a>
+    <a href="#api-parallel" data-target="api-parallel">parallel · Tasks</a>
+    <a href="#api-shell" data-target="api-shell">shell · Paths</a>
+    <a href="#api-tale" data-target="api-tale">tale · Hytale bridge</a>
+    <a href="#api-http" data-target="api-http">http · Downloads</a>
+  </div>
+  <div class="nav-group"><h2>Hardware</h2>
+    <a href="#monitors" data-target="monitors">Monitors</a>
+    <a href="#turtles" data-target="turtles">Turtle guide</a>
+    <a href="#api-turtle" data-target="api-turtle">turtle API</a>
+    <a href="#storage" data-target="storage">PenDrives, USB &amp; NAS</a>
+    <a href="#pocket" data-target="pocket">Pocket Computers</a>
+    <a href="#api-peripheral" data-target="api-peripheral">peripheral API</a>
+    <a href="#api-inventory" data-target="api-inventory">Inventory peripherals</a>
+    <a href="#api-modem" data-target="api-modem">Modems &amp; rednet</a>
+    <a href="#api-gps" data-target="api-gps">gps · Positioning</a>
+    <a href="#api-speaker" data-target="api-speaker">Speakers</a>
+  </div>
+  <div class="nav-group"><h2>Server owners</h2>
+    <a href="#configuration" data-target="configuration">Configuration &amp; security</a>
+    <a href="#administration" data-target="administration">Administration &amp; logs</a>
+    <a href="#compatibility" data-target="compatibility">Compatibility &amp; limits</a>
+  </div>
+  <div class="nav-group"><h2>Examples</h2>
+    <a href="#examples" data-target="examples">Example programs</a>
+  </div>
+</nav>
+
+<main class="main">
+<aside class="toc" aria-label="On this page"></aside>
+
+<section class="article active" id="home" data-title="Overview" data-group="Start here">
+  <header><span class="eyebrow">Official documentation · v0.1.0</span><h1>TaleOS Wiki</h1>
+    <p class="lead">Build, program and automate your Hytale world with Lua computers, mobile terminals, robots, displays and shared storage.</p>
+  </header>
+  <div class="hero">
+    <div>
+      <p>TaleOS is a server-side Hytale mod that adds programmable Computers, Turtles, Pocket Computers, multi-block Monitors, PenDrives, USB drives, NAS units, wireless Modems and Speakers. Players only need the vanilla client.</p>
+      <p>This wiki documents the features that are actually present in TaleOS 0.1.0. It is inspired by the usefulness of computer-mod documentation, not a promise of drop-in compatibility with other mods.</p>
+    </div>
+    <img src="../logo.png" alt="TaleOS programmable computer">
+  </div>
+  <div class="cards">
+    <a class="card" href="#getting-started" data-target="getting-started"><strong>New to TaleOS?</strong><span>Craft your first Computer, open the terminal and run a Lua program.</span></a>
+    <a class="card" href="#recipes" data-target="recipes"><strong>Crafting recipes</strong><span>Every machine, peripheral and upgrade, with exact ingredients.</span></a>
+    <a class="card" href="#api-turtle" data-target="api-turtle"><strong>Automate with Turtles</strong><span>Movement, mining, combat, inventories, crafting and upgrades.</span></a>
+    <a class="card" href="#monitors" data-target="monitors"><strong>Draw on Monitors</strong><span>Text, pixels, 16 colors and shared displays up to 8×8 blocks.</span></a>
+    <a class="card" href="#api-fs" data-target="api-fs"><strong>Lua API reference</strong><span>Function signatures, return values, errors and examples.</span></a>
+    <a class="card" href="#configuration" data-target="configuration"><strong>Run a secure server</strong><span>HTTP rules, modem limits, languages, persistence and logs.</span></a>
+  </div>
+  <div class="note"><strong>Server-side only.</strong> Install the JAR in <code>Server/mods/</code> and restart. Assets are delivered by the server; players do not install a separate client mod.</div>
+  <h2 id="home-documentation">How to use this wiki</h2>
+  <p>Use the sidebar to browse by topic, or press <code>/</code> and search for a function such as <code>turtle.dig</code>, <code>fs.write</code> or <code>term.redirect</code>. Code blocks include a copy button. APIs list Lua arguments and return values from left to right.</p>
+</section>
+
+<section class="article" id="getting-started" data-title="Getting started" data-group="Start here">
+  <header><span class="eyebrow">Guide</span><h1>Getting started</h1><p class="lead">From a copper bar to your first running program in a few minutes.</p></header>
+  <h2 id="start-install">1. Install the mod</h2>
+  <ol>
+    <li>Download <code>taleos-0.1.0.jar</code> from <a href="https://www.curseforge.com/hytale/mods/taleos" target="_blank" rel="noopener noreferrer">CurseForge</a>.</li>
+    <li>Copy it into the Hytale server's <code>Server/mods/</code> directory.</li>
+    <li>Restart the server. TaleOS requires Java 25 and is built against Hytale server 0.6.2.</li>
+    <li>Join with the vanilla client. No client installation is required.</li>
+  </ol>
+  <h2 id="start-computer">2. Craft and place a Computer</h2>
+  <p>At a <strong>Workbench → Survival</strong>, combine <strong>4 copper bars + 4 Deadwood planks</strong>. Place the Computer and press <strong>F</strong> to open its terminal.</p>
+  <p>After booting, you should see <code>TaleOS v0.1 (TaleOS)</code> and the <code>tale&gt;</code> prompt.</p>
+  <h2 id="start-commands">3. Try the shell</h2>
+  <pre><code>id
+help
+echo Hello, Hytale!
+lua</code></pre>
+  <p>In the Lua REPL, enter:</p>
+  <pre><code>print("Hello from Lua!")
+tale.getComputerID()
+exit</code></pre>
+  <p>The REPL first tries to evaluate your input as an expression; if that fails, it runs it as a statement. It prints returned non-nil values. Type <code>exit</code> to return to the shell.</p>
+  <h2 id="start-editor">4. Create a program</h2>
+  <p>Run <code>edit hello.lua</code>. Enter this program, save it, and use <strong>Save and run</strong> (or save and type <code>hello</code>):</p>
+  <pre><code>local id = os.getComputerID()
+print("Hello from computer #" .. id)
+
+for i = 1, 3 do
+  print("Count: " .. i)
+  os.sleep(1)
+end</code></pre>
+  <p>The editor offers save, save-and-run, exit and Tab completion. The terminal also supports completion; the running-program Stop button terminates a program without killing the shell.</p>
+  <h2 id="start-startup">5. Run automatically at boot</h2>
+  <p>Create <code>startup.lua</code> in the computer's root directory. TaleOS executes it before the shell, both after a server restart and after <code>reboot</code>. Errors are printed and the shell still starts.</p>
+  <pre><code>-- startup.lua
+print("Computer #" .. os.getComputerID() .. " is ready")</code></pre>
+  <div class="tip"><strong>Next step:</strong> place a Monitor next to the Computer and run <code>reloj</code>, or craft a Turtle and try <code>go forward 3</code>.</div>
+</section>
+
+<section class="article" id="recipes" data-title="Crafting recipes" data-group="Start here">
+  <header><span class="eyebrow">Reference</span><h1>Crafting recipes</h1><p class="lead">All TaleOS recipes use Workbench → Survival and produce one item.</p></header>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Item</th><th>Ingredients</th><th>Crafting time</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>TaleOS_Computer</code></td><td>4 copper bars + 4 Deadwood planks</td><td>5 s</td><td>Fixed programmable Lua computer.</td></tr>
+      <tr><td><code>TaleOS_Turtle</code></td><td>6 copper bars + 2 Deadwood planks</td><td>5 s</td><td>Mobile robot with inventory and two upgrade slots.</td></tr>
+      <tr><td><code>TaleOS_Monitor</code></td><td>2 copper bars + 2 Deadwood planks</td><td>3 s</td><td>Colored text and pixel display; connects into rectangles.</td></tr>
+      <tr><td><code>TaleOS_PocketComputer</code></td><td>1 TaleOS Computer + 2 copper bars</td><td>5 s</td><td>Portable terminal with persistent identity and files.</td></tr>
+      <tr><td><code>TaleOS_PenDrive</code></td><td>2 copper bars + 1 Deadwood plank</td><td>3 s</td><td>Portable 1 MiB storage medium.</td></tr>
+      <tr><td><code>TaleOS_USB_Drive</code></td><td>4 copper bars + 1 Deadwood plank</td><td>4 s</td><td>Single-PenDrive reader for adjacent machines.</td></tr>
+      <tr><td><code>TaleOS_NAS</code></td><td>6 copper bars + 2 Deadwood planks</td><td>6 s</td><td>Eight-PenDrive network storage unit.</td></tr>
+      <tr><td><code>TaleOS_Modem</code></td><td>4 copper bars + 1 Deadwood plank</td><td>3 s</td><td>Wireless rednet/GPS peripheral or Turtle upgrade.</td></tr>
+      <tr><td><code>TaleOS_Speaker</code></td><td>2 copper bars + 2 Deadwood planks</td><td>3 s</td><td>Positional SoundEvent playback or Turtle upgrade.</td></tr>
+      <tr><td><code>TaleOS_Crafting_Upgrade</code></td><td>2 copper bars + 2 Deadwood planks</td><td>3 s</td><td>Enables Turtle crafting.</td></tr>
+    </tbody>
+  </table></div>
+  <h2 id="recipes-tools">Tools and weapons</h2>
+  <p>TaleOS does not add special tools. Use ordinary Hytale pickaxes, shovels, weapons and other registered tools in Turtle upgrade slots. A tool appropriate for the target block is required for digging. Tools and weapons do not lose durability when used by a Turtle.</p>
+  <h2 id="recipes-stacks">Stacking and identity</h2>
+  <p>Computers, Turtles, Pocket Computers and PenDrives have persistent identity and do not stack. Monitors, USB drives, NAS units, Modems and Speakers can stack up to 25 before identity is attached. Breaking a Computer or Turtle creates an item labeled with its ID; placing it again preserves its files and state.</p>
+</section>
+
+<section class="article" id="computers" data-title="Computers & files" data-group="Start here">
+  <header><span class="eyebrow">Guide</span><h1>Computers &amp; files</h1><p class="lead">Terminals, persistent storage and the Lua sandbox.</p></header>
+  <h2 id="computer-terminal">Using the terminal</h2>
+  <p>Press <strong>F</strong> on a Computer or Turtle. Type at the prompt and press Enter. The output area keeps a scrollable transcript. Completion is available with <strong>Tab</strong> in the terminal and editor. Use <strong>Stop</strong> to terminate the currently running program; the shell itself remains available.</p>
+  <p>The native Lua terminal is a <strong>51×19 character grid</strong>. It supports cursor positioning, scrolling, independent foreground/background colors per cell, <code>blit</code>, clipped windows and redirection to Monitors.</p>
+  <h2 id="computer-files">Persistent files</h2>
+  <p>Each machine has a jailed filesystem with a <strong>1 MiB quota</strong>. Computer files live in <code>mods/TaleOS/computers/&lt;id&gt;/</code>. The read-only <code>rom/</code> mount contains TaleOS and built-in programs. PenDrives have independent 1 MiB quotas.</p>
+  <p>Shell paths are relative to the current directory. Absolute paths start with <code>/</code>. Both <code>.</code> and <code>..</code> are normalized, and attempts to escape the computer's filesystem are rejected.</p>
+  <h2 id="computer-identity">Identity when broken</h2>
+  <p>Breaking a Computer or Turtle produces an item labeled <code>Computer #ID</code> or <code>Turtle #ID</code>. Its ID, files, inventory and equipped upgrades are retained when placed again. These items do not stack, preventing two placed machines from sharing one live disk.</p>
+  <h2 id="computer-sandbox">Lua sandbox and budgets</h2>
+  <p>TaleOS uses LuaJ with a per-tick instruction budget (200,000 bytecodes by default). Infinite loops, including loops hidden in <code>pcall</code>, <code>xpcall</code> or child coroutines, are killed without stopping the server.</p>
+  <p>Scripts cannot access Java, host files, host I/O or native process execution. <code>luajava</code>, <code>io</code>, <code>debug</code>, <code>package</code>, <code>require</code>, <code>dofile</code> and <code>loadfile</code> are unavailable. The standard <code>os</code> table is replaced by a safe TaleOS version.</p>
+  <h2 id="computer-loading">Loaded chunks</h2>
+  <p>World reads and Turtle actions require loaded chunks. With no players nearby, a chunk may unload and block reads return no block. Server owners can use vanilla keep-loaded settings for automation areas; see <a href="#administration" data-target="administration">Administration</a>.</p>
+</section>
+
+<section class="article" id="shell" data-title="Shell commands" data-group="Start here">
+  <header><span class="eyebrow">Reference</span><h1>Shell commands</h1><p class="lead">Built-in commands available at the tale&gt; prompt.</p></header>
+  <p>Arguments separated by spaces are passed to programs as strings. Your own <code>name.lua</code> in the current directory can be run with <code>name</code>. Built-in ROM programs take precedence when names collide.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
+      <tr><td><code>help</code></td><td>Show command and API help.</td></tr>
+      <tr><td><code>id</code></td><td>Print the persistent computer ID.</td></tr>
+      <tr><td><code>ls [directory]</code></td><td>List a directory; defaults to the current directory. Directory names end in <code>/</code>.</td></tr>
+      <tr><td><code>cd [directory]</code></td><td>Change directory. With no argument, go to <code>/</code>. Supports <code>..</code> and absolute paths. A numeric ID is a shortcut for <code>nas/&lt;id&gt;</code> when applicable.</td></tr>
+      <tr><td><code>cat &lt;file&gt;</code></td><td>Print a UTF-8 file.</td></tr>
+      <tr><td><code>mkdir &lt;directory&gt;</code></td><td>Create a directory, including required parents.</td></tr>
+      <tr><td><code>rm &lt;path&gt;</code></td><td>Delete a file or directory. ROM mounts cannot be changed.</td></tr>
+      <tr><td><code>echo [text…]</code></td><td>Print its arguments.</td></tr>
+      <tr><td><code>clear</code></td><td>Clear the terminal.</td></tr>
+      <tr><td><code>lua</code></td><td>Open the Lua mini-REPL; use <code>exit</code> to leave.</td></tr>
+      <tr><td><code>edit &lt;file&gt;</code></td><td>Open the visual editor. Save, save-and-run or exit.</td></tr>
+      <tr><td><code>wget &lt;url&gt; [file]</code></td><td>Download a text resource over HTTP. If omitted, the filename comes from the URL. Never executes the download automatically.</td></tr>
+      <tr><td><code>reloj</code></td><td>Display a centered HH:MM:SS clock on an adjacent Monitor. Stop it with the Stop button.</td></tr>
+      <tr><td><code>gps [locate]</code></td><td>Locate this machine using at least four GPS references.</td></tr>
+      <tr><td><code>gps host &lt;x&gt; &lt;y&gt; &lt;z&gt;</code></td><td>Serve a GPS reference at fixed coordinates until stopped.</td></tr>
+      <tr><td><code>reboot</code></td><td>Restart TaleOS and run <code>startup.lua</code> again.</td></tr>
+      <tr><td><code>shutdown</code></td><td>Shut down this machine.</td></tr>
+    </tbody></table></div>
+  <h2 id="shell-turtle">Turtle-only commands</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
+      <tr><td><code>go &lt;direction&gt; [count]</code></td><td>Move or turn. Directions: <code>forward</code>, <code>back</code>, <code>up</code>, <code>down</code>, <code>left</code>, <code>right</code>. Aliases: <code>fd</code>, <code>bk</code>, <code>dn</code>, <code>lt</code>, <code>rt</code>, <code>forwards</code>. Count defaults to 1.</td></tr>
+      <tr><td><code>turn &lt;left|right&gt; [count]</code></td><td>Turn in place without moving.</td></tr>
+      <tr><td><code>tunnel [length]</code></td><td>Dig a 3×3 cross-section for the given number of sections; defaults to 1. Uses the appropriate equipped tool.</td></tr>
+      <tr><td><code>excavate &lt;length&gt;</code></td><td>Dig and move through a 1×3 face for a positive integer length.</td></tr>
+      <tr><td><code>equip &lt;left|right&gt;</code></td><td>Swap the selected inventory item into an upgrade slot.</td></tr>
+      <tr><td><code>unequip &lt;left|right&gt;</code></td><td>Move an upgrade into the selected empty inventory slot.</td></tr>
+    </tbody></table></div>
+  <h2 id="shell-examples">Examples</h2>
+  <pre><code>mkdir programs
+cd programs
+edit counter.lua
+counter
+cd ..
+ls /
+cat /startup.lua</code></pre>
+</section>
+
+<section class="article" id="programming" data-title="Your first programs" data-group="Start here">
+  <header><span class="eyebrow">Guide</span><h1>Your first programs</h1><p class="lead">Learn the TaleOS style: terminal output, events, files and cooperative tasks.</p></header>
+  <h2 id="program-output">Output and arguments</h2>
+  <p><code>print(...)</code> converts values to text, separates them with tabs and writes a newline. A program invoked as <code>demo one 2</code> receives <code>"one"</code> and <code>"2"</code> through <code>...</code>.</p>
+  <pre><code>local name, countText = ...
+countText = tonumber(countText) or 1
+print("Hello, " .. (name or "world"))
+for i = 1, countText do
+  print("Iteration " .. i)
+end</code></pre>
+  <h2 id="program-errors">Errors and action results</h2>
+  <p>Filesystem errors raise Lua errors and can be caught with <code>pcall</code>. Turtle actions usually return <code>true</code> or <code>false, reason</code>. Peripheral method errors may also raise Lua errors; handle them when hardware may be absent.</p>
+  <pre><code>local ok, reason = turtle and turtle.forward()
+if turtle and not ok then
+  print("Blocked: " .. tostring(reason))
+end
+
+local wrote, err = pcall(fs.write, "status.txt", "ready")
+if not wrote then print(err) end</code></pre>
+  <h2 id="program-events">Waiting for events</h2>
+  <p>Use <code>os.pullEvent()</code> to wait for any event or <code>os.pullEvent("timer")</code> to accept only one kind. <code>os.pullEventRaw</code> does not filter. See the <a href="#events" data-target="events">event reference</a> for exact fields.</p>
+  <pre><code>local timer = os.startTimer(2)
+while true do
+  local event, id = os.pullEvent()
+  if event == "timer" and id == timer then
+    print("Two seconds elapsed")
+    break
+  end
+end</code></pre>
+  <h2 id="program-tasks">Two tasks at once</h2>
+  <p><code>parallel.waitForAny</code> returns when one function finishes; <code>waitForAll</code> waits for every function. Tasks cooperate through events and yields rather than preemptive threads.</p>
+  <pre><code>local function ticker()
+  while true do
+    os.sleep(1)
+    print("tick")
+  end
+end
+
+local function listener()
+  local event, side = os.pullEvent("peripheral")
+  print("Attached on " .. side)
+end
+
+parallel.waitForAny(ticker, listener)</code></pre>
+  <h2 id="program-startup">Startup and persistence</h2>
+  <p>Save durable state with <code>fs.write</code> or <code>fs.append</code>; do not rely only on Lua variables. Put unattended behavior in <code>startup.lua</code>. A startup program that loops forever still receives events and can be stopped from the terminal.</p>
+</section>
+
+<section class="article" id="api-fs" data-title="fs API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>fs · Filesystem</h1><p class="lead">Read and manage files inside a machine or mounted PenDrive.</p></header>
+  <p>Paths are strings. The shell-wrapped API resolves relative paths against the current directory; <code>/</code> selects the root. Missing files generally return <code>nil</code> on reads, while invalid writes, missing directories, read-only mounts and quota errors raise Lua errors prefixed with <code>fs:</code>.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>fs.exists(path)</code></td><td>boolean</td><td>Whether a file or directory exists.</td></tr>
+    <tr><td><code>fs.isDir(path)</code></td><td>boolean</td><td>Whether the path exists and is a directory.</td></tr>
+    <tr><td><code>fs.list(path)</code></td><td>table</td><td>A numerically indexed array of child names. Names of directories include a trailing <code>/</code>.</td></tr>
+    <tr><td><code>fs.read(path)</code></td><td>string | nil</td><td>Read the entire UTF-8 file, or nil if it does not exist.</td></tr>
+    <tr><td><code>fs.write(path, contents)</code></td><td>true</td><td>Create or replace a file. Both arguments are strings. Parent directories must exist.</td></tr>
+    <tr><td><code>fs.append(path, contents)</code></td><td>true</td><td>Append text to a file, creating it if necessary.</td></tr>
+    <tr><td><code>fs.mkdir(path)</code></td><td>true</td><td>Create a directory and required parents.</td></tr>
+    <tr><td><code>fs.delete(path)</code></td><td>true</td><td>Delete a file or directory. ROM and active mount protections apply.</td></tr>
+    <tr><td><code>fs.getSize(path)</code></td><td>number</td><td>File size in bytes; directories report 0.</td></tr>
+    <tr><td><code>fs.getCapacity([path])</code></td><td>number</td><td>Total quota in bytes for the current filesystem or the filesystem containing path.</td></tr>
+    <tr><td><code>fs.getFreeSpace([path])</code></td><td>number</td><td>Remaining bytes in that filesystem's quota.</td></tr>
+  </tbody></table></div>
+  <h2 id="fs-example">Example: append a log</h2>
+  <pre><code>fs.mkdir("logs")
+fs.append("logs/activity.txt", os.date() .. " started\n")
+
+if fs.exists("logs/activity.txt") then
+  print(fs.read("logs/activity.txt"))
+  print(fs.getSize("logs/activity.txt") .. " bytes")
+end
+
+print(fs.getFreeSpace("logs") .. " bytes free")</code></pre>
+  <h2 id="fs-mounts">Mounted media</h2>
+  <p>USB media appear as <code>usb</code>, <code>usb2</code>, etc. NAS media appear as <code>nas/&lt;PenDriveID&gt;</code>. Use <code>fs.getCapacity("nas/22")</code> or <code>fs.getFreeSpace("usb")</code> to query a specific medium. Removing a PenDrive removes its mount and subsequent accesses fail rather than reading stale data.</p>
+</section>
+
+<section class="article" id="api-os" data-title="os API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>os · System &amp; events</h1><p class="lead">Identity, timers, sleep, events and computer lifecycle.</p></header>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>os.getComputerID()</code></td><td>number</td><td>The persistent numeric ID of this machine.</td></tr>
+    <tr><td><code>os.startTimer(seconds)</code></td><td>number</td><td>Start a timer and return its ID. A <code>timer</code> event fires when it expires.</td></tr>
+    <tr><td><code>os.cancelTimer(id)</code></td><td>nil</td><td>Cancel a pending timer. Unknown or completed IDs are ignored.</td></tr>
+    <tr><td><code>os.sleep([seconds])</code></td><td>nil</td><td>Wait using a timer; omitted duration means 0. Other events are consumed while waiting for this timer.</td></tr>
+    <tr><td><code>os.queueEvent(name, ...)</code></td><td>boolean</td><td>Queue a custom event. Returns false when the bounded 256-event queue is full.</td></tr>
+    <tr><td><code>os.pullEvent([filter])</code></td><td>event fields…</td><td>Wait for the next event, skipping events that do not match the optional name.</td></tr>
+    <tr><td><code>os.pullEventRaw()</code></td><td>event fields…</td><td>Wait for the next event without filtering. Used internally by parallel, rednet and GPS.</td></tr>
+    <tr><td><code>os.reboot()</code></td><td>does not return</td><td>Restart the machine and run startup again.</td></tr>
+    <tr><td><code>os.shutdown()</code></td><td>does not return</td><td>Shut down the machine.</td></tr>
+    <tr><td><code>os.clock()</code></td><td>number</td><td>Safe LuaJ clock value, intended for measuring elapsed execution time.</td></tr>
+    <tr><td><code>os.time([table])</code></td><td>number</td><td>Lua time function based on real/server time, not Hytale's day cycle.</td></tr>
+    <tr><td><code>os.date([format[, time]])</code></td><td>string | table</td><td>Format real/server time. <code>os.date("*t")</code> returns fields such as hour, min and sec.</td></tr>
+    <tr><td><code>os.openEditor(path)</code></td><td>true</td><td>Request the visual editor for the player using the terminal. Normally invoked with the <code>edit</code> program.</td></tr>
+  </tbody></table></div>
+  <div class="note"><strong>Two kinds of sleep:</strong> <code>os.sleep(seconds)</code> uses real timers. <code>tale.sleep(ticks)</code> pauses for server ticks (20 ticks ≈ one second at normal tick rate).</div>
+  <h2 id="os-timer-example">One-shot and repeating timers</h2>
+  <pre><code>local id = os.startTimer(5)
+print("Timer #" .. id)
+
+local event, fired = os.pullEvent("timer")
+if fired == id then print("Five seconds elapsed") end
+
+os.queueEvent("my_event", 42, { ready = true })
+local name, value, data = os.pullEvent("my_event")
+print(name, value, data.ready)</code></pre>
+</section>
+
+<section class="article" id="events" data-title="Event reference" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua reference</span><h1>Event reference</h1><p class="lead">Values returned by os.pullEvent and os.pullEventRaw.</p></header>
+  <p>The first return value is always the event name. Subsequent values depend on the event. Events are delivered in FIFO order and the queue is bounded to 256 entries.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Event</th><th>Additional fields</th><th>When it fires</th></tr></thead><tbody>
+    <tr><td><code>stdin</code></td><td><code>line</code></td><td>A player or the admin command submits a line to the shell. Primarily used internally by TaleOS.</td></tr>
+    <tr><td><code>timer</code></td><td><code>timerID</code></td><td>A timer from <code>os.startTimer</code> expires.</td></tr>
+    <tr><td><code>peripheral</code></td><td><code>name</code></td><td>A peripheral becomes available on a side or alias.</td></tr>
+    <tr><td><code>peripheral_detach</code></td><td><code>name</code></td><td>A peripheral is removed or becomes unavailable.</td></tr>
+    <tr><td><code>monitor_resize</code></td><td><code>name</code></td><td>A connected Monitor structure changes size or is split.</td></tr>
+    <tr><td><code>modem_message</code></td><td><code>side, channel, replyChannel, payload, distance</code></td><td>An open channel receives a wireless message on a loaded receiver in the same world.</td></tr>
+    <tr><td><code>usb</code></td><td><code>side</code></td><td>A PenDrive is mounted. Side identifies the USB drive, or <code>nas</code> for NAS-backed media.</td></tr>
+    <tr><td><code>usb_eject</code></td><td><code>side</code></td><td>A mounted PenDrive is ejected or its mount disappears.</td></tr>
+    <tr><td><em>custom name</em></td><td><em>custom values…</em></td><td>Your program calls <code>os.queueEvent(name, ...)</code>. Strings, numbers, booleans, tables and nil are supported.</td></tr>
+  </tbody></table></div>
+  <h2 id="events-network">Reading a modem message</h2>
+  <pre><code>local event, side, channel, replyTo, payload, distance =
+  os.pullEvent("modem_message")
+
+print("Received on " .. side .. ", channel " .. channel)
+print("Reply channel: " .. replyTo)
+print("Distance: " .. distance)</code></pre>
+  <div class="warning"><strong>Not currently generated:</strong> mouse, keyboard, monitor-touch, redstone, disk/floppy, websocket, alarm and multishell events are not part of TaleOS 0.1.0.</div>
+</section>
+
+<section class="article" id="api-term" data-title="term API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>term · Terminal</h1><p class="lead">Write text, position the cursor, scroll and draw colored character cells.</p></header>
+  <p>Coordinates are one-based: <code>1,1</code> is the upper-left cell. Terminal color arguments accept either a color name or a single power-of-two value from <code>colors</code>. <code>print</code> writes to the current redirect target.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>term.write(value)</code></td><td>nil</td><td>Write text at the cursor and advance it, wrapping and scrolling as needed.</td></tr>
+    <tr><td><code>term.blit(text, fg, bg)</code></td><td>nil</td><td>Write equal-length strings of text and hexadecimal foreground/background color digits.</td></tr>
+    <tr><td><code>term.clear()</code></td><td>nil</td><td>Fill the terminal with spaces using current colors and move the cursor to 1,1.</td></tr>
+    <tr><td><code>term.clearLine()</code></td><td>nil</td><td>Clear the current row and move the cursor to its first column.</td></tr>
+    <tr><td><code>term.scroll(lines)</code></td><td>nil</td><td>Scroll by an integer amount; positive values move content upward.</td></tr>
+    <tr><td><code>term.getSize()</code></td><td>width, height</td><td>Dimensions in character cells. The native terminal is 51×19.</td></tr>
+    <tr><td><code>term.setCursorPos(x, y)</code></td><td>nil</td><td>Set the one-based cursor position.</td></tr>
+    <tr><td><code>term.getCursorPos()</code></td><td>x, y</td><td>Read the current position.</td></tr>
+    <tr><td><code>term.setCursorBlink(boolean)</code></td><td>nil</td><td>Enable or disable cursor blinking.</td></tr>
+    <tr><td><code>term.getCursorBlink()</code></td><td>boolean</td><td>Read the cursor blink state.</td></tr>
+    <tr><td><code>term.setTextColor(color)</code></td><td>nil</td><td>Set foreground for subsequent writes.</td></tr>
+    <tr><td><code>term.getTextColor()</code></td><td>number</td><td>Current foreground as a power-of-two color value.</td></tr>
+    <tr><td><code>term.setBackgroundColor(color)</code></td><td>nil</td><td>Set background for subsequent writes.</td></tr>
+    <tr><td><code>term.getBackgroundColor()</code></td><td>number</td><td>Current background as a power-of-two color value.</td></tr>
+    <tr><td><code>term.isColor()</code></td><td>boolean</td><td>Whether this terminal supports color.</td></tr>
+    <tr><td><code>term.native()</code></td><td>table</td><td>The original native terminal object.</td></tr>
+    <tr><td><code>term.current()</code></td><td>table</td><td>The current redirect target.</td></tr>
+    <tr><td><code>term.redirect(target)</code></td><td>previous target</td><td>Send terminal methods and print output to a terminal, window or Monitor. Restore with the returned object.</td></tr>
+  </tbody></table></div>
+  <h2 id="term-blit">Using blit</h2>
+  <p>Each character in the color strings is a hexadecimal digit representing a palette index: <code>0</code> is black, <code>f</code> is white, <code>5</code> is lime. All three strings must have the same length.</p>
+  <pre><code>term.clear()
+term.setCursorPos(1, 1)
+term.blit("TaleOS", "555555", "000000")
+term.setCursorPos(1, 3)
+term.setTextColor(colors.lime)
+term.setBackgroundColor(colors.black)
+term.write("Colored terminal text")</code></pre>
+  <h2 id="term-restore">Always restore redirects</h2>
+  <pre><code>local previous = term.redirect(term.native())
+-- Work with the selected target here.
+term.redirect(previous)</code></pre>
+</section>
+
+<section class="article" id="colors" data-title="colors API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>colors &amp; colours</h1><p class="lead">The shared 16-color palette used by terminals and Monitors.</p></header>
+  <p><code>colors</code> and <code>colours</code> are the same table. Each named value is a power of two. Terminal functions accept these values; Monitor pixel functions use the equivalent names.</p>
+  <div class="table-wrap"><table><thead><tr><th>Color</th><th>Value</th><th>Hex</th><th>Blit digit</th></tr></thead><tbody>
+    <tr><td><span class="swatch" style="background:#14161c"></span><code>colors.black</code></td><td>1</td><td>#14161c</td><td>0</td></tr>
+    <tr><td><span class="swatch" style="background:#2a3a6a"></span><code>colors.navy</code></td><td>2</td><td>#2a3a6a</td><td>1</td></tr>
+    <tr><td><span class="swatch" style="background:#3a5fce"></span><code>colors.blue</code></td><td>4</td><td>#3a5fce</td><td>2</td></tr>
+    <tr><td><span class="swatch" style="background:#3cb5b5"></span><code>colors.cyan</code></td><td>8</td><td>#3cb5b5</td><td>3</td></tr>
+    <tr><td><span class="swatch" style="background:#3f9e4d"></span><code>colors.green</code></td><td>16</td><td>#3f9e4d</td><td>4</td></tr>
+    <tr><td><span class="swatch" style="background:#7cc050"></span><code>colors.lime</code></td><td>32</td><td>#7cc050</td><td>5</td></tr>
+    <tr><td><span class="swatch" style="background:#e0c040"></span><code>colors.yellow</code></td><td>64</td><td>#e0c040</td><td>6</td></tr>
+    <tr><td><span class="swatch" style="background:#d8832c"></span><code>colors.orange</code></td><td>128</td><td>#d8832c</td><td>7</td></tr>
+    <tr><td><span class="swatch" style="background:#cc4040"></span><code>colors.red</code></td><td>256</td><td>#cc4040</td><td>8</td></tr>
+    <tr><td><span class="swatch" style="background:#e08fb0"></span><code>colors.pink</code></td><td>512</td><td>#e08fb0</td><td>9</td></tr>
+    <tr><td><span class="swatch" style="background:#b84fb8"></span><code>colors.magenta</code></td><td>1024</td><td>#b84fb8</td><td>a</td></tr>
+    <tr><td><span class="swatch" style="background:#7a4fc0"></span><code>colors.purple</code></td><td>2048</td><td>#7a4fc0</td><td>b</td></tr>
+    <tr><td><span class="swatch" style="background:#7a5a38"></span><code>colors.brown</code></td><td>4096</td><td>#7a5a38</td><td>c</td></tr>
+    <tr><td><span class="swatch" style="background:#707880"></span><code>colors.gray</code></td><td>8192</td><td>#707880</td><td>d</td></tr>
+    <tr><td><span class="swatch" style="background:#b8c0c8"></span><code>colors.silver</code></td><td>16384</td><td>#b8c0c8</td><td>e</td></tr>
+    <tr><td><span class="swatch" style="background:#e8e8e8"></span><code>colors.white</code></td><td>32768</td><td>#e8e8e8</td><td>f</td></tr>
+  </tbody></table></div>
+</section>
+
+<section class="article" id="api-window" data-title="window API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>window · Clipped surfaces</h1><p class="lead">Create independent terminal regions inside a parent terminal or Monitor.</p></header>
+  <p>A window has its own cursor, colors, visibility and dimensions. Drawing is clipped to the window and does not move or scroll its parent's cursor.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>window.create(parent, x, y, width, height[, visible])</code></td><td>window</td><td>Create a one-based child region. Width and height must be positive; visibility defaults to true.</td></tr>
+    <tr><td><code>win.setVisible(boolean)</code></td><td>nil</td><td>Show or hide the window without destroying its cursor or settings.</td></tr>
+    <tr><td><code>win.isVisible()</code></td><td>boolean</td><td>Read visibility.</td></tr>
+    <tr><td><code>win.reposition(x, y[, width[, height]])</code></td><td>nil</td><td>Move and optionally resize the window, resetting its cursor to 1,1.</td></tr>
+  </tbody></table></div>
+  <p>Windows also implement the terminal methods: <code>write</code>, <code>blit</code>, <code>clear</code>, <code>clearLine</code>, <code>scroll</code>, <code>getSize</code>, <code>setCursorPos</code>, <code>getCursorPos</code>, <code>setCursorBlink</code>, <code>getCursorBlink</code>, <code>setTextColor</code>, <code>getTextColor</code>, <code>setBackgroundColor</code>, <code>getBackgroundColor</code> and <code>isColor</code>.</p>
+  <h2 id="window-example">Two independent panels</h2>
+  <pre><code>term.clear()
+local left = window.create(term.current(), 1, 1, 24, 8, true)
+local right = window.create(term.current(), 27, 1, 24, 8, true)
+
+left.setTextColor(colors.lime)
+left.write("Status: online")
+right.setTextColor(colors.yellow)
+right.write("Storage: 80%")
+
+local previous = term.redirect(left)
+print("This appears in the left panel")
+term.redirect(previous)</code></pre>
+</section>
+
+<section class="article" id="api-parallel" data-title="parallel API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>parallel · Cooperative tasks</h1><p class="lead">Run multiple event-driven functions without blocking the computer.</p></header>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>parallel.waitForAny(...)</code></td><td>number</td><td>Run all supplied functions and return the one-based index of the first that finishes. Other tasks stop being resumed.</td></tr>
+    <tr><td><code>parallel.waitForAll(...)</code></td><td>nil</td><td>Run all supplied functions until every one has finished.</td></tr>
+  </tbody></table></div>
+  <p>Functions execute cooperatively as coroutines. Long-running tasks should wait for events, timers or world calls. An error in one task is propagated to the caller.</p>
+  <pre><code>local function listen()
+  while true do
+    local event, side = os.pullEvent("peripheral")
+    print("Peripheral attached: " .. side)
+  end
+end
+
+local function heartbeat()
+  while true do
+    print("alive")
+    os.sleep(5)
+  end
+end
+
+parallel.waitForAll(listen, heartbeat)</code></pre>
+</section>
+
+<section class="article" id="api-shell" data-title="shell API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>shell · Current directory &amp; paths</h1><p class="lead">Resolve paths the same way as the TaleOS shell.</p></header>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>shell.dir()</code></td><td>string</td><td>Current directory relative to root; the root is an empty string.</td></tr>
+    <tr><td><code>shell.resolve(path)</code></td><td>string</td><td>Resolve relative or absolute paths and normalize <code>.</code> and <code>..</code>.</td></tr>
+    <tr><td><code>shell.setDir(path)</code></td><td>nil</td><td>Set the current directory after resolving it. This does not itself verify that the directory exists.</td></tr>
+  </tbody></table></div>
+  <pre><code>print("Current directory: /" .. shell.dir())
+print(shell.resolve("../shared/data.txt"))
+print(shell.resolve("/nas/22/program.lua"))</code></pre>
+</section>
+
+<section class="article" id="api-tale" data-title="tale API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>tale · Hytale bridge</h1><p class="lead">TaleOS-specific world access, localization and tick-based control.</p></header>
+  <p>Relative coordinates are offsets from the machine: <code>0,-1,0</code> is the block immediately below. World calls run safely on the server tick thread and are limited to 32 world calls per machine per tick.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>tale.getBlock([dx[, dy[, dz]]])</code></td><td>string | nil</td><td>Hytale block ID at the relative position. Defaults to 0,-1,0. Nil means air or an unloaded/inaccessible chunk.</td></tr>
+    <tr><td><code>tale.detect([dx[, dy[, dz]]])</code></td><td>boolean</td><td>True when a block ID is present at the relative position.</td></tr>
+    <tr><td><code>tale.chat(message)</code></td><td>true</td><td>Broadcast a message to the machine's world chat.</td></tr>
+    <tr><td><code>tale.time()</code></td><td>number</td><td>Real epoch seconds. This is not the Hytale world-day time.</td></tr>
+    <tr><td><code>tale.sleep([ticks])</code></td><td>nil</td><td>Park the machine for at least one server tick; defaults to 1. Use 20 for roughly one second.</td></tr>
+    <tr><td><code>tale.monitor([dx, dy, dz])</code></td><td>Monitor | nil</td><td>Get a Monitor object. With no offset, search the six neighboring faces in right, left, top, bottom, front, back order.</td></tr>
+    <tr><td><code>tale.getComputerID()</code></td><td>number</td><td>Low-level equivalent of <code>os.getComputerID</code>.</td></tr>
+    <tr><td><code>tale.setPrompt(text)</code></td><td>nil</td><td>Change the prompt displayed next to the terminal input.</td></tr>
+    <tr><td><code>tale.language()</code></td><td>string</td><td>Configured UI language: <code>en</code> or <code>es</code>.</td></tr>
+    <tr><td><code>tale.tr(text)</code></td><td>string</td><td>Translate a known built-in string; unknown text is returned unchanged.</td></tr>
+    <tr><td><code>tale.pullEvent([filter])</code></td><td>event fields…</td><td>Low-level event wait behind the safer <code>os.pullEvent</code> functions.</td></tr>
+    <tr><td><code>tale.reboot()</code> / <code>tale.shutdown()</code></td><td>does not return</td><td>Low-level lifecycle functions behind the <code>os</code> equivalents.</td></tr>
+  </tbody></table></div>
+  <h2 id="tale-world-example">Inspect the ground</h2>
+  <pre><code>local id = tale.getBlock(0, -1, 0)
+if id then
+  print("Block below: " .. id)
+else
+  print("Air or unloaded chunk")
+end
+
+if tale.detect(1, 0, 0) then
+  tale.chat("There is a block beside computer #" .. os.getComputerID())
+end</code></pre>
+</section>
+
+<section class="article" id="api-http" data-title="http API" data-group="Lua APIs">
+  <header><span class="eyebrow">Lua API</span><h1>http · Safe downloads</h1><p class="lead">Asynchronous HTTP GET requests without blocking server ticks.</p></header>
+  <p>The API exists only when HTTP is enabled in <code>mods/TaleOS/config.json</code>. TaleOS 0.1.0 supports text GET requests, not POST, WebSockets, proxies or Git cloning.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>http.get(url)</code></td><td>response | nil, error</td><td>Perform a GET request, following validated redirects. On success returns a response object; on failure returns nil and a reason.</td></tr>
+    <tr><td><code>response.readAll()</code></td><td>string</td><td>Read the complete response body.</td></tr>
+    <tr><td><code>response.getResponseCode()</code></td><td>number, string</td><td>HTTP status code and reason phrase.</td></tr>
+    <tr><td><code>response.close()</code></td><td>nil</td><td>Close the response. Call after reading it.</td></tr>
+  </tbody></table></div>
+  <h2 id="http-example">Download and save a Lua file</h2>
+  <pre><code>local response, err = http.get(
+  "https://raw.githubusercontent.com/user/repo/main/program.lua")
+if not response then error(err) end
+
+local code, reason = response.getResponseCode()
+if code &lt; 200 or code &gt;= 300 then
+  response.close()
+  error("HTTP " .. code .. " " .. reason)
+end
+
+local body = response.readAll()
+response.close()
+fs.write("program.lua", body)
+print("Saved " .. #body .. " bytes")</code></pre>
+  <p>Or use the shell: <code>wget https://raw.githubusercontent.com/user/repo/main/program.lua program.lua</code>, then run <code>program</code>.</p>
+  <div class="note"><strong>Security:</strong> private, loopback, LAN, link-local and reserved addresses are denied by default. Timeouts, response sizes, redirects, per-computer concurrency and global bandwidth are limited. See <a href="#configuration" data-target="configuration">Configuration</a>.</div>
+</section>
+
+<section class="article" id="monitors" data-title="Monitors" data-group="Hardware">
+  <header><span class="eyebrow">Hardware guide + API</span><h1>Monitors</h1><p class="lead">Draw colored text and pixels directly on blocks in the world.</p></header>
+  <p>Place a Monitor beside a Computer or Turtle. Monitors are output devices: they do not open an interface with F. Use <code>tale.monitor()</code>, <code>peripheral.wrap("side")</code> or <code>peripheral.find("monitor")</code> from Lua.</p>
+  <h2 id="monitor-size">Dimensions and multi-block displays</h2>
+  <p>Each Monitor provides <strong>40×24 pixels</strong> and a <strong>10×4 character terminal</strong>. Compatible Monitors with the same facing join into rectangles up to <strong>8×8 blocks</strong>: 320×192 pixels and 80×32 terminal cells. Every block renders its own crop of the shared canvas.</p>
+  <p>Resizing preserves compatible content. Splitting a structure creates independent canvases and queues <code>monitor_resize</code> for affected attachments.</p>
+  <h2 id="monitor-access">Getting a Monitor</h2>
+  <pre><code>local mon = tale.monitor() -- search all six neighbors
+if not mon then error("No adjacent Monitor") end
+
+-- Or by peripheral side:
+local bySide = peripheral.wrap("right")
+-- Or all attached Monitors:
+local first, second = peripheral.find("monitor")</code></pre>
+  <h2 id="monitor-pixels">Pixel methods</h2>
+  <p>Pixel coordinates are one-based. Pixel colors are palette names such as <code>"black"</code>, <code>"lime"</code> or <code>"white"</code>. The built-in microfont uses 3×5 glyphs.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>mon.getSize()</code></td><td>width, height</td><td>Size in pixels, including all connected blocks.</td></tr>
+    <tr><td><code>mon.getTerminalSize()</code></td><td>width, height</td><td>Size in 4×6-pixel character cells.</td></tr>
+    <tr><td><code>mon.setPixel(x, y, colorName)</code></td><td>nil</td><td>Set one pixel.</td></tr>
+    <tr><td><code>mon.getPixel(x, y)</code></td><td>string</td><td>Read a pixel's palette name.</td></tr>
+    <tr><td><code>mon.fill(x, y, width, height, colorName)</code></td><td>nil</td><td>Fill a rectangle whose upper-left corner is x,y.</td></tr>
+    <tr><td><code>mon.clear([colorName])</code></td><td>nil</td><td>With a color, clear the pixel canvas. Without arguments, clear the character terminal.</td></tr>
+    <tr><td><code>mon.write(x, y, text[, colorName])</code></td><td>nil</td><td>Draw microfont text at pixel coordinates; default color is white.</td></tr>
+  </tbody></table></div>
+  <h2 id="monitor-terminal">Terminal methods</h2>
+  <p>Monitors also support <code>write(text)</code>, <code>blit</code>, <code>clearLine</code>, <code>scroll</code>, <code>setCursorPos</code>, <code>getCursorPos</code>, <code>setCursorBlink</code>, <code>getCursorBlink</code>, <code>setTextColor</code>, <code>getTextColor</code>, <code>setBackgroundColor</code>, <code>getBackgroundColor</code> and <code>isColor</code>. Their cursor and color operations use character cells, not pixels.</p>
+  <pre><code>local mon = tale.monitor()
+mon.clear("navy")
+mon.fill(5, 5, 20, 3, "blue")
+mon.write(5, 10, "TALEOS", "lime")
+
+-- Use it as a normal terminal:
+local previous = term.redirect(mon)
+term.setTextColor(colors.white)
+print("Hello on the Monitor")
+term.redirect(previous)</code></pre>
+  <h2 id="monitor-clock">Built-in clock</h2>
+  <p>Place a Monitor adjacent to a Computer and run <code>reloj</code>. The program clears the canvas once per second, redraws all eight HH:MM:SS characters and sleeps for 20 ticks. Stop it from the terminal.</p>
+</section>
+
+<section class="article" id="turtles" data-title="Turtle guide" data-group="Hardware">
+  <header><span class="eyebrow">Hardware guide</span><h1>Turtles</h1><p class="lead">Mobile Lua computers that move, mine, fight, build and manage items.</p></header>
+  <h2 id="turtle-ui">Inventory and upgrades</h2>
+  <p>Press F on a Turtle to combine its terminal, 4×4 inventory, your inventory and two upgrade slots. Lua slots are numbered <strong>1–16</strong>, left-to-right and top-to-bottom. The selected slot is highlighted and defaults to slot 1.</p>
+  <p>The left and right upgrade slots accept ordinary tools and weapons, <code>TaleOS_Modem</code>, <code>TaleOS_Speaker</code> and <code>TaleOS_Crafting_Upgrade</code>. Equipped hardware appears on the 3D chassis and tools swing when used. Tools and weapons do not consume durability.</p>
+  <h2 id="turtle-equip">Equipping from Lua or the shell</h2>
+  <pre><code>-- Select a slot containing a pickaxe, then:
+equip left
+
+-- Select an empty slot to retrieve it:
+unequip left</code></pre>
+  <pre><code>turtle.select(1)
+local ok, reason = turtle.equipLeft()
+if not ok then print(reason) end
+
+turtle.select(2)
+turtle.equipRight()</code></pre>
+  <h2 id="turtle-actions">Action results</h2>
+  <p>Most physical actions return <code>true</code> on success or <code>false, reason</code> on failure. Always check the result in unattended programs. Movement and turning are animated, and a Turtle retains its running program, ID, files, inventory and upgrades while moving.</p>
+  <pre><code>for i = 1, 10 do
+  while turtle.detect() do
+    local ok, reason = turtle.dig("right")
+    if not ok then error(reason) end
+    tale.sleep(2)
+  end
+  local moved, reason = turtle.forward()
+  if not moved then error(reason) end
+end</code></pre>
+  <h2 id="turtle-dig">Mining and combat</h2>
+  <p><code>turtle.dig</code> requires a suitable tool with sufficient gathering quality. Without a side argument it tries equipped tool slots; pass <code>"left"</code> or <code>"right"</code> to choose explicitly. Drops enter the Turtle inventory when possible.</p>
+  <p><code>turtle.attack</code> uses an equipped weapon against a damageable target in the selected direction. It returns false when there is no valid target or a solid block obstructs the attack.</p>
+  <h2 id="turtle-craft">Crafting</h2>
+  <p>Equip a Crafting Upgrade and arrange ingredients in the 16 inventory slots. <code>turtle.craft([limit])</code> searches supported ordinary tier-0 Crafting recipes and creates up to limit crafts (default 64). Input and output stacks, including relevant metadata, are planned before changes are committed.</p>
+  <h2 id="turtle-programs">Useful built-ins</h2>
+  <ul>
+    <li><code>go forward 10</code> — move ten blocks.</li>
+    <li><code>turn right 2</code> — turn around.</li>
+    <li><code>tunnel 5</code> — dig five sections of a 3×3 tunnel.</li>
+    <li><code>excavate 8</code> — dig eight sections of a 1×3 face.</li>
+  </ul>
+  <div class="note"><strong>No fuel management needed.</strong> <code>turtle.getFuelLevel()</code> and <code>turtle.getFuelLimit()</code> return <code>"unlimited"</code>; <code>refuel</code> is unnecessary and reports that this Turtle does not use fuel.</div>
+</section>
+
+<section class="article" id="api-turtle" data-title="turtle API" data-group="Hardware">
+  <header><span class="eyebrow">Lua API</span><h1>turtle API</h1><p class="lead">The complete movement, world, inventory and upgrade interface.</p></header>
+  <p>This table exists only on Turtles. Unless noted otherwise, action functions return <code>true</code> or <code>false, reason</code>. Direction suffixes <code>Up</code> and <code>Down</code> select those faces; unsuffixed world actions use the front.</p>
+  <h2 id="turtle-api-move">Movement and turning</h2>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>turtle.forward()</code> / <code>back()</code></td><td>true | false, reason</td><td>Move one block horizontally in the corresponding direction.</td></tr>
+    <tr><td><code>turtle.up()</code> / <code>down()</code></td><td>true | false, reason</td><td>Move one block vertically.</td></tr>
+    <tr><td><code>turtle.turnLeft()</code> / <code>turnRight()</code></td><td>true | false, reason</td><td>Rotate 90 degrees without changing position.</td></tr>
+  </tbody></table></div>
+  <h2 id="turtle-api-inspect">Detection, inspection and comparison</h2>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>turtle.detect[Up/Down]()</code></td><td>boolean</td><td>Whether a block is present.</td></tr>
+    <tr><td><code>turtle.inspect[Up/Down]()</code></td><td>true, detail | false, reason</td><td>Inspect a block. Detail currently contains <code>name</code>, the Hytale block ID.</td></tr>
+    <tr><td><code>turtle.compare[Up/Down]()</code></td><td>boolean</td><td>Compare the target block's ID with the block key of the selected item.</td></tr>
+    <tr><td><code>turtle.compareTo(slot)</code></td><td>boolean | false, reason</td><td>Compare item IDs in the selected slot and another slot. Two empty slots compare equal.</td></tr>
+  </tbody></table></div>
+  <pre><code>local ok, info = turtle.inspectDown()
+if ok then print("Standing on " .. info.name) end
+if turtle.compareDown() then print("Selected item matches the ground") end</code></pre>
+  <h2 id="turtle-api-inventory">Inventory</h2>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>turtle.select(slot)</code></td><td>true | false, reason</td><td>Select a slot from 1 to 16.</td></tr>
+    <tr><td><code>turtle.getSelectedSlot()</code></td><td>number</td><td>Current one-based selected slot.</td></tr>
+    <tr><td><code>turtle.getItemCount([slot])</code></td><td>number</td><td>Items in the given or selected slot; empty/invalid slots report 0.</td></tr>
+    <tr><td><code>turtle.getItemSpace([slot])</code></td><td>number</td><td>Remaining stack capacity; an empty valid slot reports 64.</td></tr>
+    <tr><td><code>turtle.getItemDetail([slot])</code></td><td>table | nil</td><td>Fields: <code>name</code>, <code>count</code>, <code>maxCount</code>, and when applicable <code>durability</code>, <code>maxDurability</code>.</td></tr>
+    <tr><td><code>turtle.transferTo(slot[, count])</code></td><td>true | false, reason</td><td>Move items from the selected slot to another slot. Count defaults to the whole stack.</td></tr>
+  </tbody></table></div>
+  <h2 id="turtle-api-upgrades">Upgrades and fuel</h2>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>turtle.equipLeft()</code> / <code>equipRight()</code></td><td>true | false, reason</td><td>Swap the selected item with the corresponding upgrade slot.</td></tr>
+    <tr><td><code>turtle.equip()</code></td><td>true | false, reason</td><td>Alias for equipRight.</td></tr>
+    <tr><td><code>turtle.unequip()</code></td><td>true | false, reason</td><td>Move the right upgrade into the selected empty slot.</td></tr>
+    <tr><td><code>turtle.getEquippedLeft()</code> / <code>getEquippedRight()</code></td><td>table | nil</td><td>Equipped item name/count and durability fields when applicable.</td></tr>
+    <tr><td><code>turtle.getFuelLevel()</code> / <code>getFuelLimit()</code></td><td>"unlimited"</td><td>Turtles do not require fuel.</td></tr>
+    <tr><td><code>turtle.refuel()</code></td><td>false, reason</td><td>Reports that refueling is unnecessary.</td></tr>
+  </tbody></table></div>
+  <h2 id="turtle-api-world">Digging, attacking, crafting and placing</h2>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>turtle.dig[Up/Down]([side])</code></td><td>true | false, reason</td><td>Break a block with an appropriate tool. Side is optional <code>"left"</code> or <code>"right"</code>.</td></tr>
+    <tr><td><code>turtle.attack[Up/Down]([side])</code></td><td>true | false, reason</td><td>Attack a damageable entity with an equipped weapon.</td></tr>
+    <tr><td><code>turtle.craft([limit])</code></td><td>true | false, reason</td><td>Craft using inventory ingredients and a Crafting Upgrade. Limit is 1–64; default 64.</td></tr>
+    <tr><td><code>turtle.place[Up/Down]()</code></td><td>true | false, reason</td><td>Place the selected item if it is a block and the destination is empty.</td></tr>
+  </tbody></table></div>
+  <h2 id="turtle-api-transfer">World item transfer</h2>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>turtle.suck[Up/Down]([count])</code></td><td>true | false, reason</td><td>Pull items from an adjacent container or collect nearby dropped items into inventory.</td></tr>
+    <tr><td><code>turtle.drop[Up/Down]([count])</code></td><td>true | false, reason</td><td>Push selected items into an adjacent container or drop them into the world. Count defaults to the whole stack.</td></tr>
+  </tbody></table></div>
+  <h2 id="turtle-api-builder">Small builder example</h2>
+  <pre><code>for i = 1, 8 do
+  if turtle.getItemCount() == 0 then
+    error("Selected slot is empty")
+  end
+  local ok, reason = turtle.placeDown()
+  if not ok then error(reason) end
+  ok, reason = turtle.forward()
+  if not ok then error(reason) end
+end</code></pre>
+</section>
+
+<section class="article" id="storage" data-title="PenDrives, USB & NAS" data-group="Hardware">
+  <header><span class="eyebrow">Hardware guide</span><h1>PenDrives, USB &amp; NAS</h1><p class="lead">Portable files, shared programs and removable persistent storage.</p></header>
+  <h2 id="storage-pendrives">PenDrives</h2>
+  <p>Each PenDrive has a persistent numeric ID, an optional label and an independent <strong>1 MiB</strong> filesystem. Its ID appears as <code>PenDrive #ID</code> in storage interfaces. PenDrives do not stack and cannot be inserted in two places at once.</p>
+  <h2 id="storage-usb">USB drives</h2>
+  <p>Insert one PenDrive into a USB Drive adjacent to a Computer or Turtle. It mounts at <code>usb</code>, <code>usb2</code>, etc., depending on how many drives are attached. The <code>usb_drive</code> peripheral can inspect, rename, locate and eject media.</p>
+  <pre><code>local drive = peripheral.find("usb_drive")
+if drive and drive.isPenDrivePresent() then
+  print("Drive #" .. drive.getPenDriveID())
+  print("Mounted at " .. drive.getMountPath())
+  print(fs.read(drive.getMountPath() .. "/readme.txt"))
+end</code></pre>
+  <h3 id="storage-usb-api">usb_drive methods</h3>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Method</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>isPenDrivePresent()</code></td><td>boolean</td><td>Whether media is inserted.</td></tr>
+    <tr><td><code>getPenDriveID()</code></td><td>number | nil</td><td>Persistent medium ID.</td></tr>
+    <tr><td><code>getPenDriveLabel()</code></td><td>string</td><td>Current label; requires media.</td></tr>
+    <tr><td><code>setPenDriveLabel([label])</code></td><td>true</td><td>Set or clear the label; requires media.</td></tr>
+    <tr><td><code>getMountPath()</code></td><td>string | nil</td><td>Path visible to this computer; requires media.</td></tr>
+    <tr><td><code>eject()</code></td><td>boolean</td><td>Safely eject the PenDrive and remove its mount.</td></tr>
+  </tbody></table></div>
+  <h2 id="storage-nas">Stackable NAS units</h2>
+  <p>Each NAS holds <strong>8 PenDrives</strong>. Face-connected NAS units form one storage component. Every running Computer, Turtle or Pocket Computer within a spherical <strong>16-block range</strong> of that component receives mounts at <code>nas/&lt;PenDriveID&gt;</code>.</p>
+  <p>All connected machines see the same live files: a program saved to <code>nas/22/startup.lua</code> can be read or executed by another machine with access to PenDrive 22. Removing media or moving out of range unmounts it; stale mounts are removed automatically.</p>
+  <pre><code>ls nas
+cd 22          -- shortcut for cd nas/22
+ls
+cat LEEME_NAS.txt
+cd /
+cat nas/22/shared-program.lua</code></pre>
+  <p>Run a mounted program from the shell by using a path that resolves to its Lua file, or load its source explicitly in your own program. For portable startup logic, copy the desired program to the machine's own <code>startup.lua</code>.</p>
+  <h2 id="storage-events">Media events</h2>
+  <p><code>usb</code> and <code>usb_eject</code> fire with a side name when media mounts or unmounts. NAS media use <code>nas</code> as the event side. See <a href="#events" data-target="events">Events</a>.</p>
+</section>
+
+<section class="article" id="pocket" data-title="Pocket Computers" data-group="Hardware">
+  <header><span class="eyebrow">Hardware guide</span><h1>Pocket Computers</h1><p class="lead">A mobile TaleOS terminal with persistent files and nearby NAS access.</p></header>
+  <p>Craft with one Computer and two copper bars. Use the Pocket Computer item to open the mobile terminal. It has the same shell, Lua APIs, editor, filesystem and 1 MiB local quota as other machines.</p>
+  <h2 id="pocket-identity">Persistent identity</h2>
+  <p>A Pocket Computer keeps its ID and files while carried. Duplicate stacks cannot start multiple sessions on the same disk, protecting the filesystem from concurrent writers.</p>
+  <h2 id="pocket-suspend">When execution suspends</h2>
+  <p>Execution and NAS access suspend when the item is dropped, its holder disconnects or changes worlds. Returning to a valid held state resumes the mobile session with the same persistent identity.</p>
+  <h2 id="pocket-nas">NAS on the move</h2>
+  <p>Nearby connected NAS units are discovered around the player using the same 16-block range. Mounts follow the player and are removed when media leaves range or the Pocket Computer suspends.</p>
+  <div class="warning"><strong>Mobile context:</strong> wireless and NAS positioning follows the holder. World-dependent calls still require a valid loaded world context.</div>
+</section>
+
+<section class="article" id="api-peripheral" data-title="peripheral API" data-group="Hardware">
+  <header><span class="eyebrow">Lua API</span><h1>peripheral API</h1><p class="lead">Discover and call Monitors, Modems, inventories, USB drives and Speakers.</p></header>
+  <p>Peripheral names are usually side strings: <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>, <code>front</code>, <code>back</code>. Turtle upgrades use their corresponding side. Coordinate aliases use <code>@dx,dy,dz</code> for directly addressed neighbors.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>peripheral.getNames()</code></td><td>table</td><td>Array of currently available peripheral names.</td></tr>
+    <tr><td><code>peripheral.getType(name)</code></td><td>string | nil</td><td><code>monitor</code>, <code>modem</code>, <code>inventory</code>, <code>usb_drive</code>, <code>speaker</code>, or nil.</td></tr>
+    <tr><td><code>peripheral.getMethods(name)</code></td><td>table | nil</td><td>Array of callable method names.</td></tr>
+    <tr><td><code>peripheral.wrap(name)</code></td><td>table | nil</td><td>Create an object whose methods call this peripheral.</td></tr>
+    <tr><td><code>peripheral.find(type)</code></td><td>zero or more tables</td><td>Return every wrapped peripheral of this type as separate return values.</td></tr>
+    <tr><td><code>peripheral.call(name, method, ...)</code></td><td>values…</td><td>Call a method directly without wrapping first.</td></tr>
+  </tbody></table></div>
+  <h2 id="peripheral-discovery">Discovery example</h2>
+  <pre><code>for _, name in ipairs(peripheral.getNames()) do
+  print(name .. " is " .. tostring(peripheral.getType(name)))
+  for _, method in ipairs(peripheral.getMethods(name)) do
+    print("  " .. method)
+  end
+end
+
+local speaker = peripheral.find("speaker")
+if speaker then speaker.playSound("TaleOS_Boot_Beep") end</code></pre>
+  <p>Listen for <code>peripheral</code> and <code>peripheral_detach</code> to react to hardware changes.</p>
+</section>
+
+<section class="article" id="api-inventory" data-title="Inventory peripherals" data-group="Hardware">
+  <header><span class="eyebrow">Peripheral API</span><h1>Inventory peripherals</h1><p class="lead">Inspect chests and other item containers adjacent to a machine.</p></header>
+  <p>Wrap a supported container as an <code>inventory</code> peripheral. Slots are one-based. Turtles can additionally move items with <code>suck</code> and <code>drop</code>.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Method</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>inv.size()</code></td><td>number</td><td>Total number of slots.</td></tr>
+    <tr><td><code>inv.list()</code></td><td>table</td><td>Map of occupied slot numbers to basic stacks: <code>name</code> and <code>count</code>.</td></tr>
+    <tr><td><code>inv.getItemDetail(slot)</code></td><td>table | nil</td><td>Detailed stack: name, count, maxCount, optional durability/maxDurability and safe metadata.</td></tr>
+    <tr><td><code>inv.getItemLimit(slot)</code></td><td>number</td><td>Maximum stack size for the item in this slot.</td></tr>
+  </tbody></table></div>
+  <pre><code>local chest = peripheral.find("inventory")
+if chest then
+  print("Slots: " .. chest.size())
+  for slot, stack in pairs(chest.list()) do
+    print(slot, stack.name, stack.count)
+  end
+end</code></pre>
+</section>
+
+<section class="article" id="api-modem" data-title="Modems & rednet" data-group="Hardware">
+  <header><span class="eyebrow">Hardware + Lua API</span><h1>Modems &amp; rednet</h1><p class="lead">Channels, protocols, broadcasts and DNS over wireless networking.</p></header>
+  <p>Place a Modem adjacent to a Computer or equip it on a Turtle. Messages reach loaded receivers in the same world within the configured range (64 blocks by default). Payloads are deep-copied and bounded; each receiver is limited to 32 messages per tick by default.</p>
+  <h2 id="modem-api">modem methods</h2>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Method</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>modem.open(channel)</code></td><td>nil</td><td>Listen on a channel from 0 to 65535.</td></tr>
+    <tr><td><code>modem.close(channel)</code></td><td>nil</td><td>Stop listening on that channel.</td></tr>
+    <tr><td><code>modem.closeAll()</code></td><td>nil</td><td>Close every channel on this modem.</td></tr>
+    <tr><td><code>modem.isOpen(channel)</code></td><td>boolean</td><td>Whether the channel is open.</td></tr>
+    <tr><td><code>modem.transmit(channel, replyChannel, payload)</code></td><td>nil</td><td>Send a payload with a reply channel. Listeners queue <code>modem_message</code>.</td></tr>
+    <tr><td><code>modem.isWireless()</code></td><td>true</td><td>TaleOS Modems are wireless.</td></tr>
+  </tbody></table></div>
+  <h2 id="rednet-api">rednet functions</h2>
+  <p>Rednet manages channels and protocols for you. It opens your computer ID and <code>rednet.CHANNEL_BROADCAST</code> (65535) when <code>rednet.open</code> succeeds.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>rednet.open(side)</code></td><td>boolean</td><td>Open rednet on a wireless Modem.</td></tr>
+    <tr><td><code>rednet.isOpen(side)</code></td><td>boolean</td><td>Whether rednet is open on that side.</td></tr>
+    <tr><td><code>rednet.close(side)</code> / <code>closeAll()</code></td><td>nil</td><td>Close rednet channels on one/all managed Modems.</td></tr>
+    <tr><td><code>rednet.send(receiver, message[, protocol])</code></td><td>boolean</td><td>Send to a computer ID/channel (0–65535), optionally tagged with a protocol.</td></tr>
+    <tr><td><code>rednet.broadcast(message[, protocol])</code></td><td>boolean</td><td>Send to all open rednet receivers in range.</td></tr>
+    <tr><td><code>rednet.receive([protocol[, timeout]])</code></td><td>sender, message, protocol | nil</td><td>Wait for a matching message; timeout is optional seconds. Nil on timeout.</td></tr>
+    <tr><td><code>rednet.host(protocol, hostname)</code></td><td>nil</td><td>Register a hostname under a protocol; requires an open Modem.</td></tr>
+    <tr><td><code>rednet.unhost(protocol)</code></td><td>nil</td><td>Remove all names hosted by this computer under that protocol.</td></tr>
+    <tr><td><code>rednet.lookup(protocol[, hostname[, timeout]])</code></td><td>ID | table</td><td>Find a specific host ID, or all host IDs when hostname is nil.</td></tr>
+    <tr><td><code>rednet.run()</code></td><td>does not return</td><td>Answer DNS lookups. The normal TaleOS shell already runs this in parallel.</td></tr>
+  </tbody></table></div>
+  <h2 id="rednet-example">Two-computer chat</h2>
+  <pre><code>-- Receiver:
+rednet.open("right")
+local sender, message = rednet.receive("demo", 10)
+if sender then print(sender .. ": " .. tostring(message)) end
+
+-- Sender (replace 8 with the receiver's ID):
+rednet.open("left")
+rednet.send(8, "Hello!", "demo")</code></pre>
+</section>
+
+<section class="article" id="api-gps" data-title="gps API" data-group="Hardware">
+  <header><span class="eyebrow">Lua API</span><h1>gps · Positioning</h1><p class="lead">Locate machines using distances to at least four wireless reference hosts.</p></header>
+  <p>GPS uses channel <code>gps.CHANNEL = 65534</code>. A locating machine needs a wireless Modem and responses from at least four non-coplanar references with consistent distances.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>gps.locate([timeout])</code></td><td>x, y, z | nil, error</td><td>Request references and solve a 3D position. Default timeout is 2 seconds.</td></tr>
+    <tr><td><code>gps.host(x, y, z)</code></td><td>does not return</td><td>Serve fixed reference coordinates until the program is stopped.</td></tr>
+    <tr><td><code>gps.trilaterate(references)</code></td><td>x, y, z | nil, error</td><td>Solve from an array of at least four tables containing finite <code>x</code>, <code>y</code>, <code>z</code> and non-negative <code>distance</code>.</td></tr>
+  </tbody></table></div>
+  <h2 id="gps-setup">Set up a GPS network</h2>
+  <ol>
+    <li>Place four Computers with wireless Modems at known, non-coplanar positions.</li>
+    <li>Run <code>gps host &lt;x&gt; &lt;y&gt; &lt;z&gt;</code> on each, using its actual coordinates.</li>
+    <li>Attach a Modem to the locating machine and run <code>gps locate</code>.</li>
+  </ol>
+  <pre><code>local x, y, z = gps.locate(3)
+if x then
+  print(string.format("Position: %.2f %.2f %.2f", x, y, z))
+else
+  print("GPS failed: " .. tostring(y))
+end</code></pre>
+  <div class="note"><strong>Geometry matters.</strong> Four hosts in one plane do not provide a unique 3D solution. Add a host above or below that plane and keep all reference chunks loaded.</div>
+</section>
+
+<section class="article" id="api-speaker" data-title="Speakers" data-group="Hardware">
+  <header><span class="eyebrow">Peripheral API</span><h1>Speakers</h1><p class="lead">Play registered Hytale SoundEvents at a position in the world.</p></header>
+  <p>Place a Speaker beside a Computer or equip it on a Turtle. TaleOS plays existing registered SoundEvents; arbitrary microphone input, note synthesis and streaming audio are not included.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Method</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>speaker.playSound(name[, volume[, pitch]])</code></td><td>true | false, reason</td><td>Play a SoundEvent. Volume defaults to 1 and accepts 0–3. Pitch defaults to 1 and accepts 0.5–2.</td></tr>
+  </tbody></table></div>
+  <p>Sound names may contain letters, digits, underscore, dot, slash and hyphen, up to 256 characters. Unknown SoundEvents return false. Playback is limited to one sound per equipped Speaker per tick.</p>
+  <pre><code>local speaker = peripheral.find("speaker")
+if not speaker then error("No Speaker attached") end
+
+local ok, reason = speaker.playSound("TaleOS_Boot_Beep", 1, 1)
+if not ok then print(reason) end</code></pre>
+</section>
+
+<section class="article" id="configuration" data-title="Configuration & security" data-group="Server owners">
+  <header><span class="eyebrow">Server owners</span><h1>Configuration &amp; security</h1><p class="lead">Language, HTTP access rules and wireless limits.</p></header>
+  <p>TaleOS creates <code>mods/TaleOS/config.json</code> relative to the server working directory. Edit it while the server is stopped, then restart. Keep a backup before making changes.</p>
+  <h2 id="config-default">Complete default configuration</h2>
+  <pre><code>{
+  "language": "en",
+  "http": {
+    "enabled": true,
+    "max_requests": 16,
+    "timeout_seconds": 30,
+    "max_redirects": 16,
+    "bandwidth": {
+      "global_download": 33554432
+    },
+    "rules": [
+      { "host": "$private", "action": "deny" },
+      { "host": "*", "action": "allow", "max_download": 16777216 }
+    ]
+  },
+  "modem": {
+    "range": 64,
+    "max_messages_per_tick": 32
+  }
+}</code></pre>
+  <h2 id="config-language">English or Spanish</h2>
+  <p>Set <code>"language": "en"</code> (default) or <code>"language": "es"</code>. This translates TaleOS interfaces, commands, Turtle messages, peripherals, errors and admin output. Lua API names and text produced by user programs do not change.</p>
+  <h2 id="config-http">HTTP settings</h2>
+  <div class="table-wrap"><table><thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead><tbody>
+    <tr><td><code>http.enabled</code></td><td>true</td><td>Expose <code>http.get</code> and <code>wget</code>. False removes the API.</td></tr>
+    <tr><td><code>http.max_requests</code></td><td>16</td><td>Concurrent requests per computer; 0 removes this per-computer limit.</td></tr>
+    <tr><td><code>http.timeout_seconds</code></td><td>30</td><td>Request timeout, allowed range 0–60.</td></tr>
+    <tr><td><code>http.max_redirects</code></td><td>16</td><td>Maximum redirects per request.</td></tr>
+    <tr><td><code>http.bandwidth.global_download</code></td><td>33554432</td><td>Global download throughput budget: 32 MiB/s.</td></tr>
+    <tr><td><code>http.rules</code></td><td>deny private, allow public</td><td>Ordered host rules; first match wins.</td></tr>
+  </tbody></table></div>
+  <h3 id="config-rules">Host rules</h3>
+  <p>Rules support domains, IPs, wildcards such as <code>*.example.com</code>, CIDR ranges and the special <code>$private</code> group. Every DNS result and redirect destination is checked again. <code>max_download</code> limits bytes for a matching rule; 16777216 is 16 MiB.</p>
+  <pre><code>"rules": [
+  { "host": "$private", "action": "deny" },
+  { "host": "raw.githubusercontent.com", "action": "allow", "max_download": 16777216 },
+  { "host": "*.example.com", "action": "allow", "max_download": 1048576 },
+  { "host": "*", "action": "deny" }
+]</code></pre>
+  <div class="warning"><strong>Fail closed.</strong> Invalid HTTP configuration disables HTTP; an invalid rule denies all addresses. Do not broaden access to private infrastructure unless you understand the risk of server-side requests.</div>
+  <h2 id="config-modem">Wireless settings</h2>
+  <p><code>modem.range</code> is the same-world wireless radius in blocks, and <code>modem.max_messages_per_tick</code> limits delivery work. Both accept values from 1 to 256. Invalid modem settings use safe defaults (64 and 32).</p>
+  <h2 id="config-storage">Persistent server data</h2>
+  <ul>
+    <li><code>mods/TaleOS/computers/</code> — machine files.</li>
+    <li><code>mods/TaleOS/pendrives/</code> — removable media.</li>
+    <li><code>mods/TaleOS/logs/</code> — per-computer transcripts.</li>
+    <li><code>mods/TaleOS/ids.json</code> and <code>turtles.json</code> — identity and Turtle state.</li>
+  </ul>
+</section>
+
+<section class="article" id="administration" data-title="Administration & logs" data-group="Server owners">
+  <header><span class="eyebrow">Server owners</span><h1>Administration &amp; logs</h1><p class="lead">Operate computers from the console and diagnose running programs.</p></header>
+  <h2 id="admin-command">The /taleos command</h2>
+  <pre><code>/taleos &lt;world&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt; &lt;shell line…&gt;</code></pre>
+  <p>Boot the computer at that block if needed and queue one shell line. This is useful for automated tests and server administration. From the server console, omit the slash as required by Hytale's command parser.</p>
+  <pre><code>taleos creative_test 191 123 -64 id
+taleos creative_test 191 123 -64 ls nas
+taleos creative_test 199 123 -65 __turtle id</code></pre>
+  <p>Administrative diagnostics available at the same coordinates include <code>__probe</code> for chunk/block diagnostics, <code>__blockid</code> for block IDs, <code>__stop</code> to request program termination and <code>__nasdebug</code> to log NAS media locations. Turtle commands can be prefixed with <code>__turtle </code>.</p>
+  <h2 id="admin-logs">Computer logs</h2>
+  <p>Every machine writes a timestamped transcript to <code>mods/TaleOS/logs/computer-&lt;id&gt;.log</code>. It includes boots, submitted commands, shell output and program errors. Use these logs instead of relying on screenshots when diagnosing automation.</p>
+  <h2 id="admin-loaded">Keep automation loaded</h2>
+  <p>Machines need loaded chunks for world reads, wireless delivery and physical actions. Hytale's vanilla keep-loaded command can maintain an automation area:</p>
+  <pre><code>/world settings keeploaded set &lt;minX&gt; &lt;minZ&gt; &lt;maxX&gt; &lt;maxZ&gt; --world=&lt;world&gt;</code></pre>
+  <div class="warning"><strong>Use keep-loaded sparingly.</strong> Large permanently loaded areas increase memory and tick cost. Bound the region to the machines that need it.</div>
+  <h2 id="admin-backup">Backups and updates</h2>
+  <p>Back up <code>mods/TaleOS/</code> together with the world before updating or migrating a server. Do not delete identity files while keeping machine disks: IDs bind placed blocks, portable items, PenDrives and their data.</p>
+  <h2 id="admin-selftest">Built-in smoke test</h2>
+  <p>Starting the JVM with <code>-Dtaleos.selftest=true</code> runs a startup smoke test: boot to the TaleOS prompt, submit an ID command and verify that an infinite loop is killed by its instruction budget while the server remains alive.</p>
+</section>
+
+<section class="article" id="compatibility" data-title="Compatibility & limits" data-group="Server owners">
+  <header><span class="eyebrow">Reference</span><h1>Compatibility &amp; limits</h1><p class="lead">What TaleOS 0.1.0 does—and what it does not do yet.</p></header>
+  <h2 id="compat-platform">Platform</h2>
+  <ul>
+    <li>Early Access, built for Hytale server 0.6.2 and Java 25.</li>
+    <li>Server-side installation; vanilla clients receive the assets.</li>
+    <li>English and Spanish interfaces; English by default.</li>
+    <li>1 MiB quota per machine and per PenDrive.</li>
+    <li>51×19 native terminal; 16-color palette.</li>
+  </ul>
+  <h2 id="compat-cc">Relationship to other computer mods</h2>
+  <p>TaleOS is a clean-room implementation inspired by the programmability of computer mods. Familiar names such as <code>fs</code>, <code>term</code>, <code>peripheral</code>, <code>rednet</code> and <code>turtle</code> do not imply complete API or program compatibility. Check signatures and return values in this wiki when porting a program.</p>
+  <h2 id="compat-not-yet">Not implemented in 0.1.0</h2>
+  <ul>
+    <li>Floppy disks and disk drives—TaleOS uses PenDrives, USB readers and NAS instead.</li>
+    <li>Redstone APIs, command computers, printers, wired networks and energy/fluid peripherals.</li>
+    <li>Multishell/tabbed program management, mouse input, monitor touch and paint/image file formats.</li>
+    <li>HTTP POST, WebSockets, proxies, arbitrary binary downloads and Git cloning.</li>
+    <li>Speaker audio streaming or arbitrary user audio; only registered SoundEvents.</li>
+    <li>Lua <code>require</code>, <code>package</code>, host <code>io</code>, Java access and native file access.</li>
+    <li>Automatic chunk loading by computers themselves.</li>
+  </ul>
+  <h2 id="compat-safety">Operational limits</h2>
+  <p>Lua instruction budgets kill runaway code, world calls are limited per tick, HTTP is asynchronous and validated, event queues are bounded, and network messages are size/rate limited. These protections reduce server risk but do not replace sensible permissions, backups and resource monitoring.</p>
+</section>
+
+<section class="article" id="examples" data-title="Example programs" data-group="Examples">
+  <header><span class="eyebrow">Examples</span><h1>Example programs</h1><p class="lead">Small, complete programs you can adapt for your own machines.</p></header>
+  <h2 id="example-status">1. Monitor status board</h2>
+  <p>Save as <code>status.lua</code> with a Monitor adjacent to the Computer:</p>
+  <pre><code>local mon = tale.monitor()
+if not mon then error("Place a Monitor next to this Computer") end
+
+while true do
+  local width = mon.getSize()
+  local text = "ONLINE #" .. os.getComputerID()
+  mon.clear("navy")
+  mon.fill(1, 1, width, 1, "blue")
+  mon.write(2, 2, text, "lime")
+  mon.write(2, 10, os.date("%H:%M:%S"), "white")
+  tale.sleep(20)
+end</code></pre>
+  <h2 id="example-logger">2. Peripheral event logger</h2>
+  <pre><code>fs.mkdir("logs")
+print("Watching peripherals…")
+while true do
+  local event, name = os.pullEvent()
+  if event == "peripheral" or event == "peripheral_detach" then
+    local line = os.date() .. " " .. event .. " " .. name .. "\n"
+    fs.append("logs/peripherals.txt", line)
+    print(line)
+  end
+end</code></pre>
+  <h2 id="example-turtle">3. Safe dig-and-place routine</h2>
+  <p>For a Turtle with a suitable tool in the right upgrade slot and blocks in slot 1:</p>
+  <pre><code>local function check(ok, reason)
+  if not ok then error(reason or "Action failed") end
+end
+
+turtle.select(1)
+for step = 1, 10 do
+  turtle.turnRight()
+  if turtle.detectDown() then
+    check(turtle.digDown("right"))
+    tale.sleep(2)
+  end
+  check(turtle.placeUp())
+  turtle.turnLeft()
+  check(turtle.forward())
+  print("Step " .. step .. "/10")
+end</code></pre>
+  <h2 id="example-rednet">4. Networked doorbell</h2>
+  <pre><code>-- Computer beside a Speaker:
+rednet.open("right")
+local speaker = peripheral.find("speaker")
+while true do
+  local sender, message = rednet.receive("doorbell")
+  if message == "ring" then
+    print("Bell from #" .. sender)
+    if speaker then speaker.playSound("TaleOS_Boot_Beep") end
+  end
+end
+
+-- Another Computer:
+rednet.open("left")
+rednet.broadcast("ring", "doorbell")</code></pre>
+  <h2 id="example-nas">5. Shared NAS configuration</h2>
+  <pre><code>local path = "nas/22/settings.txt"
+if not fs.exists(path) then
+  fs.write(path, "motd=Hello from shared storage")
+end
+
+local settings = fs.read(path)
+print(settings)</code></pre>
+  <p>Adapt the PenDrive ID to one shown by <code>ls nas</code>. Any machine in range can read the same file.</p>
+</section>
+
+<footer class="footer">
+  TaleOS 0.1.0 documentation · Clean-room implementation for Hytale · <a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank" rel="noopener noreferrer">MPL-2.0 License</a>.<br>
+  <a href="https://www.curseforge.com/hytale/mods/taleos" target="_blank" rel="noopener noreferrer">Download TaleOS on CurseForge</a> · This wiki is bundled with the project and has no external runtime dependencies.
+</footer>
+</main>
+</body>
+</html>

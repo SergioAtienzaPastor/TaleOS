@@ -1,0 +1,148 @@
+package me.kvothe.taleos.lua;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+class LuaMachineTest {
+
+    private static final long BUDGET = 100_000;
+
+    @Test
+    void infiniteLoopDiesByBudgetWithoutHarmingHost() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("while true do end", "loop");
+        machine.tick();
+        assertEquals(LuaMachine.State.DEAD, machine.getState());
+        assertTrue(machine.getError() != null && machine.getError().contains("budget"),
+                "error should mention the budget, was: " + machine.getError());
+
+        // The host thread is fine: another machine runs normally right after.
+        LuaMachine survivor = new LuaMachine(BUDGET);
+        survivor.load("print('alive')", "ok");
+        survivor.tick();
+        assertEquals(LuaMachine.State.DONE, survivor.getState());
+        assertEquals("alive\n", survivor.drainOutput());
+    }
+
+    @Test
+    void pcallCannotEscapeTheBudget() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("print(pcall(function() while true do end end))", "trap");
+        machine.tick();
+        assertEquals(LuaMachine.State.DEAD, machine.getState(),
+                "pcall must not swallow the budget kill; state=" + machine.getState());
+    }
+
+    @Test
+    void xpcallCannotEscapeTheBudget() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("print(xpcall(function() while true do end end, function() return 'h' end))", "trap2");
+        machine.tick();
+        assertEquals(LuaMachine.State.DEAD, machine.getState(),
+                "xpcall must not swallow the budget kill; state=" + machine.getState());
+    }
+
+    @Test
+    void coroutinesShareTheSameBudget() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("while true do coroutine.resume(coroutine.create(function() while true do end end)) end",
+                "cospin");
+        machine.tick();
+        assertEquals(LuaMachine.State.DEAD, machine.getState(),
+                "spinning inside child coroutines must still die by budget; state=" + machine.getState());
+    }
+
+    @Test
+    void printIsCapturedWithTabSeparator() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("print('Hello', 'World', 42)", "hello");
+        machine.tick();
+        assertEquals(LuaMachine.State.DONE, machine.getState());
+        assertEquals("Hello\tWorld\t42\n", machine.drainOutput());
+    }
+
+    @Test
+    void sandboxHidesDangerousLibraries() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load(
+                "print(type(io), type(luajava), type(debug), type(os and os.exit), type(package))",
+                "probe1");
+        machine.tick();
+        assertEquals("nil\tnil\tnil\tnil\tnil\n", machine.drainOutput());
+
+        LuaMachine safe = new LuaMachine(BUDGET);
+        safe.load("print(type(os.clock), type(string.rep), type(coroutine.create))", "probe2");
+        safe.tick();
+        assertEquals("function\tfunction\tfunction\n", safe.drainOutput());
+    }
+
+    @Test
+    void pullEventSuspendsAndNextTickDelivers() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("local e = tale.pullEvent(); print('got', e)", "events");
+        machine.tick();
+        assertTrue(machine.isAlive(), "machine should be suspended waiting for an event");
+        assertEquals("", machine.drainOutput());
+
+        machine.queueEvent("key");
+        machine.tick();
+        assertEquals(LuaMachine.State.DONE, machine.getState());
+        assertEquals("got\tkey\n", machine.drainOutput());
+    }
+
+    @Test
+    void compileErrorKillsMachineAtLoad() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("this is not lua", "broken");
+        assertEquals(LuaMachine.State.DEAD, machine.getState());
+        assertFalse(machine.isAlive());
+    }
+
+    @Test
+    void terminateKillsSleepingProgramAndShellSurvives() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        // Mirrors shell.lua: program runs under pcall between setProgramRunning.
+        machine.load("tale.setProgramRunning(true)\n"
+                + "local ok, err = pcall(function() while true do tale.sleep(50) end end)\n"
+                + "tale.setProgramRunning(false)\n"
+                + "print('caught: ' .. tostring(err))\n"
+                + "print('shell alive')\n", "shellish");
+        machine.tick(); // boots into the infinite sleep loop
+        assertTrue(machine.isAlive());
+        machine.requestTerminate();
+        machine.tick(); // wakes early, hook throws, pcall catches
+        assertEquals(LuaMachine.State.DONE, machine.getState());
+        assertEquals("caught: " + LuaMachine.TERMINATED_MESSAGE + "\nshell alive\n",
+                machine.drainOutput());
+    }
+
+    @Test
+    void terminateBeatsBudgetInTightLoops() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("tale.setProgramRunning(true)\n"
+                + "local ok, err = pcall(function() while true do end end)\n"
+                + "tale.setProgramRunning(false)\n"
+                + "print('caught: ' .. tostring(err))\n", "tight");
+        machine.requestTerminate();
+        machine.tick();
+        assertEquals(LuaMachine.State.DONE, machine.getState(),
+                "terminate must fire before the budget kill; state=" + machine.getState());
+        assertEquals("caught: " + LuaMachine.TERMINATED_MESSAGE + "\n", machine.drainOutput());
+    }
+
+    @Test
+    void terminateWithoutProgramIsIgnored() {
+        LuaMachine machine = new LuaMachine(BUDGET);
+        machine.load("local e = tale.pullEvent(); print('got', e)", "idle");
+        machine.tick(); // parks at pullEvent with no program running
+        machine.requestTerminate();
+        machine.queueEvent("key");
+        machine.tick();
+        assertEquals(LuaMachine.State.DONE, machine.getState());
+        assertEquals("got\tkey\n", machine.drainOutput(),
+                "a stale terminate must not kill an idle machine");
+    }
+}

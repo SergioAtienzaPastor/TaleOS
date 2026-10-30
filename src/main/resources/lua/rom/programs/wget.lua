@@ -4,7 +4,7 @@ if not url then
   return
 end
 if type(http) ~= "table" or type(http.get) ~= "function" then
-  print(tale.tr("wget: HTTP is disabled in mods/TaleCraft/config.json"))
+  print(tale.tr("wget: HTTP is disabled in mods/TaleOS/config.json"))
   return
 end
 

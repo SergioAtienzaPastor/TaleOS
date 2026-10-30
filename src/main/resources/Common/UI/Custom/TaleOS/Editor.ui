@@ -1,0 +1,74 @@
+// TaleOS editor page. Layout path: TaleOS/Editor.ui
+$C = "../Common.ui";
+
+Group #Editor {
+  Anchor: (Width: 720, Height: 430);
+  Background: #101418(0.97);
+  LayoutMode: Top;
+  Padding: (Full: 14);
+
+  Label #Title {
+    Text: "Editor";
+    Anchor: (Height: 30);
+    Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true);
+  }
+
+  Group { Anchor: (Height: 6); }
+
+  // Editable file content. Client-side template from Common.ui.
+  $C.@MultilineTextField #Content {
+    FlexWeight: 1;
+    AutoFocus: true;
+    MaxLength: 16000;
+    PlaceholderText: "-- write your Lua program here";
+    Style: (TextColor: #e8e8d8);
+  }
+
+  Group { Anchor: (Height: 4); }
+
+  Label #Status {
+    Text: "";
+    Anchor: (Height: 18);
+    Style: (FontSize: 11, TextColor: #c08888);
+  }
+
+  Label #CompletionHint {
+    Text: "Type a fragment to see suggestions";
+    Anchor: (Height: 22);
+    Style: (FontSize: 12, TextColor: #8fc9ff, VerticalAlignment: Center);
+  }
+
+  Group { Anchor: (Height: 4); }
+
+  Group #ButtonRow {
+    Anchor: (Height: 34);
+    LayoutMode: Left;
+
+    $C.@SecondaryTextButton #Complete {
+      Text: "Complete";
+      Anchor: (Width: 140, Height: 32);
+    }
+
+    Group { Anchor: (Width: 8); }
+
+    $C.@TextButton #Save {
+      Text: "Save";
+      Anchor: (Width: 110, Height: 32);
+    }
+
+    Group { Anchor: (Width: 8); }
+
+    $C.@SecondaryTextButton #Run {
+      Text: "Save and run";
+      Anchor: (Width: 170, Height: 32);
+    }
+
+    // pushes Exit to the far right
+    Group { FlexWeight: 1; }
+
+    $C.@SecondaryTextButton #Exit {
+      Text: "Exit";
+      Anchor: (Width: 90, Height: 32);
+    }
+  }
+}

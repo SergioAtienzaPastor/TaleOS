@@ -1,14 +1,14 @@
-# TaleCraft — Computers in Hytale!
+# TaleOS — Computers in Hytale!
 
 **Code in Lua, automate your world with turtles, and connect monitors, networks, and storage!**
 
-TaleCraft brings fully programmable computers to Hytale. Build your own programs with the integrated editor, automate tasks with mobile robots, draw on large in-world displays, share files through network-attached storage, and connect your machines with wireless networking.
+TaleOS brings fully programmable computers to Hytale. Build your own programs with the integrated editor, automate tasks with mobile robots, draw on large in-world displays, share files through network-attached storage, and connect your machines with wireless networking.
 
 Everything runs on the server using a sandboxed Lua runtime designed for multiplayer. **Players do not need to install anything on their clients.**
 
 [Aquí una imagen general de varios ordenadores, turtles y monitores funcionando juntos]
 
-## What can you do with TaleCraft?
+## What can you do with TaleOS?
 
 - Write and run real Lua programs inside Hytale.
 - Use a terminal with commands, persistent files, directories, and autocompletion.
@@ -21,7 +21,7 @@ Everything runs on the server using a sandboxed Lua runtime designed for multipl
 - Carry a pocket computer with its own persistent identity and filesystem.
 - Download Lua programs from the web with configurable HTTP security.
 - Play positional sounds through speakers.
-- Choose English or Spanish in `mods/TaleCraft/config.json`; English is the default.
+- Choose English or Spanish in `mods/TaleOS/config.json`; English is the default.
 
 ## Computers and TaleOS
 
@@ -41,9 +41,9 @@ Write programs without leaving the game. The editor supports file saving, execut
 
 ### Events, timers, and multitasking
 
-TaleCraft includes typed event queues, cancelable timers, cooperative tasks, and `parallel.waitForAny` / `parallel.waitForAll`. A `startup.lua` program can run automatically when a computer boots or reboots.
+TaleOS includes typed event queues, cancelable timers, cooperative tasks, and `parallel.waitForAny` / `parallel.waitForAll`. A `startup.lua` program can run automatically when a computer boots or reboots.
 
-Lua code runs in a sandbox with instruction budgets and restricted Java access. Infinite loops are stopped without bringing down the server, making TaleCraft suitable for multiplayer environments.
+Lua code runs in a sandbox with instruction budgets and restricted Java access. Infinite loops are stopped without bringing down the server, making TaleOS suitable for multiplayer environments.
 
 ## Programmable turtles
 
@@ -168,7 +168,7 @@ exit
 
 ## Installation
 
-1. Download the TaleCraft JAR.
+1. Download the TaleOS JAR.
 2. Copy it into your server's `Server/mods/` directory.
 3. Restart the Hytale server.
 4. Place a Computer and start programming.
@@ -185,14 +185,14 @@ exit
 - HTTP requests use configurable security rules and resource limits.
 - Wireless messages and sound playback are bounded and rate-limited.
 - Each computer writes a transcript for administrative troubleshooting.
-- Computers can be tested or controlled through the server-side `/talecraft` command.
+- Computers can be tested or controlled through the server-side `/taleos` command.
 
 ## Early Access
 
-TaleCraft is under active development. The current release already includes computers, turtles, monitors, networking, removable storage, NAS systems, speakers, pocket computers, and HTTP downloads, but more peripherals, APIs, programs, and improvements are planned.
+TaleOS is under active development. The current release already includes computers, turtles, monitors, networking, removable storage, NAS systems, speakers, pocket computers, and HTTP downloads, but more peripherals, APIs, programs, and improvements are planned.
 
 Feedback, bug reports, and ideas are welcome!
 
 ## License and credits
 
-TaleCraft is released under the **MPL-2.0** license. It is an original clean-room implementation inspired by ComputerCraft and CC:Tweaked; no code or assets were copied from those projects.
+TaleOS is released under the **MPL-2.0** license. It is an original clean-room implementation inspired by ComputerCraft and CC:Tweaked; no code or assets were copied from those projects.

@@ -1,0 +1,12 @@
+{
+  "AudioCategory": "AudioCat_SFX",
+  "Layers": [
+    {
+      "Files": [
+        "Sounds/TaleOS/boot_beep.ogg"
+      ]
+    }
+  ],
+  "Volume": 1.0,
+  "Parent": "SFX_Attn_Quiet"
+}

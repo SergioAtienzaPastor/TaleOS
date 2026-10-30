@@ -3,13 +3,13 @@
 Prerequisito: servidor WSL arrancado con el jar desplegado y cliente Windows
 conectado por `localhost`. Comandos del servidor útiles: logs en
 `Server/logs/`, y el mod loguea `[selftest]` si se arranca con
-`-Dtalecraft.selftest=true`.
+`-Dtaleos.selftest=true`.
 
 Todo lo que no exige interacción visual del cliente también se puede ejecutar
 desde la consola del servidor con
-`/talecraft <mundo> <x> <y> <z> <línea de shell>` (p. ej.
-`/talecraft creative_test 191 123 -64 cat nota.txt`) y verificarse en
-`mods/TaleCraft/logs/computer-<id>.log`.
+`/taleos <mundo> <x> <y> <z> <línea de shell>` (p. ej.
+`/taleos creative_test 191 123 -64 cat nota.txt`) y verificarse en
+`mods/TaleOS/logs/computer-<id>.log`.
 
 Marcar cada prueba solo si se reproduce tal cual:
 
@@ -27,7 +27,7 @@ Marcar cada prueba solo si se reproduce tal cual:
 - [x] **Persistencia**: `cat nota.txt` → `persisto` tras varios reinicios del
   servidor. ✅ 2026-10-21 (tras los reinicios de las 11:23, 16:41, 16:59,
   17:12 y 17:35; id estable #8 gracias al fix de `ids.json` load).
-- [x] **API mundo**: `print(tale.getBlock(0,0,0))` → `TaleCraft_Computer`,
+- [x] **API mundo**: `print(tale.getBlock(0,0,0))` → `TaleOS_Computer`,
   `print(tale.getBlock(0,-1,0))` → `Soil_Grass_Full`,
   `print(tale.detect(0,-1,0))` → `true`, `tale.chat(...)` → mensaje en el chat
   (`[Broadcast]` en el log). ✅ 2026-10-21 por consola. OJO: lecturas solo con
@@ -43,10 +43,10 @@ Marcar cada prueba solo si se reproduce tal cual:
   contenido del terminal. (No testeable con un solo PC.)
 
 ## Regresión de servidor
-- [x] `grep -i talecraft Server/logs/latest.log` sin ERROR/WARN tras 5 min de
+- [x] `grep -i taleos Server/logs/latest.log` sin ERROR/WARN tras 5 min de
   uso. ✅ 2026-10-21 — soak de 5+ min con la batería de consola ejecutándose:
-  0 excepciones, 0 crashes de mundo, ningún SEVERE/WARN de TaleCraft (solo el
-  WARN benigno del escaneo del directorio de datos `mods/TaleCraft` como pack).
+  0 excepciones, 0 crashes de mundo, ningún SEVERE/WARN de TaleOS (solo el
+  WARN benigno del escaneo del directorio de datos `mods/TaleOS` como pack).
 
 ## Notas de la sesión 2026-10-21
 - El terminal muestra siempre la **cola** del transcript (14 líneas que caben
@@ -64,13 +64,13 @@ Marcar cada prueba solo si se reproduce tal cual:
   `/world settings keeploaded set 176 -80 207 -49 --world=creative_test`
   (reversible con `... keeploaded reset --world=creative_test`).
 - Diagnóstico de lecturas de bloques desde consola:
-  `/talecraft <mundo> <x> <y> <z> __probe` (loguea `[TaleCraft probe]`).
+  `/taleos <mundo> <x> <y> <z> __probe` (loguea `[TaleOS probe]`).
 
 ## Turtle (2026-10-25)
 - [x] **Movimiento e identidad**: Turtle #12 avanzó de `(200,123,-64)` a
   `(200,123,-63)`, dejó el origen vacío, conservó `id` = 12 y volvió con `back`.
 - [x] **API Lua**: `select(3)` + `getSelectedSlot()` devolvió 3; el slot queda
-  guardado en `mods/TaleCraft/turtles.json`.
+  guardado en `mods/TaleOS/turtles.json`.
 - [x] **Inventario y colocación**: recibió 2 `Soil_Grass_Full`, `place()` creó el
   bloque delante y el stack quedó en 1.
 - [x] **Herramienta y minería**: `Tool_Shovel_Copper` equipada desde el slot 2;
@@ -91,13 +91,13 @@ Marcar cada prueba solo si se reproduce tal cual:
 - [ ] **Visual cliente**: comprobar icono, frontal y geometría de pala/pico en los
   laterales (no hay herramienta dibujada cuando los slots están vacíos).
 - Comandos de apoyo: `__turtleplace`, `__turtleboot`, `__turtlegive <item> <n>`,
-  `__turtle <línea>` y `__blockid`, todos con coordenadas y mundo de `/talecraft`.
+  `__turtle <línea>` y `__blockid`, todos con coordenadas y mundo de `/taleos`.
 
 ## HTTP y wget (2026-10-25)
 
 - [x] Pruebas headless del servicio: reglas allow/deny, DNS y rangos privados,
   redirecciones, UTF-8, 404, límite de descarga, concurrencia y cancelación.
-- [x] **GitHub Raw**: `/talecraft creative_test 199 123 -65 wget https://raw.githubusercontent.com/github/gitignore/main/README.md github-readme.txt`
+- [x] **GitHub Raw**: `/taleos creative_test 199 123 -65 wget https://raw.githubusercontent.com/github/gitignore/main/README.md github-readme.txt`
   guardó 5847 bytes en la Turtle #15; `cat github-readme.txt` mostró el contenido
   completo en `computer-15.log`. ✅ 2026-10-25.
 - [x] **Red privada denegada**: con la configuración predeterminada, `wget
@@ -158,7 +158,7 @@ Marcar cada prueba solo si se reproduce tal cual:
 - [x] `clean build`: 194 pruebas, 0 fallos. Incluye registro de upgrades, selección/cálculo
   de ataque, planes de craft, módem en Turtle y validación de ROM/completado.
 - [x] **Servidor real, Turtle #15**: mejora crafting equipada, `craft(1)` fabricó un
-  `TaleCraft_Modem` con cobre+madera y otro módem quedó equipado a la derecha.
+  `TaleOS_Modem` con cobre+madera y otro módem quedó equipado a la derecha.
 - [x] **Red por upgrade**: #15 recibió `UPGRADE_RX 8 modem_equipado upgrade`; la mejora
   tiene prioridad sobre un bloque vecino en el mismo lado.
 - [x] `attack()` sin entidad devolvió `false, "no hay ninguna entidad dañable"`.
@@ -176,7 +176,7 @@ Marcar cada prueba solo si se reproduce tal cual:
   Se corrigió la lectura de contenedores presentes solo en Holder, no en entidad activa.
 - [x] **Expulsión sin jugadores**: `eject()` devolvió false y el archivo siguió montado;
   el PenDrive se restauró, sin pérdida. La expulsión como drop real requiere cliente cerca.
-- [x] **Altavoz real**: `playSound("TaleCraft_Boot_Beep")` devolvió true; el segundo sonido
+- [x] **Altavoz real**: `playSound("TaleOS_Boot_Beep")` devolvió true; el segundo sonido
   en el mismo tick fue limitado y un SoundEvent inexistente se rechazó correctamente.
 - [x] **Pocket**: spike de API favorable; item Use sin targetBlock, holder por jugador/slot,
   IDs/UUID persistentes, sesión única y suspensión implementados. 15 pruebas específicas.
@@ -196,13 +196,13 @@ Marcar cada prueba solo si se reproduce tal cual:
 ## Correcciones de cliente, construcción y NAS (2026-10-27)
 
 - [x] **Regresión**: `clean build`, 255 pruebas, 0 fallos. `git diff --check` limpio.
-- [x] **Crash Turtle/NAS corregido**: las copias visuales de objetos TaleCraft no llevan metadatos
+- [x] **Crash Turtle/NAS corregido**: las copias visuales de objetos TaleOS no llevan metadatos
   incompatibles al cliente; los stacks reales conservan IDs, etiquetas y persistencia. El usuario
   confirmó que las interfaces y el resto de las pruebas visuales funcionan.
 - [x] **Autocompletado de consola**: Computer y Turtle autocompletan con TAB y ya no tienen botón;
   el editor conserva el botón `Completar`. Pendiente confirmación visual del foco y las sugerencias.
 - [x] **Monitor**: retirada la interfaz F; se mantiene el pintado directo en el mundo.
-  Los bloques TaleCraft tienen soporte superior y el Monitor puede apilarse sin exigir apoyo.
+  Los bloques TaleOS tienen soporte superior y el Monitor puede apilarse sin exigir apoyo.
 - [x] **NAS real**: dos unidades apiladas compartieron los PenDrives #22 y #23 entre Computers y
   Turtles. El montaje se crea después del arranque y se repara si el registro queda obsoleto.
 - [x] **NAS en Pocket**: monta unidades próximas al jugador al abrir y reexplora cada segundo;

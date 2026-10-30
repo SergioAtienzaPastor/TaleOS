@@ -1,0 +1,28 @@
+// TaleOS monitor canvas page. Layout path: TaleOS/Monitor.ui
+$C = "../Common.ui";
+
+Group #Monitor {
+  Anchor: (Width: 720, Height: 430);
+  Background: #101418(0.97);
+  LayoutMode: Top;
+  Padding: (Full: 14);
+
+  Label #Title {
+    Text: "Monitor";
+    Anchor: (Height: 30);
+    Style: (FontSize: 16, TextColor: #d8c890, RenderBold: true);
+  }
+
+  Group { Anchor: (Height: 6); }
+
+  // Centered canvas: rows of colored cells are appended under #Canvas
+  // (MonitorCanvasPage), each cell a 15px Group with a palette Background.
+  Group #ScreenWrap {
+    FlexWeight: 1;
+    LayoutMode: Middle;
+
+    Group #Canvas {
+      LayoutMode: Top;
+    }
+  }
+}

@@ -1,4 +1,4 @@
--- TaleOS bios — escrito desde cero para TaleCraft.
+-- TaleOS bios — escrito desde cero para TaleOS.
 -- Prepara las APIs base (term, os), ejecuta startup.lua y arranca el shell.
 
 term = term or {}
@@ -67,7 +67,7 @@ peripheral = loadRom("rom/apis/peripheral.lua")(peripheral)
 rednet = loadRom("rom/apis/rednet.lua")()
 gps = loadRom("rom/apis/gps.lua")()
 
-print("TaleOS v0.1 (TaleCraft)")
+print("TaleOS v0.1 (TaleOS)")
 
 local startup = fs.read("startup.lua")
 if startup then

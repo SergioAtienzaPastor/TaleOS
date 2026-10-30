@@ -1,6 +1,6 @@
 {
-    "Group": "TaleCraft",
-    "Name": "TaleCraft",
+    "Group": "TaleOS",
+    "Name": "TaleOS",
     "Version": "0.1.0",
     "Description": "Programmable Lua computers for Hytale: terminal blocks, a sandboxed Lua runtime and peripherals, inspired by ComputerCraft.",
     "Authors": [
@@ -8,7 +8,7 @@
             "Name": "kvothe"
         }
     ],
-    "Website": "https://github.com/SergioAtienzaPastor/TaleCraft",
+    "Website": "https://github.com/SergioAtienzaPastor/TaleOS",
     "ServerVersion": "*",
     "Dependencies": {
         
@@ -17,6 +17,6 @@
         
     },
     "DisabledByDefault": false,
-    "Main": "me.kvothe.talecraft.TaleCraftPlugin",
+    "Main": "me.kvothe.taleos.TaleOSPlugin",
     "IncludesAssetPack": true
 }

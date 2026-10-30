@@ -28,13 +28,13 @@ def main():
     os.makedirs(BLOCKS, exist_ok=True)
     icons = os.path.join(RES, "Common", "Icons", "ItemsGenerated")
     os.makedirs(icons, exist_ok=True)
-    model_path = os.path.join(BLOCKS, "TaleCraft_NAS.blockymodel")
-    texture_path = os.path.join(BLOCKS, "TaleCraft_NAS_Texture.png")
+    model_path = os.path.join(BLOCKS, "TaleOS_NAS.blockymodel")
+    texture_path = os.path.join(BLOCKS, "TaleOS_NAS_Texture.png")
     with open(model_path, "w") as output:
         json.dump(nas_model(), output, separators=(",", ":"))
     texture(texture_path)
-    render_icon(model_path, texture_path, os.path.join(icons, "TaleCraft_NAS.png"))
-    print("generado TaleCraft_NAS")
+    render_icon(model_path, texture_path, os.path.join(icons, "TaleOS_NAS.png"))
+    print("generado TaleOS_NAS")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from PIL import Image
 
 from generate_assets import CELL, FACES, RES, box, box_mapped, model, render_icon
 
-ITEMS = os.path.join(RES, "Common", "Items", "TaleCraft")
+ITEMS = os.path.join(RES, "Common", "Items", "TaleOS")
 ICONS = os.path.join(RES, "Common", "Icons", "ItemsGenerated")
 
 
@@ -52,7 +52,7 @@ def texture(path):
 def main():
     os.makedirs(ITEMS, exist_ok=True)
     os.makedirs(ICONS, exist_ok=True)
-    name = "TaleCraft_PocketComputer"
+    name = "TaleOS_PocketComputer"
     model_path = os.path.join(ITEMS, name + ".blockymodel")
     texture_path = os.path.join(ITEMS, name + "_Texture.png")
     with open(model_path, "w") as output:

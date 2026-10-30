@@ -13,7 +13,7 @@ end
 
 local function envelope(message, protocol)
   return {
-    talecraft_rednet = true,
+    taleos_rednet = true,
     protocol = protocol,
     message = message,
   }
@@ -86,7 +86,7 @@ local function nextMessage(protocol, timer)
     end
     if event[1] == "modem_message" and openModems[event[2]] then
       local sender, payload = event[4], event[5]
-      if type(payload) == "table" and payload.talecraft_rednet == true
+      if type(payload) == "table" and payload.taleos_rednet == true
           and (protocol == nil or payload.protocol == protocol) then
         return sender, payload.message, payload.protocol
       end
@@ -154,7 +154,7 @@ function rednet.run()
   while true do
     local event, side, _, sender, payload = os.pullEventRaw("modem_message")
     if event == "modem_message" and openModems[side] and type(payload) == "table"
-        and payload.talecraft_rednet == true and payload.protocol == "dns"
+        and payload.taleos_rednet == true and payload.protocol == "dns"
         and type(payload.message) == "table" then
       local request = payload.message
       local names = hosted[request.protocol]

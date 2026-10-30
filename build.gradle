@@ -143,7 +143,7 @@ tasks.register('generateVSCodeLaunch') {
     }
 }
 
-// TaleCraft: the plugin jar must carry LuaJ at runtime (the server does not
+// TaleOS: the plugin jar must carry LuaJ at runtime (the server does not
 // provide it), so the slim jar is replaced by the shadow (fat) one.
 tasks.named('jar') {
     archiveClassifier = 'slim'

@@ -1,0 +1,132 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.TaleOS_Turtle.name",
+    "Description": "server.items.TaleOS_Turtle.description"
+  },
+  "PlayerAnimationsId": "Block",
+  "Categories": [
+    "Furniture.Tech"
+  ],
+  "Icon": "Icons/ItemsGenerated/TaleOS_Turtle.png",
+  "IconProperties": {
+    "Scale": 0.6,
+    "Rotation": [
+      22.5,
+      45.0,
+      22.5
+    ]
+  },
+  "BlockType": {
+    "BlockSoundSetId": "Wood",
+    "PhysicalMaterialId": "Wood",
+    "CustomModel": "Blocks/TaleOS/TaleOS_Turtle.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/TaleOS/TaleOS_Turtle_Texture.png",
+        "Weight": 1
+      }
+    ],
+    "DrawType": "Model",
+    "State": {
+      "Definitions": {
+        "MovePosX": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Move_PosX.blockyanim"
+        },
+        "MoveNegX": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Move_NegX.blockyanim"
+        },
+        "MovePosY": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Move_PosY.blockyanim"
+        },
+        "MoveNegY": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Move_NegY.blockyanim"
+        },
+        "MovePosZ": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Move_PosZ.blockyanim"
+        },
+        "MoveNegZ": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Move_NegZ.blockyanim"
+        },
+        "TurnLeft": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Turn_Left.blockyanim"
+        },
+        "TurnRight": {
+          "CustomModelAnimation": "Blocks/Animations/TaleOS/Turtle_Turn_Right.blockyanim"
+        }
+      }
+    },
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Woods"
+      }
+    },
+    "HitboxType": "Full",
+    "Material": "Solid",
+    "Opacity": "Transparent",
+    "Supporting": {
+      "Up": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
+    "Support": {
+      "Down": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
+    "VariantRotation": "NESW",
+    "BlockEntity": {
+      "Components": {
+        "ItemContainerBlock": {
+          "Capacity": 18
+        }
+      }
+    },
+    "InteractionHint": "server.interactionHints.openDoor",
+    "Interactions": {
+      "Use": {
+        "Interactions": [
+          {
+            "Type": "OpenCustomUI",
+            "Page": {
+              "Id": "TaleOSTurtle"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Tags": {
+    "Type": [
+      "Furniture"
+    ]
+  },
+  "Recipe": {
+    "TimeSeconds": 5,
+    "Input": [
+      {
+        "ItemId": "Ingredient_Bar_Copper",
+        "Quantity": 6
+      },
+      {
+        "ItemId": "Wood_Deadwood_Planks",
+        "Quantity": 2
+      }
+    ],
+    "BenchRequirement": [
+      {
+        "Id": "Workbench",
+        "Type": "Crafting",
+        "Categories": [
+          "Workbench_Survival"
+        ]
+      }
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Wood",
+  "ItemLevel": 5,
+  "MaxStack": 1
+}
