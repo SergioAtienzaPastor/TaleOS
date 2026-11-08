@@ -160,6 +160,28 @@ Group #Terminal {
       }
     }
 
+    Label #InternalUpgradesLabel {
+      Anchor: (Height: 30);
+      Text: "Internal modules (not shown on model)";
+      Style: (FontSize: 14, TextColor: #b9c6d4, VerticalAlignment: Center);
+    }
+
+    Group {
+      Anchor: (Height: 80);
+      LayoutMode: Middle;
+
+      ItemGrid #InternalUpgradeGrid {
+        SlotsPerRow: 4;
+        AreItemsDraggable: true;
+        Style: (
+          SlotSize: 64,
+          SlotIconSize: 56,
+          SlotSpacing: 8,
+          SlotBackground: "../Common/BlockSelectorSlotBackground.png"
+        );
+      }
+    }
+
     Label #DragHint {
       Anchor: (Height: 38);
       Text: "Drag items between grids";

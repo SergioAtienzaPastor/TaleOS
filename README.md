@@ -15,12 +15,12 @@ configuration. The wiki is also bundled at [docs/wiki/index.html](docs/wiki/inde
 
 ## Installation
 
-1. Download `taleos-0.1.0.jar` from
+1. Download `taleos-0.2.0.jar` from
    [CurseForge](https://www.curseforge.com/hytale/mods/taleos).
 2. Copy it into the server's `Server/mods/` directory.
 3. Restart the Hytale server. No client-side installation is required.
 
-## Features (v0.1)
+## Features (v0.2)
 
 - **Computer block** (craft at the Workbench: 4 copper bars + 4 deadwood planks) with its own
   voxel model, palette texture, and a boot beep.
@@ -67,19 +67,33 @@ configuration. The wiki is also bundled at [docs/wiki/index.html](docs/wiki/inde
   disconnects or changes worlds. Nearby NAS media follows the player and is unmounted on suspension.
   Duplicate stacks cannot run two sessions on the same disk.
 - **Turtle robot** (6 copper bars + 2 deadwood planks): a movable computer with a 4×4
-  inventory and two filtered upgrade slots. Its page combines the terminal, item icons,
-  player inventory, selected-slot highlight and upgrade controls. Left/right tools and weapons
-  appear as native 3D geometry on the chassis and swing when used. Movement preserves the
-  running program, computer ID, files, inventory and equipped upgrades.
+  inventory, two filtered external upgrade slots and four internal module slots. Its page
+  combines the terminal, item icons, player inventory, selected-slot highlight and upgrade
+  controls. Left/right tools and weapons appear as native 3D geometry and swing when used;
+  internal modules are not rendered. Movement preserves the running program, computer ID,
+  files, inventory and equipped upgrades.
+- **Chunk Loader Upgrade** (4 copper bars + 2 deadwood planks): keeps the Turtle's current
+  chunk loaded while equipped, follows it across chunk boundaries and restores the ticket after
+  a server restart. Removing the upgrade or breaking the Turtle releases the chunk. Multiple
+  loaders on one Turtle do not expand the loaded area. Includes its own circuit-board
+  `.blockymodel`, palette texture and rendered inventory icon.
+- **Player Link** (1 Modem + 2 copper bars): hold the item and press **F** to bind it to your
+  player identity. Equip it in any external or internal Turtle upgrade slot and wrap the
+  `player_link` peripheral to send items to exact hotbar/backpack slots. Configure per-slot
+  routes, a default destination and automatic transfer from Lua. The binding and settings stay
+  in the item's metadata when moved or removed. It never restricts who can use the Turtle and
+  cannot pull or swap player items. Transfers require the owner online, in the same world and
+  within 64 blocks by default; full or unavailable destinations leave items in the Turtle.
 - **Turtle Lua API**: movement/turning, detection/inspection, digging/placement,
   `attack*`/`craft`, `suck*`/`drop*`, comparison, inventory queries/transfers,
-  `equipLeft`/`equipRight`, `getEquippedLeft`/`getEquippedRight`, and unlimited-fuel queries.
+  `equipLeft`/`equipRight`, `getEquippedLeft`/`getEquippedRight`,
+  `equipInternal`/`unequipInternal`/`getEquippedInternal`, and unlimited-fuel queries.
   Actions return `true` or `false, reason`. ROM programs include `go`, `turn`, `tunnel`,
   `excavate`, `equip` and `unequip`. `tunnel N` digs a 3×3 cross-section. Slots are numbered
   1–16 from Lua; tools must be appropriate for the block being mined. Equipped tools and weapons
-  do not lose durability when the Turtle uses them. Modems and the `TaleOS_Crafting_Upgrade`
-  can occupy either upgrade slot; crafting supports ordinary
-  tier-0 Crafting recipes and preserves inventory/metadata when planning its output.
+  do not lose durability when the Turtle uses them. Non-tool modules can occupy any external or
+  internal slot; crafting supports ordinary tier-0 Crafting recipes and preserves
+  inventory/metadata when planning its output.
 
 ## Lua quick start
 
@@ -150,7 +164,9 @@ redirect destination are checked. Invalid configuration fails closed. Set `http.
 to remove the API. POST, WebSockets, proxies and Git cloning are not included yet.
 
 The same file contains `modem.range` (default 64) and `modem.max_messages_per_tick`
-(default 32), both limited to 1–256.
+(default 32), both limited to 1–256. The `player_link` section supports `enabled` (default `true`),
+`max_distance` (default 64, allowed 1–256) and `transfers_per_tick` (default 8, allowed 1–64).
+Player Link always requires an online owner in the same world and never accesses offline player data.
 
 Example using a GitHub Raw URL:
 

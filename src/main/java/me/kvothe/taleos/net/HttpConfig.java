@@ -28,6 +28,11 @@ final class HttpConfig {
           "modem": {
             "range": 64,
             "max_messages_per_tick": 32
+          },
+          "player_link": {
+            "enabled": true,
+            "max_distance": 64,
+            "transfers_per_tick": 8
           }
         }
         """;

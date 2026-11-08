@@ -133,6 +133,7 @@ public final class LuaMachine {
             "select", "getSelectedSlot", "getItemCount", "getItemSpace", "getItemDetail",
             "transferTo", "compare", "compareUp", "compareDown", "compareTo",
             "equip", "unequip", "equipLeft", "equipRight", "getEquippedLeft", "getEquippedRight",
+            "equipInternal", "unequipInternal", "getEquippedInternal",
             "getFuelLevel", "getFuelLimit", "refuel", "dig", "digUp", "digDown",
             "attack", "attackUp", "attackDown", "craft",
             "place", "placeUp", "placeDown", "suck", "suckUp", "suckDown",

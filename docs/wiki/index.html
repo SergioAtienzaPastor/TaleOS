@@ -21,7 +21,7 @@
     <div id="search-results" role="listbox"></div>
   </div>
   <a class="download-button" href="https://www.curseforge.com/hytale/mods/taleos" target="_blank" rel="noopener noreferrer">Download</a>
-  <span class="version">v0.1.0 · Early Access</span>
+  <span class="version">v0.2.0 · Early Access</span>
 </header>
 
 <nav class="sidebar" aria-label="Wiki navigation">
@@ -53,6 +53,7 @@
     <a href="#pocket" data-target="pocket">Pocket Computers</a>
     <a href="#api-peripheral" data-target="api-peripheral">peripheral API</a>
     <a href="#api-inventory" data-target="api-inventory">Inventory peripherals</a>
+    <a href="#api-player-link" data-target="api-player-link">Player Link</a>
     <a href="#api-modem" data-target="api-modem">Modems &amp; rednet</a>
     <a href="#api-gps" data-target="api-gps">gps · Positioning</a>
     <a href="#api-speaker" data-target="api-speaker">Speakers</a>
@@ -71,13 +72,13 @@
 <aside class="toc" aria-label="On this page"></aside>
 
 <section class="article active" id="home" data-title="Overview" data-group="Start here">
-  <header><span class="eyebrow">Official documentation · v0.1.0</span><h1>TaleOS Wiki</h1>
+  <header><span class="eyebrow">Official documentation · v0.2.0</span><h1>TaleOS Wiki</h1>
     <p class="lead">Build, program and automate your Hytale world with Lua computers, mobile terminals, robots, displays and shared storage.</p>
   </header>
   <div class="hero">
     <div>
-      <p>TaleOS is a server-side Hytale mod that adds programmable Computers, Turtles, Pocket Computers, multi-block Monitors, PenDrives, USB drives, NAS units, wireless Modems and Speakers. Players only need the vanilla client.</p>
-      <p>This wiki documents the features that are actually present in TaleOS 0.1.0. It is inspired by the usefulness of computer-mod documentation, not a promise of drop-in compatibility with other mods.</p>
+      <p>TaleOS is a server-side Hytale mod that adds programmable Computers, Turtles, Pocket Computers, multi-block Monitors, PenDrives, USB drives, NAS units, wireless Modems, Speakers, Chunk Loaders and Player Links. Players only need the vanilla client.</p>
+      <p>This wiki documents the features that are actually present in TaleOS 0.2.0. It is inspired by the usefulness of computer-mod documentation, not a promise of drop-in compatibility with other mods.</p>
     </div>
     <img src="../logo.png" alt="TaleOS programmable computer">
   </div>
@@ -98,14 +99,14 @@
   <header><span class="eyebrow">Guide</span><h1>Getting started</h1><p class="lead">From a copper bar to your first running program in a few minutes.</p></header>
   <h2 id="start-install">1. Install the mod</h2>
   <ol>
-    <li>Download <code>taleos-0.1.0.jar</code> from <a href="https://www.curseforge.com/hytale/mods/taleos" target="_blank" rel="noopener noreferrer">CurseForge</a>.</li>
+    <li>Download <code>taleos-0.2.0.jar</code> from <a href="https://www.curseforge.com/hytale/mods/taleos" target="_blank" rel="noopener noreferrer">CurseForge</a>.</li>
     <li>Copy it into the Hytale server's <code>Server/mods/</code> directory.</li>
     <li>Restart the server. TaleOS requires Java 25 and is built against Hytale server 0.6.2.</li>
     <li>Join with the vanilla client. No client installation is required.</li>
   </ol>
   <h2 id="start-computer">2. Craft and place a Computer</h2>
   <p>At a <strong>Workbench → Survival</strong>, combine <strong>4 copper bars + 4 Deadwood planks</strong>. Place the Computer and press <strong>F</strong> to open its terminal.</p>
-  <p>After booting, you should see <code>TaleOS v0.1 (TaleOS)</code> and the <code>tale&gt;</code> prompt.</p>
+  <p>After booting, you should see <code>TaleOS v0.2 (TaleOS)</code> and the <code>tale&gt;</code> prompt.</p>
   <h2 id="start-commands">3. Try the shell</h2>
   <pre><code>id
 help
@@ -139,7 +140,7 @@ print("Computer #" .. os.getComputerID() .. " is ready")</code></pre>
     <thead><tr><th>Item</th><th>Ingredients</th><th>Crafting time</th><th>Purpose</th></tr></thead>
     <tbody>
       <tr><td><code>TaleOS_Computer</code></td><td>4 copper bars + 4 Deadwood planks</td><td>5 s</td><td>Fixed programmable Lua computer.</td></tr>
-      <tr><td><code>TaleOS_Turtle</code></td><td>6 copper bars + 2 Deadwood planks</td><td>5 s</td><td>Mobile robot with inventory and two upgrade slots.</td></tr>
+      <tr><td><code>TaleOS_Turtle</code></td><td>6 copper bars + 2 Deadwood planks</td><td>5 s</td><td>Mobile robot with inventory, two external upgrades and four internal module slots.</td></tr>
       <tr><td><code>TaleOS_Monitor</code></td><td>2 copper bars + 2 Deadwood planks</td><td>3 s</td><td>Colored text and pixel display; connects into rectangles.</td></tr>
       <tr><td><code>TaleOS_PocketComputer</code></td><td>1 TaleOS Computer + 2 copper bars</td><td>5 s</td><td>Portable terminal with persistent identity and files.</td></tr>
       <tr><td><code>TaleOS_PenDrive</code></td><td>2 copper bars + 1 Deadwood plank</td><td>3 s</td><td>Portable 1 MiB storage medium.</td></tr>
@@ -148,12 +149,14 @@ print("Computer #" .. os.getComputerID() .. " is ready")</code></pre>
       <tr><td><code>TaleOS_Modem</code></td><td>4 copper bars + 1 Deadwood plank</td><td>3 s</td><td>Wireless rednet/GPS peripheral or Turtle upgrade.</td></tr>
       <tr><td><code>TaleOS_Speaker</code></td><td>2 copper bars + 2 Deadwood planks</td><td>3 s</td><td>Positional SoundEvent playback or Turtle upgrade.</td></tr>
       <tr><td><code>TaleOS_Crafting_Upgrade</code></td><td>2 copper bars + 2 Deadwood planks</td><td>3 s</td><td>Enables Turtle crafting.</td></tr>
+      <tr><td><code>TaleOS_Chunk_Loader_Upgrade</code></td><td>4 copper bars + 2 Deadwood planks</td><td>5 s</td><td>Keeps the Turtle's current chunk loaded while equipped.</td></tr>
+      <tr><td><code>TaleOS_Player_Link</code></td><td>1 TaleOS Modem + 2 copper bars</td><td>5 s</td><td>Sends Turtle items to the linked player's chosen inventory slots.</td></tr>
     </tbody>
   </table></div>
   <h2 id="recipes-tools">Tools and weapons</h2>
   <p>TaleOS does not add special tools. Use ordinary Hytale pickaxes, shovels, weapons and other registered tools in Turtle upgrade slots. A tool appropriate for the target block is required for digging. Tools and weapons do not lose durability when used by a Turtle.</p>
   <h2 id="recipes-stacks">Stacking and identity</h2>
-  <p>Computers, Turtles, Pocket Computers and PenDrives have persistent identity and do not stack. Monitors, USB drives, NAS units, Modems and Speakers can stack up to 25 before identity is attached. Breaking a Computer or Turtle creates an item labeled with its ID; placing it again preserves its files and state.</p>
+  <p>Computers, Turtles, Pocket Computers, PenDrives, Chunk Loaders and Player Links do not stack. Monitors, USB drives, NAS units, Modems and Speakers can stack up to 25 before identity is attached. Breaking a Computer or Turtle creates an item labeled with its ID; placing it again preserves its files and state. Player Link ownership and routes travel in the link item itself.</p>
 </section>
 
 <section class="article" id="computers" data-title="Computers & files" data-group="Start here">
@@ -336,6 +339,8 @@ print(name, value, data.ready)</code></pre>
     <tr><td><code>modem_message</code></td><td><code>side, channel, replyChannel, payload, distance</code></td><td>An open channel receives a wireless message on a loaded receiver in the same world.</td></tr>
     <tr><td><code>usb</code></td><td><code>side</code></td><td>A PenDrive is mounted. Side identifies the USB drive, or <code>nas</code> for NAS-backed media.</td></tr>
     <tr><td><code>usb_eject</code></td><td><code>side</code></td><td>A mounted PenDrive is ejected or its mount disappears.</td></tr>
+    <tr><td><code>player_link_full</code></td><td><code>side, turtleSlot, playerSlot</code></td><td>A Player Link destination is full, incompatible or cannot accept the stack; throttled.</td></tr>
+    <tr><td><code>player_link_unavailable</code></td><td><code>side, reason</code></td><td>A linked owner or inventory is offline, out of range, in another world or unavailable; throttled.</td></tr>
     <tr><td><em>custom name</em></td><td><em>custom values…</em></td><td>Your program calls <code>os.queueEvent(name, ...)</code>. Strings, numbers, booleans, tables and nil are supported.</td></tr>
   </tbody></table></div>
   <h2 id="events-network">Reading a modem message</h2>
@@ -345,7 +350,7 @@ print(name, value, data.ready)</code></pre>
 print("Received on " .. side .. ", channel " .. channel)
 print("Reply channel: " .. replyTo)
 print("Distance: " .. distance)</code></pre>
-  <div class="warning"><strong>Not currently generated:</strong> mouse, keyboard, monitor-touch, redstone, disk/floppy, websocket, alarm and multishell events are not part of TaleOS 0.1.0.</div>
+  <div class="warning"><strong>Not currently generated:</strong> mouse, keyboard, monitor-touch, redstone, disk/floppy, websocket, alarm and multishell events are not part of TaleOS 0.2.0.</div>
 </section>
 
 <section class="article" id="api-term" data-title="term API" data-group="Lua APIs">
@@ -502,7 +507,7 @@ end</code></pre>
 
 <section class="article" id="api-http" data-title="http API" data-group="Lua APIs">
   <header><span class="eyebrow">Lua API</span><h1>http · Safe downloads</h1><p class="lead">Asynchronous HTTP GET requests without blocking server ticks.</p></header>
-  <p>The API exists only when HTTP is enabled in <code>mods/TaleOS/config.json</code>. TaleOS 0.1.0 supports text GET requests, not POST, WebSockets, proxies or Git cloning.</p>
+  <p>The API exists only when HTTP is enabled in <code>mods/TaleOS/config.json</code>. TaleOS 0.2.0 supports text GET requests, not POST, WebSockets, proxies or Git cloning.</p>
   <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
     <tr><td><code>http.get(url)</code></td><td>response | nil, error</td><td>Perform a GET request, following validated redirects. On success returns a response object; on failure returns nil and a reason.</td></tr>
     <tr><td><code>response.readAll()</code></td><td>string</td><td>Read the complete response body.</td></tr>
@@ -572,8 +577,8 @@ term.redirect(previous)</code></pre>
 <section class="article" id="turtles" data-title="Turtle guide" data-group="Hardware">
   <header><span class="eyebrow">Hardware guide</span><h1>Turtles</h1><p class="lead">Mobile Lua computers that move, mine, fight, build and manage items.</p></header>
   <h2 id="turtle-ui">Inventory and upgrades</h2>
-  <p>Press F on a Turtle to combine its terminal, 4×4 inventory, your inventory and two upgrade slots. Lua slots are numbered <strong>1–16</strong>, left-to-right and top-to-bottom. The selected slot is highlighted and defaults to slot 1.</p>
-  <p>The left and right upgrade slots accept ordinary tools and weapons, <code>TaleOS_Modem</code>, <code>TaleOS_Speaker</code> and <code>TaleOS_Crafting_Upgrade</code>. Equipped hardware appears on the 3D chassis and tools swing when used. Tools and weapons do not consume durability.</p>
+  <p>Press F on a Turtle to combine its terminal, 4×4 inventory, your inventory, two external upgrade slots and four internal module slots. Lua inventory slots are numbered <strong>1–16</strong>, left-to-right and top-to-bottom. The selected slot is highlighted and defaults to slot 1.</p>
+  <p>The left and right slots accept ordinary tools, weapons and every TaleOS module. The four internal slots accept non-tool modules only: Modems, Speakers, Crafting Upgrades, Chunk Loader Upgrades and Player Links. External hardware appears on the 3D chassis and tools swing when used; internal modules are not rendered. Tools and weapons do not consume durability.</p>
   <h2 id="turtle-equip">Equipping from Lua or the shell</h2>
   <pre><code>-- Select a slot containing a pickaxe, then:
 equip left
@@ -586,6 +591,18 @@ if not ok then print(reason) end
 
 turtle.select(2)
 turtle.equipRight()</code></pre>
+  <p>Internal modules use one-based indices 1–4. Equipping swaps the selected inventory slot with the module slot; unequipping requires an empty selected slot.</p>
+  <pre><code>turtle.select(1)
+turtle.equipInternal(1)
+print(turtle.getEquippedInternal(1).name)
+
+turtle.unequipInternal(1) -- slot 1 is empty after equipping
+
+-- Internal Modems and Speakers use these peripheral names:
+local modem = peripheral.wrap("internal1")</code></pre>
+  <h2 id="turtle-chunk-loader">Chunk Loader Upgrade</h2>
+  <p>Equip a <code>TaleOS_Chunk_Loader_Upgrade</code> in any external or internal upgrade slot. It keeps only the Turtle's current chunk loaded, even when no players are nearby. Moving across a chunk boundary releases the old chunk and loads the new one. Removing the upgrade or breaking the Turtle releases its ticket.</p>
+  <p>The equipped loader is restored after a server restart. Several loaders on one Turtle do not load additional chunks, and several Turtles in the same chunk share it safely until the last loader is removed.</p>
   <h2 id="turtle-actions">Action results</h2>
   <p>Most physical actions return <code>true</code> on success or <code>false, reason</code> on failure. Always check the result in unattended programs. Movement and turning are animated, and a Turtle retains its running program, ID, files, inventory and upgrades while moving.</p>
   <pre><code>for i = 1, 10 do
@@ -646,6 +663,8 @@ if turtle.compareDown() then print("Selected item matches the ground") end</code
     <tr><td><code>turtle.equip()</code></td><td>true | false, reason</td><td>Alias for equipRight.</td></tr>
     <tr><td><code>turtle.unequip()</code></td><td>true | false, reason</td><td>Move the right upgrade into the selected empty slot.</td></tr>
     <tr><td><code>turtle.getEquippedLeft()</code> / <code>getEquippedRight()</code></td><td>table | nil</td><td>Equipped item name/count and durability fields when applicable.</td></tr>
+    <tr><td><code>turtle.equipInternal(index)</code> / <code>unequipInternal(index)</code></td><td>true | false, reason</td><td>Swap the selected item with internal module slot 1–4, or retrieve a module into an empty selected slot. Tools and weapons are rejected.</td></tr>
+    <tr><td><code>turtle.getEquippedInternal(index)</code></td><td>table | nil | false, reason</td><td>Item details for internal module slot 1–4; invalid indices return an error.</td></tr>
     <tr><td><code>turtle.getFuelLevel()</code> / <code>getFuelLimit()</code></td><td>"unlimited"</td><td>Turtles do not require fuel.</td></tr>
     <tr><td><code>turtle.refuel()</code></td><td>false, reason</td><td>Reports that refueling is unnecessary.</td></tr>
   </tbody></table></div>
@@ -721,11 +740,11 @@ cat nas/22/shared-program.lua</code></pre>
 </section>
 
 <section class="article" id="api-peripheral" data-title="peripheral API" data-group="Hardware">
-  <header><span class="eyebrow">Lua API</span><h1>peripheral API</h1><p class="lead">Discover and call Monitors, Modems, inventories, USB drives and Speakers.</p></header>
-  <p>Peripheral names are usually side strings: <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>, <code>front</code>, <code>back</code>. Turtle upgrades use their corresponding side. Coordinate aliases use <code>@dx,dy,dz</code> for directly addressed neighbors.</p>
+  <header><span class="eyebrow">Lua API</span><h1>peripheral API</h1><p class="lead">Discover and call Monitors, Modems, inventories, USB drives, Speakers and Player Links.</p></header>
+  <p>Peripheral names are usually side strings: <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>, <code>front</code>, <code>back</code>. Turtle upgrades use their corresponding side; internal modules use <code>internal1</code> through <code>internal4</code>. Coordinate aliases use <code>@dx,dy,dz</code> for directly addressed neighbors.</p>
   <div class="table-wrap"><table class="api"><thead><tr><th>Function</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
     <tr><td><code>peripheral.getNames()</code></td><td>table</td><td>Array of currently available peripheral names.</td></tr>
-    <tr><td><code>peripheral.getType(name)</code></td><td>string | nil</td><td><code>monitor</code>, <code>modem</code>, <code>inventory</code>, <code>usb_drive</code>, <code>speaker</code>, or nil.</td></tr>
+    <tr><td><code>peripheral.getType(name)</code></td><td>string | nil</td><td><code>monitor</code>, <code>modem</code>, <code>inventory</code>, <code>usb_drive</code>, <code>speaker</code>, <code>player_link</code>, or nil.</td></tr>
     <tr><td><code>peripheral.getMethods(name)</code></td><td>table | nil</td><td>Array of callable method names.</td></tr>
     <tr><td><code>peripheral.wrap(name)</code></td><td>table | nil</td><td>Create an object whose methods call this peripheral.</td></tr>
     <tr><td><code>peripheral.find(type)</code></td><td>zero or more tables</td><td>Return every wrapped peripheral of this type as separate return values.</td></tr>
@@ -760,6 +779,42 @@ if chest then
     print(slot, stack.name, stack.count)
   end
 end</code></pre>
+</section>
+
+<section class="article" id="api-player-link" data-title="Player Link" data-group="Hardware">
+  <header><span class="eyebrow">Peripheral API</span><h1>Player Link</h1><p class="lead">Send Turtle items to exact slots in a linked player's inventory.</p></header>
+  <h2 id="player-link-binding">Bind it with F</h2>
+  <p>Craft <code>TaleOS_Player_Link</code> with 1 Modem and 2 copper bars. Hold it and press <strong>F</strong> to bind that item to your UUID and username. F opens a small status page where the owner — or an administrator with <code>taleos.playerlink.admin</code> — can unlink it. Another player cannot take over an existing link.</p>
+  <p>The link belongs to the item, not to the Turtle or its position. It does <strong>not</strong> restrict who can open or program the Turtle. Equip it in a left/right upgrade slot or an internal slot, then use <code>peripheral.wrap("left")</code>, <code>peripheral.wrap("right")</code> or <code>peripheral.wrap("internal1")</code> through <code>internal4</code>.</p>
+  <h2 id="player-link-slots">Inventory slots and safety</h2>
+  <p>Lua Turtle slots are 1–16. Player slots are one-based: the complete hotbar first, then the backpack. With the usual nine-slot hotbar, slot 9 is its last slot and slot 10 is the first backpack slot. Destinations outside the player's actual capacity are rejected.</p>
+  <p>Player Link only sends items. It never pulls, removes or swaps player items. A destination must be empty or contain a compatible stack with space. Partial transfers move only the confirmed amount; incompatible or full destinations leave everything in the Turtle. The owner must be online, in the same world and within the configured distance.</p>
+  <div class="table-wrap"><table class="api"><thead><tr><th>Method</th><th>Returns</th><th>Behavior</th></tr></thead><tbody>
+    <tr><td><code>link.getOwner()</code></td><td>string | nil</td><td>Linked username; nil when unbound.</td></tr>
+    <tr><td><code>link.isAvailable()</code></td><td>true | false, reason</td><td>Check enabled state, ownership, online presence, world, distance and inventory.</td></tr>
+    <tr><td><code>link.setRoute(turtleSlot, playerSlot)</code></td><td>true | false, reason</td><td>Route one Turtle slot to one player slot for automatic transfer.</td></tr>
+    <tr><td><code>link.clearRoute(turtleSlot)</code></td><td>true | false, reason</td><td>Remove a slot-specific route.</td></tr>
+    <tr><td><code>link.getRoutes()</code></td><td>table</td><td>Map of Turtle slot numbers to player slot numbers.</td></tr>
+    <tr><td><code>link.setDefaultSlot(playerSlot)</code></td><td>true | false, reason</td><td>Destination for unrouted Turtle slots; nil clears it.</td></tr>
+    <tr><td><code>link.setAutoTransfer(enabled)</code></td><td>true | false, reason</td><td>Enable or disable background sending of configured slots.</td></tr>
+    <tr><td><code>link.transfer(turtleSlot, playerSlot[, count])</code></td><td>true, moved | false, reason</td><td>Send immediately, optionally limiting the quantity.</td></tr>
+    <tr><td><code>link.getPlayerSlot(playerSlot)</code></td><td>table | nil, reason</td><td>Inspect name, count and maxCount; an empty slot has count 0 and no name.</td></tr>
+  </tbody></table></div>
+  <h2 id="player-link-example">Automatic delivery example</h2>
+  <pre><code>local link = peripheral.find("player_link")
+assert(link, "Equip a linked Player Link")
+assert(link.setRoute(1, 9))
+assert(link.setAutoTransfer(true))
+
+while true do
+  turtle.select(1)
+  local ok, reason = turtle.suckDown()
+  if not ok then print(reason) end
+  os.sleep(0.25)
+end</code></pre>
+  <p>Use <code>link.setDefaultSlot(9)</code> for every unrouted slot. Owner and settings persist in the item's metadata when moved, removed, stored or carried inside a broken Turtle.</p>
+  <h2 id="player-link-events">Status events</h2>
+  <p><code>player_link_full</code> supplies <code>side, turtleSlot, playerSlot</code>. <code>player_link_unavailable</code> supplies <code>side, reason</code>. Repeated events are throttled to avoid flooding the computer's event queue.</p>
 </section>
 
 <section class="article" id="api-modem" data-title="Modems & rednet" data-group="Hardware">
@@ -837,7 +892,7 @@ if not ok then print(reason) end</code></pre>
 </section>
 
 <section class="article" id="configuration" data-title="Configuration & security" data-group="Server owners">
-  <header><span class="eyebrow">Server owners</span><h1>Configuration &amp; security</h1><p class="lead">Language, HTTP access rules and wireless limits.</p></header>
+  <header><span class="eyebrow">Server owners</span><h1>Configuration &amp; security</h1><p class="lead">Language, HTTP access rules, wireless limits and Player Link safety.</p></header>
   <p>TaleOS creates <code>mods/TaleOS/config.json</code> relative to the server working directory. Edit it while the server is stopped, then restart. Keep a backup before making changes.</p>
   <h2 id="config-default">Complete default configuration</h2>
   <pre><code>{
@@ -858,8 +913,15 @@ if not ok then print(reason) end</code></pre>
   "modem": {
     "range": 64,
     "max_messages_per_tick": 32
+  },
+  "player_link": {
+    "enabled": true,
+    "max_distance": 64,
+    "transfers_per_tick": 8
   }
 }</code></pre>
+  <h2 id="config-player-link">Player Link settings</h2>
+  <p><code>player_link.enabled</code> enables the peripheral. <code>max_distance</code> is the owner-to-Turtle range in blocks (1–256, default 64). <code>transfers_per_tick</code> limits manual and automatic operations per equipped link (1–64, default 8). The owner must always be online and in the same world; offline inventory access and pulling are not supported. Older configurations without this section use the defaults.</p>
   <h2 id="config-language">English or Spanish</h2>
   <p>Set <code>"language": "en"</code> (default) or <code>"language": "es"</code>. This translates TaleOS interfaces, commands, Turtle messages, peripherals, errors and admin output. Lua API names and text produced by user programs do not change.</p>
   <h2 id="config-http">HTTP settings</h2>
@@ -913,7 +975,7 @@ taleos creative_test 199 123 -65 __turtle id</code></pre>
 </section>
 
 <section class="article" id="compatibility" data-title="Compatibility & limits" data-group="Server owners">
-  <header><span class="eyebrow">Reference</span><h1>Compatibility &amp; limits</h1><p class="lead">What TaleOS 0.1.0 does—and what it does not do yet.</p></header>
+  <header><span class="eyebrow">Reference</span><h1>Compatibility &amp; limits</h1><p class="lead">What TaleOS 0.2.0 does—and what it does not do yet.</p></header>
   <h2 id="compat-platform">Platform</h2>
   <ul>
     <li>Early Access, built for Hytale server 0.6.2 and Java 25.</li>
@@ -924,7 +986,7 @@ taleos creative_test 199 123 -65 __turtle id</code></pre>
   </ul>
   <h2 id="compat-cc">Relationship to other computer mods</h2>
   <p>TaleOS is a clean-room implementation inspired by the programmability of computer mods. Familiar names such as <code>fs</code>, <code>term</code>, <code>peripheral</code>, <code>rednet</code> and <code>turtle</code> do not imply complete API or program compatibility. Check signatures and return values in this wiki when porting a program.</p>
-  <h2 id="compat-not-yet">Not implemented in 0.1.0</h2>
+  <h2 id="compat-not-yet">Not implemented in 0.2.0</h2>
   <ul>
     <li>Floppy disks and disk drives—TaleOS uses PenDrives, USB readers and NAS instead.</li>
     <li>Redstone APIs, command computers, printers, wired networks and energy/fluid peripherals.</li>
@@ -932,7 +994,6 @@ taleos creative_test 199 123 -65 __turtle id</code></pre>
     <li>HTTP POST, WebSockets, proxies, arbitrary binary downloads and Git cloning.</li>
     <li>Speaker audio streaming or arbitrary user audio; only registered SoundEvents.</li>
     <li>Lua <code>require</code>, <code>package</code>, host <code>io</code>, Java access and native file access.</li>
-    <li>Automatic chunk loading by computers themselves.</li>
   </ul>
   <h2 id="compat-safety">Operational limits</h2>
   <p>Lua instruction budgets kill runaway code, world calls are limited per tick, HTTP is asynchronous and validated, event queues are bounded, and network messages are size/rate limited. These protections reduce server risk but do not replace sensible permissions, backups and resource monitoring.</p>
@@ -1010,7 +1071,7 @@ print(settings)</code></pre>
 </section>
 
 <footer class="footer">
-  TaleOS 0.1.0 documentation · Clean-room implementation for Hytale · <a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank" rel="noopener noreferrer">MPL-2.0 License</a>.<br>
+  TaleOS 0.2.0 documentation · Clean-room implementation for Hytale · <a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank" rel="noopener noreferrer">MPL-2.0 License</a>.<br>
   <a href="https://www.curseforge.com/hytale/mods/taleos" target="_blank" rel="noopener noreferrer">Download TaleOS on CurseForge</a> · This wiki is bundled with the project and has no external runtime dependencies.
 </footer>
 </main>

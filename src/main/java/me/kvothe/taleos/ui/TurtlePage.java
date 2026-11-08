@@ -55,10 +55,13 @@ public final class TurtlePage extends TerminalPage {
         cmd.set("#Stop.Text", me.kvothe.taleos.I18n.t("Stop program"));
         cmd.set("#LeftUpgradeLabel.Text", me.kvothe.taleos.I18n.t("Left upgrade"));
         cmd.set("#RightUpgradeLabel.Text", me.kvothe.taleos.I18n.t("Right upgrade"));
+        cmd.set("#InternalUpgradesLabel.Text", me.kvothe.taleos.I18n.t(
+                "Internal modules (not shown on model)"));
         cmd.set("#PlayerInventoryLabel.Text", me.kvothe.taleos.I18n.t("YOUR INVENTORY"));
         bindGrid(evt, "#TurtleGrid", "turtle");
         bindGrid(evt, "#LeftToolGrid", "leftTool");
         bindGrid(evt, "#RightToolGrid", "rightTool");
+        bindGrid(evt, "#InternalUpgradeGrid", "internal");
         bindGrid(evt, "#HotbarGrid", "hotbar");
         bindGrid(evt, "#BackpackGrid", "backpack");
         refreshInventory(ref, store, cmd);
@@ -124,7 +127,7 @@ public final class TurtlePage extends TerminalPage {
                     cmd.set("#ToolHint.Text", me.kvothe.taleos.I18n.t("Active slot: ")
                             + (turtle.getSelectedSlot() + 1));
                     sendUpdate(cmd, false);
-                } else if (isToolSlot(kind) && turtle.getInventory().getItemStack(
+                } else if (isUpgradeSlot(kind) && turtle.getInventory().getItemStack(
                         (short) containerSlot(kind, slot)) != null) {
                     draggedKind = kind;
                     draggedSlot = slot;
@@ -191,9 +194,9 @@ public final class TurtlePage extends TerminalPage {
             return;
         }
         ItemStack targetStack = target.getItemStack((short) targetSlot);
-        boolean targetTool = isToolSlot(targetKind);
-        boolean sourceTool = isToolSlot(sourceKind);
-        if (targetTool || sourceTool || (targetStack != null && !targetStack.isEmpty()
+        boolean targetUpgrade = isUpgradeSlot(targetKind);
+        boolean sourceUpgrade = isUpgradeSlot(sourceKind);
+        if (targetUpgrade || sourceUpgrade || (targetStack != null && !targetStack.isEmpty()
                 && !targetStack.getItemId().equals(stack.getItemId()))) {
             if (accepts(targetKind, stack) && accepts(sourceKind, targetStack)) {
                 source.setItemStackForSlot((short) sourceSlot, targetStack);
@@ -207,10 +210,11 @@ public final class TurtlePage extends TerminalPage {
         } else {
             computerMessage("Ese objeto no cabe en este slot");
         }
+        turtle.syncChunkLoader();
     }
 
-    private static boolean isToolSlot(String kind) {
-        return kind.equals("leftTool") || kind.equals("rightTool");
+    private static boolean isUpgradeSlot(String kind) {
+        return kind.equals("leftTool") || kind.equals("rightTool") || kind.equals("internal");
     }
 
     private static int containerSlot(String kind, int gridSlot) {
@@ -220,18 +224,24 @@ public final class TurtlePage extends TerminalPage {
         if (kind.equals("rightTool")) {
             return TurtleController.RIGHT_TOOL_SLOT;
         }
+        if (kind.equals("internal")) {
+            return gridSlot >= 0 && gridSlot < TurtleController.INTERNAL_SLOTS
+                    ? TurtleController.FIRST_INTERNAL_SLOT + gridSlot : Integer.MAX_VALUE;
+        }
         return gridSlot;
     }
 
     private static boolean accepts(String kind, ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !isToolSlot(kind)) {
+        if (stack == null || stack.isEmpty() || !isUpgradeSlot(kind)) {
             return true;
         }
-        return me.kvothe.taleos.turtle.TurtleUpgradeRegistry.defaults().accepts(stack);
+        return kind.equals("internal")
+                ? me.kvothe.taleos.turtle.TurtleUpgradeRegistry.defaults().acceptsInternal(stack)
+                : me.kvothe.taleos.turtle.TurtleUpgradeRegistry.defaults().accepts(stack);
     }
 
     private ItemContainer container(Store<EntityStore> store, String kind) {
-        if (kind.equals("turtle") || kind.equals("leftTool") || kind.equals("rightTool")) {
+        if (kind.equals("turtle") || isUpgradeSlot(kind)) {
             return turtle.getInventory();
         }
         Player player = store.getComponent(playerRef.getReference(), Player.getComponentType());
@@ -267,6 +277,8 @@ public final class TurtlePage extends TerminalPage {
         setGrid(cmd, "#TurtleGrid", inventory, 0, TurtleController.INVENTORY_SLOTS);
         setGrid(cmd, "#LeftToolGrid", inventory, TurtleController.LEFT_TOOL_SLOT, 1);
         setGrid(cmd, "#RightToolGrid", inventory, TurtleController.RIGHT_TOOL_SLOT, 1);
+        setGrid(cmd, "#InternalUpgradeGrid", inventory, TurtleController.FIRST_INTERNAL_SLOT,
+                TurtleController.INTERNAL_SLOTS);
         Player player = store.getComponent(ref, Player.getComponentType());
         setGrid(cmd, "#HotbarGrid", player.getInventory().getHotbar(), 0,
                 player.getInventory().getHotbar().getCapacity());

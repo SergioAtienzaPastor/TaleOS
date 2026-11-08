@@ -1,0 +1,65 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.TaleOS_Player_Link.name",
+    "Description": "server.items.TaleOS_Player_Link.description"
+  },
+  "PlayerAnimationsId": "Item",
+  "Categories": [
+    "Furniture.Tech"
+  ],
+  "Icon": "Icons/ItemsGenerated/TaleOS_Player_Link.png",
+  "IconProperties": {
+    "Scale": 0.8,
+    "Rotation": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "Model": "Items/TaleOS/TaleOS_Player_Link.blockymodel",
+  "Texture": "Items/TaleOS/TaleOS_Player_Link_Texture.png",
+  "Scale": 0.75,
+  "InteractionHint": "server.interactionHints.TaleOS_Player_Link",
+  "Interactions": {
+    "Use": {
+      "Interactions": [
+        {
+          "Type": "OpenCustomUI",
+          "Page": {
+            "Id": "TaleOSPlayerLink"
+          }
+        }
+      ]
+    }
+  },
+  "Tags": {
+    "Type": [
+      "Furniture"
+    ]
+  },
+  "Recipe": {
+    "TimeSeconds": 5,
+    "Input": [
+      {
+        "ItemId": "TaleOS_Modem",
+        "Quantity": 1
+      },
+      {
+        "ItemId": "Ingredient_Bar_Copper",
+        "Quantity": 2
+      }
+    ],
+    "BenchRequirement": [
+      {
+        "Id": "Workbench",
+        "Type": "Crafting",
+        "Categories": [
+          "Workbench_Survival"
+        ]
+      }
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Wood",
+  "ItemLevel": 5,
+  "MaxStack": 1
+}

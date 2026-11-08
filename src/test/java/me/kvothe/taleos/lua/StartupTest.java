@@ -19,7 +19,7 @@ class StartupTest {
         machine.tick();
 
         String output = machine.drainOutput();
-        assertTrue(output.contains("TaleOS v0.1"), output);
+        assertTrue(output.contains("TaleOS v0.2"), output);
         assertTrue(output.contains("startup ran"), output);
         assertTrue(machine.isAlive());
         assertEquals("tale> ", machine.getPrompt());

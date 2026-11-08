@@ -10,12 +10,16 @@ public final class TurtleUpgradeRegistry {
         TOOL,
         MODEM,
         SPEAKER,
-        CRAFTING
+        CRAFTING,
+        CHUNK_LOADER,
+        PLAYER_LINK
     }
 
     public static final String MODEM_ID = "TaleOS_Modem";
     public static final String SPEAKER_ID = "TaleOS_Speaker";
     public static final String CRAFTING_ID = "TaleOS_Crafting_Upgrade";
+    public static final String CHUNK_LOADER_ID = "TaleOS_Chunk_Loader_Upgrade";
+    public static final String PLAYER_LINK_ID = "TaleOS_Player_Link";
 
     private static final TurtleUpgradeRegistry DEFAULT = createDefault();
 
@@ -26,6 +30,8 @@ public final class TurtleUpgradeRegistry {
         registry.register(MODEM_ID, Kind.MODEM);
         registry.register(SPEAKER_ID, Kind.SPEAKER);
         registry.register(CRAFTING_ID, Kind.CRAFTING);
+        registry.register(CHUNK_LOADER_ID, Kind.CHUNK_LOADER);
+        registry.register(PLAYER_LINK_ID, Kind.PLAYER_LINK);
         return registry;
     }
 
@@ -62,7 +68,20 @@ public final class TurtleUpgradeRegistry {
         return kindOf(stack) != null;
     }
 
+    public boolean acceptsInternal(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return true;
+        }
+        Kind kind = kindOf(stack);
+        return kind != null && kind != Kind.TOOL;
+    }
+
     public boolean accepts(String itemId, boolean tool) {
         return kindOf(itemId, tool) != null;
+    }
+
+    public boolean acceptsInternal(String itemId, boolean tool) {
+        Kind kind = kindOf(itemId, tool);
+        return kind != null && kind != Kind.TOOL;
     }
 }

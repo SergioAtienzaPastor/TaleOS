@@ -14,6 +14,7 @@ Everything runs on the server using a sandboxed Lua runtime designed for multipl
 - Use a terminal with commands, persistent files, directories, and autocompletion.
 - Edit code with the built-in visual editor.
 - Control turtles that move, dig, build, fight, craft, and manage items.
+- Keep turtle chunks loaded and deliver items directly to linked player inventory slots.
 - Draw colored text and graphics directly on monitors in the world.
 - Combine monitors into large displays of up to 8×8 blocks.
 - Connect computers with wireless modems, Rednet messages, and GPS.
@@ -47,9 +48,13 @@ Lua code runs in a sandbox with instruction budgets and restricted Java access. 
 
 ## Programmable turtles
 
-Turtles are mobile computers with a 16-slot inventory and two upgrade slots. Equip tools, weapons, modems, speakers, or crafting upgrades and automate work in your world.
+Turtles are mobile computers with a 16-slot inventory, two external upgrade slots, and four internal module slots. Equip tools, weapons, modems, speakers, crafting upgrades, or chunk loaders and automate work in your world.
 
-Their equipped upgrades are visible on the 3D model, tools swing when used, and movement and rotation are animated. A turtle keeps its computer ID, files, inventory, selected slot, and upgrades when it moves or is picked up and placed again.
+Their external upgrades are visible on the 3D model, tools swing when used, and movement and rotation are animated. Internal modules stay hidden. A turtle keeps its computer ID, files, inventory, selected slot, and upgrades when it moves or is picked up and placed again.
+
+The Chunk Loader Upgrade keeps the turtle's current chunk loaded, follows it between chunks, and restores the chunk ticket after a server restart.
+
+The Player Link can be bound to a player by holding it and pressing F. Once equipped in an external or internal turtle slot, Lua programs can send items to selected player inventory slots, either manually or automatically. Routes and ownership stay in the item. It does not restrict turtle access and never removes or swaps player items; offline, distant, full, or incompatible destinations simply leave the items in the turtle.
 
 [Aquí una imagen de una turtle equipada con herramientas en el mundo]
 

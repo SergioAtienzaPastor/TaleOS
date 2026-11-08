@@ -84,6 +84,24 @@ final class TurtleToolDisplay {
             }
             return;
         }
+        if (upgrade == TurtleUpgradeRegistry.Kind.CHUNK_LOADER) {
+            shape(base, side, 0.48, 0.03, 0.34, 0.34, 0.24, new Vector3f(0.09f, 0.24f, 0.23f));
+            for (int row = -1; row <= 1; row++) {
+                for (int column = -1; column <= 1; column++) {
+                    shape(base, side + column * 0.09, 0.48 + row * 0.09, 0.17,
+                            0.055, 0.055, 0.03, new Vector3f(0.25f, 0.82f, 0.66f));
+                }
+            }
+            return;
+        }
+        if (upgrade == TurtleUpgradeRegistry.Kind.PLAYER_LINK) {
+            shape(base, side, 0.48, 0.03, 0.34, 0.34, 0.18, new Vector3f(0.08f, 0.20f, 0.25f));
+            shape(base, side, 0.56, 0.14, 0.12, 0.12, 0.05, new Vector3f(0.32f, 0.80f, 0.84f));
+            shape(base, side, 0.40, 0.14, 0.22, 0.10, 0.05, new Vector3f(0.32f, 0.80f, 0.84f));
+            shape(base, side - 0.12, 0.56, 0.14, 0.05, 0.05, 0.05, new Vector3f(0.72f, 0.43f, 0.22f));
+            shape(base, side + 0.12, 0.56, 0.14, 0.05, 0.05, 0.05, new Vector3f(0.72f, 0.43f, 0.22f));
+            return;
+        }
         if (upgrade == TurtleUpgradeRegistry.Kind.SPEAKER) {
             shape(base, side, 0.48, 0.03, 0.34, 0.40, 0.24, new Vector3f(0.15f, 0.15f, 0.17f));
             shape(base, side, 0.48, 0.17, 0.20, 0.20, 0.04, new Vector3f(0.45f, 0.45f, 0.48f));

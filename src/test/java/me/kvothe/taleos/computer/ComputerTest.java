@@ -25,7 +25,7 @@ class ComputerTest {
     void bootsTaleOsFromJarRom() throws Exception {
         Computer c = bootComputer();
         String out = c.drainOutput();
-        assertTrue(out.contains("TaleOS v0.1"), "banner, got: " + out);
+        assertTrue(out.contains("TaleOS v0.2"), "banner, got: " + out);
         assertEquals("tale> ", c.getPrompt(), "shell prompt");
         assertTrue(c.isAlive());
     }

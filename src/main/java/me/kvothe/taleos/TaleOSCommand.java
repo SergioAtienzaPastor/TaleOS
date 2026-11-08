@@ -183,6 +183,22 @@ public class TaleOSCommand extends CommandBase {
             }
             return;
         }
+        if ("__chunkat".equals(action)) {
+            boolean held = manager.chunkLoaders().isChunkHeld(world, new BlockPosition(x, y, z));
+            ctx.sendMessage(localized("[TaleOS] chunk held=" + held + ", active="
+                    + manager.chunkLoaders().activeCount()));
+            return;
+        }
+        if ("__chunkloader".equals(action)) {
+            var controller = manager.turtleControllerAt(world, new BlockPosition(x, y, z));
+            boolean equipped = controller.hasUpgradeAnywhere(
+                    me.kvothe.taleos.turtle.TurtleUpgradeRegistry.Kind.CHUNK_LOADER);
+            boolean held = manager.chunkLoaders().isChunkHeld(world, new BlockPosition(x, y, z));
+            int capacity = controller.getInventory() == null ? -1 : controller.getInventory().getCapacity();
+            ctx.sendMessage(localized("[TaleOS] chunk loader equipped=" + equipped + ", held=" + held
+                    + ", active=" + manager.chunkLoaders().activeCount() + ", slots=" + capacity));
+            return;
+        }
         if ("__turtleboot".equals(action)) {
             Computer turtle = manager.bootTurtleAt(world, new BlockPosition(x, y, z));
             ctx.sendMessage(localized("[TaleOS] turtle #" + turtle.getId() + " lista"));

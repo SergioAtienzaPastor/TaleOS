@@ -1,0 +1,55 @@
+$C = "../Common.ui";
+
+Group #PlayerLink {
+  Anchor: (Width: 610, Height: 330);
+  Background: #101824(0.98);
+  LayoutMode: Top;
+  Padding: (Full: 22);
+
+  Label #Title {
+    Text: "Player Link";
+    Anchor: (Height: 46);
+    Style: (FontSize: 25, TextColor: #e4d39c, RenderBold: true, VerticalAlignment: Center);
+  }
+
+  Label #Status {
+    Text: "Not linked";
+    Anchor: (Height: 48);
+    Style: (FontSize: 19, TextColor: #83d9cf, RenderBold: true, VerticalAlignment: Center);
+  }
+
+  Label #Explanation {
+    Text: "An equipped Turtle can send items to the linked player's inventory.";
+    Anchor: (Height: 54);
+    Style: (FontSize: 16, TextColor: #d0dfc4, VerticalAlignment: Center);
+  }
+
+  Label #Usage {
+    Text: "Equip it in an external or internal Turtle upgrade slot.";
+    Anchor: (Height: 42);
+    Style: (FontSize: 15, TextColor: #a7b7c9, VerticalAlignment: Center);
+  }
+
+  Label #AccessHint {
+    Text: "This does not restrict who can use the Turtle.";
+    Anchor: (Height: 42);
+    Style: (FontSize: 15, TextColor: #a7b7c9, VerticalAlignment: Center);
+  }
+
+  Group {
+    Anchor: (Height: 48);
+    LayoutMode: Left;
+
+    $C.@SecondaryTextButton #Unlink {
+      Text: "Unlink";
+      Anchor: (Width: 170, Height: 38);
+    }
+
+    Group { FlexWeight: 1; }
+
+    $C.@TextButton #Close {
+      Text: "Close";
+      Anchor: (Width: 150, Height: 38);
+    }
+  }
+}

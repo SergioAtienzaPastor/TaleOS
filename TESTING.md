@@ -86,8 +86,8 @@ Marcar cada prueba solo si se reproduce tal cual:
 - [x] **Túnel 3×3**: prueba automatizada con dos secciones verifica giros, subida,
   bajada, `digUp` y avance. Las 71 pruebas Gradle terminan en verde.
 - [ ] **UI cliente**: abrir con F y comprobar la página combinada: terminal, 4×4,
-  inventario del jugador y dos mejoras. Clic selecciona/transfiere; clic derecho
-  devuelve objetos. Los slots de mejora solo aceptan herramientas.
+  inventario del jugador, dos mejoras externas y cuatro módulos internos. Clic selecciona/transfiere;
+  los huecos internos rechazan herramientas y armas.
 - [ ] **Visual cliente**: comprobar icono, frontal y geometría de pala/pico en los
   laterales (no hay herramienta dibujada cuando los slots están vacíos).
 - Comandos de apoyo: `__turtleplace`, `__turtleboot`, `__turtlegive <item> <n>`,
@@ -222,3 +222,73 @@ Marcar cada prueba solo si se reproduce tal cual:
   `cd nas/22`, `ls`, `cat LEEME_NAS.txt` y `cd /` funcionaron con prompt `tale:/nas/22>`.
   La ocultación de carpetas fantasma solo se aplica a la raíz local, nunca dentro de un montaje.
 - Jar desplegado: SHA-256 `043910dd8ba024d3f4d4a2c97df709cca7b0314bc88e865f4f34661de1838918`.
+
+## Chunk Loader y módulos internos (2026-11-01)
+
+- [ ] **Receta, modelo y UI**: fabricar `TaleOS_Chunk_Loader_Upgrade` con 4 cobre + 2 Deadwood,
+  comprobar su icono renderizado y su modelo de circuito al sostenerlo, y arrastrarlo a cualquiera
+  de las seis ranuras de mejora de una Turtle.
+- [ ] **Cuatro huecos internos**: comprobar visualmente que admiten módems, altavoces, crafting y
+  Chunk Loader, rechazan herramientas/armas y no dibujan su contenido en el modelo 3D.
+- [x] **API interna**: Turtle #34 ejecutó `equipInternal(1)`, `unequipInternal(1)` y
+  `getEquippedInternal(1)`; devolvieron `true` y `TaleOS_Chunk_Loader_Upgrade`. Pendiente probar
+  módems/altavoces mediante los nombres `internal1`…`internal4`.
+- [x] **Chunk activo**: `/taleos creative_test 206 123 -65 __chunkloader` informa
+  `equipped=true, held=true, active=1, slots=22`.
+- [x] **Movimiento**: Turtle #34 cruzó de `(206,123,-64)` a `(206,123,-65)`. El nuevo chunk informó
+  `held=true` y el anterior `held=false`, sin crear una segunda instancia.
+- [ ] **Chunk compartido**: varias Turtle en el mismo chunk conservan la carga hasta retirar la última
+  mejora. La referencia compartida está implementada, pero falta la prueba física.
+- [x] **Persistencia y retirada**: tras reiniciar, Turtle #34 arrancó sola y recuperó `held=true`.
+  `unequipInternal(1)` cambió el estado a `held=false, active=0`; al reequipar volvió a `held=true`.
+- [ ] **Rotura y migración**: romper una Turtle libera el chunk; una Turtle antigua de 18 ranuras se
+  amplía a 22 conservando inventario y mejoras. Ambos casos están implementados, pendientes de prueba física.
+- Build final: 273 pruebas, 0 fallos. JAR desplegado con SHA-256
+  `534fc1c78da84961d3293eb8d6e3bdc9983646c93319855ae244a4e29f84fe52`.
+
+
+## Player Link (2026-11-08)
+
+- [x] **Metadatos y persistencia**: pruebas automatizadas de propietario UUID/nombre, rutas,
+  destino predeterminado, modo automático y copias de metadatos del objeto. Desvincular limpia
+  propietario, rutas y automatización.
+- [x] **Sin extracciones ni intercambios**: las pruebas con contenedores reales de Hytale detectaron
+  que el movimiento nativo podía intercambiar stacks incompatibles. La guarda previa ahora lo impide:
+  solo huecos vacíos o stacks compatibles con espacio. Inventario lleno/otro objeto no cambia nada.
+- [x] **Cantidades conservadas**: envíos parciales, cantidad limitada, metadatos del stack y resto en
+  Turtle verificados; también API Lua real mediante `peripheral.wrap("internal1")`.
+- [ ] **Receta y modelo**: fabricar con 1 módem + 2 cobre; comprobar icono, modelo en la mano y
+  apariencia cuando se equipa en un hueco externo. En huecos internos no debe dibujarse.
+- [ ] **Vinculación con F**: mantener un Player Link sin vincular y pulsar F. Debe registrar al jugador,
+  mostrar su nombre y abrir la página de estado. No se vincula simplemente al equiparlo en la Turtle.
+- [ ] **Sin restricción de acceso**: otro jugador debe poder abrir y programar la Turtle. Si pulsa F con
+  un enlace ajeno, no cambia el propietario ni puede desvincularlo.
+- [ ] **Desvinculación**: el propietario (o un administrador con `taleos.playerlink.admin`) puede usar
+  el botón Desvincular. Después, otro jugador puede vincular el objeto consigo pulsando F.
+- [ ] **Transferencia manual**: colocar objetos en el slot 1 de la Turtle y ejecutar en Lua:
+  `link=peripheral.find("player_link"); print(link.getOwner()); print(link.transfer(1,9))`.
+  Debe devolver `true, cantidad`, llenar solo el slot 9 y conservar cualquier resto en la Turtle.
+- [ ] **Destino ocupado/lleno**: repetir con otro objeto en el slot 9 y con un stack lleno. Debe
+  devolver `false, motivo` sin quitar ni sustituir objetos del jugador. Probar después stack compatible
+  casi lleno para comprobar una entrega parcial.
+- [ ] **Rutas automáticas**: `link.setRoute(1,9); link.setAutoTransfer(true)`. Al recoger objetos en
+  el slot 1 deben llegar solos al slot 9. `link.clearRoute(1)` y `link.setAutoTransfer(false)` lo detienen.
+- [ ] **Destino general**: `link.setDefaultSlot(9)` envía las ranuras sin ruta específica;
+  `link.setDefaultSlot(nil)` elimina ese destino.
+- [ ] **Disponibilidad**: `link.isAvailable()` debe fallar con motivo al desconectar al propietario,
+  cambiar de mundo o superar 64 bloques. Los objetos permanecen en la Turtle y los eventos
+  `player_link_unavailable`/`player_link_full` están limitados en frecuencia.
+- [ ] **Persistencia física**: quitar el enlace, guardarlo, romper/recolocar la Turtle y reiniciar el
+  servidor. Propietario y rutas deben conservarse porque pertenecen al objeto, no a las coordenadas.
+
+### Verificación técnica de Player Link
+
+- Build limpio: **291 pruebas, 0 fallos**. JAR SHA-256
+  `52a68d7594f6c257ca96266065e0be88e80a38b58be64b51bbe8d18493369c8c`.
+- `um publish check .`: **0 errores y 0 avisos**.
+- Servidor Hytale 0.7.4 arrancado con el JAR desplegado y puerto 5520 activo. Turtle #34 equipó
+  `TaleOS_Player_Link` en `internal4`; `peripheral.getType` devolvió `player_link` y enumeró los
+  nueve métodos. Sin vinculación, `getOwner()` devolvió `nil` e `isAvailable()`, `setRoute` y
+  `transfer` exigieron vincular primero con F. No se produjeron excepciones de TaleOS.
+- Las pruebas visuales de F/desvinculación y las transferencias con un jugador conectado quedan
+  pendientes en la lista anterior; no se han dado por verificadas automáticamente.

@@ -69,6 +69,9 @@ public final class TurtleController implements TurtleBridge {
     public static final int INVENTORY_SLOTS = 16;
     public static final int LEFT_TOOL_SLOT = 16;
     public static final int RIGHT_TOOL_SLOT = 17;
+    public static final int INTERNAL_SLOTS = 4;
+    public static final int FIRST_INTERNAL_SLOT = 18;
+    public static final int INVENTORY_CAPACITY = FIRST_INTERNAL_SLOT + INTERNAL_SLOTS;
     public static final int TOOL_SLOT = RIGHT_TOOL_SLOT;
     public static final String BLOCK_ID = "TaleOS_Turtle";
 
@@ -102,6 +105,14 @@ public final class TurtleController implements TurtleBridge {
 
     public BlockPosition getPosition() {
         return position;
+    }
+
+    public int getComputerId() {
+        return computerId;
+    }
+
+    public void syncChunkLoader() {
+        manager.chunkLoaders().sync(this);
     }
 
     public Vector3d getVisualPosition() {
@@ -238,8 +249,8 @@ public final class TurtleController implements TurtleBridge {
                 return null;
             }
             SimpleItemContainer inventory = containerBlock.getItemContainer();
-            if (inventory.getCapacity() < RIGHT_TOOL_SLOT + 1) {
-                SimpleItemContainer expanded = new SimpleItemContainer((short) (RIGHT_TOOL_SLOT + 1));
+            if (inventory.getCapacity() < INVENTORY_CAPACITY) {
+                SimpleItemContainer expanded = new SimpleItemContainer((short) INVENTORY_CAPACITY);
                 for (short slot = 0; slot < inventory.getCapacity(); slot++) {
                     expanded.setItemStackForSlot(slot, inventory.getItemStack(slot));
                 }
@@ -250,6 +261,11 @@ public final class TurtleController implements TurtleBridge {
                 inventory.setSlotFilter(FilterActionType.ADD, (short) slot,
                         (action, container, target, stack) -> stack == null || stack.isEmpty()
                                 || TurtleUpgradeRegistry.defaults().accepts(stack));
+            }
+            for (int slot = FIRST_INTERNAL_SLOT; slot < INVENTORY_CAPACITY; slot++) {
+                inventory.setSlotFilter(FilterActionType.ADD, (short) slot,
+                        (action, container, target, stack) ->
+                                TurtleUpgradeRegistry.defaults().acceptsInternal(stack));
             }
             return inventory;
         } catch (Exception e) {
@@ -272,8 +288,20 @@ public final class TurtleController implements TurtleBridge {
         return upgradeKind(side) == kind;
     }
 
+    public boolean hasUpgradeAnywhere(TurtleUpgradeRegistry.Kind kind) {
+        for (int slot = LEFT_TOOL_SLOT; slot < INVENTORY_CAPACITY; slot++) {
+            if (TurtleUpgradeRegistry.defaults().kindOf(getTool(slot)) == kind) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public me.kvothe.taleos.peripheral.Peripheral peripheral(String side) {
         TurtleUpgradeRegistry.Kind kind = upgradeKind(side);
+        if (kind == TurtleUpgradeRegistry.Kind.PLAYER_LINK) {
+            return manager.playerLinks().peripheral(this, sideSlot(side), side);
+        }
         if (kind != TurtleUpgradeRegistry.Kind.MODEM && kind != TurtleUpgradeRegistry.Kind.SPEAKER) {
             return null;
         }
@@ -286,8 +314,30 @@ public final class TurtleController implements TurtleBridge {
                 : manager.turtleSpeakerPeripheral(this, computer);
     }
 
-    private static int sideSlot(String side) {
-        return "left".equals(side) ? LEFT_TOOL_SLOT : "right".equals(side) ? RIGHT_TOOL_SLOT : -1;
+    public static int internalSlot(int oneBasedIndex) {
+        return oneBasedIndex < 1 || oneBasedIndex > INTERNAL_SLOTS
+                ? -1 : FIRST_INTERNAL_SLOT + oneBasedIndex - 1;
+    }
+
+    public static boolean isInternalUpgradeName(String side) {
+        return sideSlot(side) >= FIRST_INTERNAL_SLOT;
+    }
+
+    public static int sideSlot(String side) {
+        if ("left".equals(side)) {
+            return LEFT_TOOL_SLOT;
+        }
+        if ("right".equals(side)) {
+            return RIGHT_TOOL_SLOT;
+        }
+        if (side != null && side.startsWith("internal")) {
+            try {
+                return internalSlot(Integer.parseInt(side.substring("internal".length())));
+            } catch (NumberFormatException ignored) {
+                return -1;
+            }
+        }
+        return -1;
     }
 
     public String getFacing() {
@@ -328,8 +378,11 @@ public final class TurtleController implements TurtleBridge {
                 case "equip", "equipRight" -> equip(RIGHT_TOOL_SLOT);
                 case "equipLeft" -> equip(LEFT_TOOL_SLOT);
                 case "unequip" -> unequip(RIGHT_TOOL_SLOT);
+                case "equipInternal" -> equipInternal(args.arg1().optint(-1), false);
+                case "unequipInternal" -> equipInternal(args.arg1().optint(-1), true);
                 case "getEquippedLeft" -> equippedDetail(LEFT_TOOL_SLOT);
                 case "getEquippedRight" -> equippedDetail(RIGHT_TOOL_SLOT);
+                case "getEquippedInternal" -> equippedInternal(args.arg1().optint(-1));
                 case "getFuelLevel", "getFuelLimit" -> LuaValue.valueOf("unlimited");
                 case "refuel" -> failure("esta Turtle no necesita combustible");
                 case "dig" -> result(dig(TurtleDirection.FORWARD, args.arg1()));
@@ -441,12 +494,18 @@ public final class TurtleController implements TurtleBridge {
         }
         int selected = getSelectedSlot();
         ItemStack stack = inventory.getItemStack((short) selected);
-        if (stack != null && !stack.isEmpty() && !TurtleUpgradeRegistry.defaults().accepts(stack)) {
-            return failure("el objeto seleccionado no es una mejora válida");
+        boolean internal = toolSlot >= FIRST_INTERNAL_SLOT && toolSlot < INVENTORY_CAPACITY;
+        boolean accepted = internal ? TurtleUpgradeRegistry.defaults().acceptsInternal(stack)
+                : TurtleUpgradeRegistry.defaults().accepts(stack);
+        if (stack != null && !stack.isEmpty() && !accepted) {
+            return failure(internal
+                    ? "los slots internos solo admiten módulos, no herramientas ni armas"
+                    : "el objeto seleccionado no es una mejora válida");
         }
         ItemStack tool = inventory.getItemStack((short) toolSlot);
         inventory.setItemStackForSlot((short) selected, tool);
         inventory.setItemStackForSlot((short) toolSlot, stack);
+        manager.chunkLoaders().sync(this);
         return LuaValue.TRUE;
     }
 
@@ -456,6 +515,19 @@ public final class TurtleController implements TurtleBridge {
             return failure("selecciona un slot vacío");
         }
         return equip(toolSlot);
+    }
+
+    private Varargs equipInternal(int oneBasedIndex, boolean remove) {
+        int slot = internalSlot(oneBasedIndex);
+        if (slot < 0) {
+            return failure("slot interno fuera de rango (1-4)");
+        }
+        return remove ? unequip(slot) : equip(slot);
+    }
+
+    private Varargs equippedInternal(int oneBasedIndex) {
+        int slot = internalSlot(oneBasedIndex);
+        return slot < 0 ? failure("slot interno fuera de rango (1-4)") : equippedDetail(slot);
     }
 
     private Varargs equippedDetail(int toolSlot) {
@@ -759,8 +831,7 @@ public final class TurtleController implements TurtleBridge {
         if (limit < 1 || limit > 64) {
             return TurtleResult.fail("el límite debe estar entre 1 y 64");
         }
-        if (!hasUpgrade("left", TurtleUpgradeRegistry.Kind.CRAFTING)
-                && !hasUpgrade("right", TurtleUpgradeRegistry.Kind.CRAFTING)) {
+        if (!hasUpgradeAnywhere(TurtleUpgradeRegistry.Kind.CRAFTING)) {
             return TurtleResult.fail("se necesita una mejora de crafting");
         }
         ItemContainer inventory = getInventory();

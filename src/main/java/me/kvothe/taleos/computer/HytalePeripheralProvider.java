@@ -81,12 +81,24 @@ public final class HytalePeripheralProvider implements PeripheralProvider {
                 result.put(side, peripheral);
             }
         });
+        if (turtle != null) {
+            for (int index = 1; index <= me.kvothe.taleos.turtle.TurtleController.INTERNAL_SLOTS; index++) {
+                String name = "internal" + index;
+                Peripheral peripheral = turtle.peripheral(name);
+                if (peripheral != null) {
+                    result.put(name, peripheral);
+                }
+            }
+        }
         return result;
     }
 
     @Override
     public Peripheral find(String name) {
         BlockPosition origin = origin();
+        if (turtle != null && me.kvothe.taleos.turtle.TurtleController.isInternalUpgradeName(name)) {
+            return turtle.peripheral(name);
+        }
         BlockPosition offset = SIDES.get(name);
         if (offset != null) {
             Peripheral equipped = turtle == null ? null : turtle.peripheral(name);

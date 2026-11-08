@@ -57,6 +57,9 @@ public class TaleOSPlugin extends JavaPlugin {
         OpenCustomUIInteraction.registerCustomPageSupplier(this,
                 me.kvothe.taleos.computer.PocketPageSupplier.class,
                 "TaleOSPocket", new me.kvothe.taleos.computer.PocketPageSupplier(computerManager));
+        OpenCustomUIInteraction.registerCustomPageSupplier(this,
+                me.kvothe.taleos.computer.PlayerLinkPageSupplier.class,
+                "TaleOSPlayerLink", new me.kvothe.taleos.computer.PlayerLinkPageSupplier());
         getEventRegistry().register(
                 com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent.class,
                 event -> computerManager.pockets().disconnect(event.getPlayerRef().getUuid()));
@@ -76,7 +79,7 @@ public class TaleOSPlugin extends JavaPlugin {
         try {
             Computer c = computerManager.bootAt(null, new BlockPosition(0, 64, 0));
             String boot = c.drainOutput();
-            boolean bootOk = boot.contains("TaleOS v0.1") && boot.contains("tale>");
+            boolean bootOk = boot.contains("TaleOS v0.2") && boot.contains("tale>");
             LOGGER.atInfo().log("[selftest] boot to TaleOS prompt: " + bootOk);
             c.queueStdin("id");
             c.tick();

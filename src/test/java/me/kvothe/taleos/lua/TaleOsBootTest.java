@@ -47,7 +47,7 @@ class TaleOsBootTest {
         LuaMachine m = boot(dir.resolve("c7"), loadRomOverlay());
         m.tick();
         String boot = m.drainOutput();
-        assertTrue(boot.contains("TaleOS v0.1"), "boot banner, got: " + boot);
+        assertTrue(boot.contains("TaleOS v0.2"), "boot banner, got: " + boot);
         assertEquals("tale> ", m.getPrompt(), "shell prompt");
         assertTrue(m.isAlive(), "shell waits suspended for stdin");
 

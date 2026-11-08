@@ -109,6 +109,7 @@ class TurtleApiTest {
                 + " 'select', 'getSelectedSlot', 'getItemCount', 'getItemSpace', 'getItemDetail',"
                 + " 'transferTo', 'compare', 'compareUp', 'compareDown', 'compareTo',"
                 + " 'equip', 'unequip', 'equipLeft', 'equipRight', 'getEquippedLeft', 'getEquippedRight',"
+                + " 'equipInternal', 'unequipInternal', 'getEquippedInternal',"
                 + " 'getFuelLevel', 'getFuelLimit', 'refuel', 'dig', 'digUp', 'digDown',"
                 + " 'attack', 'attackUp', 'attackDown', 'craft',"
                 + " 'place', 'placeUp', 'placeDown', 'suck', 'suckUp', 'suckDown',"
@@ -117,7 +118,7 @@ class TurtleApiTest {
                 + " print(#names)", "all-methods");
         machine.tick();
         assertEquals(LuaMachine.State.DONE, machine.getState());
-        assertEquals("47\n", machine.drainOutput());
+        assertEquals("50\n", machine.drainOutput());
 
         LuaMachine removed = machineWithTurtle(new FakeTurtle());
         removed.setWorldBridge(new FakeWorld(null));

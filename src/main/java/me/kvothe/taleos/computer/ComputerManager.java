@@ -42,6 +42,8 @@ public final class ComputerManager {
     private final me.kvothe.taleos.storage.UsbDriveManager usbDriveManager;
     private final me.kvothe.taleos.storage.NasManager nasManager;
     private final me.kvothe.taleos.pocket.PocketManager pocketManager;
+    private final me.kvothe.taleos.turtle.TurtleChunkLoaderManager chunkLoaderManager;
+    private final me.kvothe.taleos.peripheral.playerlink.PlayerLinkManager playerLinkManager;
     private me.kvothe.taleos.net.HttpService httpService;
     private me.kvothe.taleos.peripheral.modem.WirelessNetwork wirelessNetwork =
             new me.kvothe.taleos.peripheral.modem.WirelessNetwork();
@@ -75,6 +77,9 @@ public final class ComputerManager {
         this.usbDriveManager = new me.kvothe.taleos.storage.UsbDriveManager(this, dataDir, idStore);
         this.nasManager = new me.kvothe.taleos.storage.NasManager(this, usbDriveManager.hub());
         this.pocketManager = new me.kvothe.taleos.pocket.PocketManager(this, dataDir, idStore);
+        this.chunkLoaderManager = new me.kvothe.taleos.turtle.TurtleChunkLoaderManager(
+                this, dataDir.resolve("chunk_loaders.json"));
+        this.playerLinkManager = new me.kvothe.taleos.peripheral.playerlink.PlayerLinkManager(this);
     }
 
     public me.kvothe.taleos.storage.UsbDriveManager usbDrives() {
@@ -87,6 +92,14 @@ public final class ComputerManager {
 
     public me.kvothe.taleos.pocket.PocketManager pockets() {
         return pocketManager;
+    }
+
+    public me.kvothe.taleos.turtle.TurtleChunkLoaderManager chunkLoaders() {
+        return chunkLoaderManager;
+    }
+
+    public me.kvothe.taleos.peripheral.playerlink.PlayerLinkManager playerLinks() {
+        return playerLinkManager;
     }
 
     public void prepareComputer(Computer computer) {
@@ -102,9 +115,11 @@ public final class ComputerManager {
                 me.kvothe.taleos.net.ModemConfig.load(dataDir.resolve("config.json"));
         wirelessNetwork = new me.kvothe.taleos.peripheral.modem.WirelessNetwork(
                 modemConfig.range(), modemConfig.maxMessagesPerTick());
+        playerLinkManager.load(dataDir.resolve("config.json"));
         try {
             idStore.load();
             turtleStateStore.load();
+            chunkLoaderManager.load();
         } catch (IOException e) {
             throw new IllegalStateException("cannot read TaleOS state", e);
         }
@@ -260,6 +275,7 @@ public final class ComputerManager {
         assertIdAvailable(id, key);
         idStore.bind(key, id);
         idStore.unbind(key);
+        chunkLoaderManager.forget(id);
         if (computer != null) {
             unloadInstance(key, computer);
         } else {
@@ -297,6 +313,7 @@ public final class ComputerManager {
         nasManager.mountComputer(world, destination, computer);
         computer.getMachine().setWorldBridge(
                 new HytaleWorldBridge(world, destination, computer.getId(), this, controller));
+        chunkLoaderManager.sync(controller);
         saveState();
     }
 
@@ -432,6 +449,8 @@ public final class ComputerManager {
         usbDriveManager.tickWorld(world);
         nasManager.tickWorld(world);
         pocketManager.tickWorld(world);
+        chunkLoaderManager.tickWorld(world);
+        playerLinkManager.beginTick(world);
         for (Map.Entry<String, Computer> entry : computers.entrySet()) {
             if (entry.getKey().startsWith(prefix)) {
                 var limiter = speakerRateLimiters.get(entry.getValue().getId());
@@ -494,6 +513,7 @@ public final class ComputerManager {
         for (java.util.Map.Entry<String, TurtleController> entry : turtles.entrySet()) {
             if (entry.getKey().startsWith(prefix)) {
                 entry.getValue().tick();
+                playerLinkManager.tick(entry.getValue());
             }
         }
         for (TerminalPage page : openPages.values()) {
@@ -794,6 +814,21 @@ public final class ComputerManager {
         return result;
     }
 
+    public java.util.Collection<TurtleController> turtlesInWorld(World world) {
+        String prefix = world.getName() + ":";
+        java.util.List<TurtleController> result = new java.util.ArrayList<>();
+        turtles.forEach((location, turtle) -> {
+            if (location.startsWith(prefix)) {
+                result.add(turtle);
+            }
+        });
+        return result;
+    }
+
+    public World worldByName(String name) {
+        return Universe.get().getWorld(name);
+    }
+
     public String keyOf(Computer computer) {
         for (Map.Entry<String, Computer> entry : computers.entrySet()) {
             if (entry.getValue() == computer) {
@@ -991,6 +1026,8 @@ public final class ComputerManager {
         }
         nasManager.shutdown();
         usbDriveManager.shutdown();
+        chunkLoaderManager.shutdown();
+        playerLinkManager.shutdown();
         computers.clear();
         turtles.clear();
         wirelessNetwork.clear();

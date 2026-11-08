@@ -50,7 +50,8 @@ public final class LuaCompleter implements Completer {
                     "detect", "detectUp", "detectDown", "inspect", "inspectUp", "inspectDown", "select",
                     "getSelectedSlot", "getItemCount", "getItemSpace", "getItemDetail", "transferTo",
                     "compare", "compareUp", "compareDown", "compareTo", "equip", "unequip", "equipLeft",
-                    "equipRight", "getEquippedLeft", "getEquippedRight", "getFuelLevel", "getFuelLimit",
+                    "equipRight", "getEquippedLeft", "getEquippedRight", "equipInternal",
+                    "unequipInternal", "getEquippedInternal", "getFuelLevel", "getFuelLimit",
                     "refuel", "dig", "digUp", "digDown", "attack", "attackUp", "attackDown",
                     "craft", "place", "placeUp", "placeDown", "suck",
                     "suckUp", "suckDown", "drop", "dropUp", "dropDown")));
